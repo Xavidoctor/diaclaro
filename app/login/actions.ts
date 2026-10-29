@@ -1,66 +1,45 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { normalizarCodigo, normalizarEmail } from "@/lib/auth/validacion";
+import { enlaceDeVuelta, normalizarEmail } from "@/lib/auth/validacion";
 
 export type LoginState = {
-  paso: "email" | "codigo";
+  enviado: boolean;
   email?: string;
   error?: string;
 };
 
-// Paso 1: enviar un código de acceso al email.
-export async function enviarCodigo(
+// Envía un email con un enlace para entrar. Al tocarlo, se abre /auth/confirm
+// y allí se abre la sesión.
+export async function enviarEnlace(
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
   const email = normalizarEmail(formData.get("email"));
   if (!email) {
-    return { paso: "email", error: "Escribe un email válido." };
+    return { enviado: false, error: "Escribe un email válido." };
   }
+
+  const cabeceras = await headers();
+  const emailRedirectTo = enlaceDeVuelta({
+    origin: cabeceras.get("origin"),
+    host: cabeceras.get("x-forwarded-host") ?? cabeceras.get("host"),
+    proto: cabeceras.get("x-forwarded-proto"),
+  });
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({ email });
-  if (error) {
-    return {
-      paso: "email",
-      email,
-      error: "No he podido enviar el código. Espera un minuto y vuelve a probar.",
-    };
-  }
-
-  return { paso: "codigo", email };
-}
-
-// Paso 2: comprobar el código y abrir la sesión.
-export async function verificarCodigo(
-  prev: LoginState,
-  formData: FormData,
-): Promise<LoginState> {
-  const email = normalizarEmail(formData.get("email"));
-  const codigo = normalizarCodigo(formData.get("codigo"));
-  if (!email) {
-    return { paso: "email", error: "Vuelve a escribir tu email." };
-  }
-  if (!codigo) {
-    return { paso: "codigo", email, error: "El código son solo cifras." };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({
+  const { error } = await supabase.auth.signInWithOtp({
     email,
-    token: codigo,
-    type: "email",
+    options: emailRedirectTo ? { emailRedirectTo } : undefined,
   });
   if (error) {
     return {
-      ...prev,
-      paso: "codigo",
+      enviado: false,
       email,
-      error: "El código no es correcto o ha caducado. Pide uno nuevo si hace falta.",
+      error: "No he podido enviar el email. Espera un minuto y vuelve a probar.",
     };
   }
 
-  redirect("/");
+  return { enviado: true, email };
 }

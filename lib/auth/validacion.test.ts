@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizarCodigo, normalizarEmail } from "./validacion";
+import { enlaceDeVuelta, normalizarEmail } from "./validacion";
 
 describe("normalizarEmail", () => {
   it("acepta un email y lo pasa a minúsculas sin espacios", () => {
@@ -14,17 +14,23 @@ describe("normalizarEmail", () => {
   });
 });
 
-describe("normalizarCodigo", () => {
-  it("acepta códigos de 6 a 8 cifras, aunque lleven espacios", () => {
-    expect(normalizarCodigo("123456")).toBe("123456");
-    expect(normalizarCodigo("123 456")).toBe("123456");
-    expect(normalizarCodigo("12345678")).toBe("12345678");
+describe("enlaceDeVuelta", () => {
+  it("usa la cabecera origin si existe", () => {
+    expect(
+      enlaceDeVuelta({ origin: "https://diaclaro.vercel.app", host: "otro", proto: "http" }),
+    ).toBe("https://diaclaro.vercel.app/auth/confirm");
   });
 
-  it("rechaza códigos con letras o de longitud incorrecta", () => {
-    expect(normalizarCodigo("12345")).toBeNull();
-    expect(normalizarCodigo("123456789")).toBeNull();
-    expect(normalizarCodigo("12a456")).toBeNull();
-    expect(normalizarCodigo(undefined)).toBeNull();
+  it("si no hay origin, lo monta con el host y el protocolo", () => {
+    expect(
+      enlaceDeVuelta({ origin: null, host: "localhost:3000", proto: "http" }),
+    ).toBe("http://localhost:3000/auth/confirm");
+    expect(
+      enlaceDeVuelta({ origin: null, host: "diaclaro.vercel.app", proto: null }),
+    ).toBe("https://diaclaro.vercel.app/auth/confirm");
+  });
+
+  it("devuelve null si no hay ningún dato", () => {
+    expect(enlaceDeVuelta({ origin: null, host: null, proto: null })).toBeNull();
   });
 });
