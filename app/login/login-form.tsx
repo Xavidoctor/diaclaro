@@ -1,58 +1,57 @@
 "use client";
 
 import { useActionState } from "react";
-import {
-  enviarCodigo,
-  verificarCodigo,
-  type LoginState,
-} from "@/app/login/actions";
+import { enviarEnlace, type LoginState } from "@/app/login/actions";
 
-const estadoInicial: LoginState = { paso: "email" };
+const estadoInicial: LoginState = { enviado: false };
 
-// Decide qué acción usar según el paso en el que estemos.
+// "Usar otro email" vuelve al principio; el resto envía el enlace.
 async function accion(prev: LoginState, formData: FormData) {
   if (formData.get("intencion") === "otro-email") return estadoInicial;
-  return prev.paso === "email"
-    ? enviarCodigo(prev, formData)
-    : verificarCodigo(prev, formData);
+  return enviarEnlace(prev, formData);
 }
 
-export function LoginForm() {
-  const [estado, formAction, enviando] = useActionState(accion, estadoInicial);
+export function LoginForm({ errorInicial }: { errorInicial?: string }) {
+  const [estado, formAction, enviando] = useActionState(accion, {
+    ...estadoInicial,
+    error: errorInicial,
+  });
+
+  if (estado.enviado) {
+    return (
+      <form action={formAction} className="card flex flex-col gap-4">
+        <p>
+          Te he enviado un enlace a <strong>{estado.email}</strong>.
+        </p>
+        <p className="text-sm text-muted">
+          Ábrelo en este mismo móvil u ordenador y entrarás directamente. Si no
+          lo ves, mira en la carpeta de spam.
+        </p>
+        <button
+          type="submit"
+          name="intencion"
+          value="otro-email"
+          className="text-sm text-muted underline"
+        >
+          Usar otro email
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      {estado.paso === "email" ? (
-        <label className="flex flex-col gap-2 text-sm font-medium">
-          Tu email
-          <input
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            defaultValue={estado.email}
-            className="input"
-          />
-        </label>
-      ) : (
-        <>
-          <input type="hidden" name="email" value={estado.email} />
-          <p className="text-sm text-muted">
-            Te he enviado un código a <strong>{estado.email}</strong>.
-          </p>
-          <label className="flex flex-col gap-2 text-sm font-medium">
-            Código
-            <input
-              name="codigo"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              required
-              autoFocus
-              className="input tracking-widest"
-            />
-          </label>
-        </>
-      )}
+      <label className="flex flex-col gap-2 text-sm font-medium">
+        Tu email
+        <input
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          defaultValue={estado.email}
+          className="input"
+        />
+      </label>
 
       {estado.error && (
         <p role="alert" className="text-sm text-danger">
@@ -61,24 +60,8 @@ export function LoginForm() {
       )}
 
       <button type="submit" disabled={enviando} className="button-primary">
-        {enviando
-          ? "Un momento…"
-          : estado.paso === "email"
-            ? "Enviarme un código"
-            : "Entrar"}
+        {enviando ? "Un momento…" : "Enviarme un enlace"}
       </button>
-
-      {estado.paso === "codigo" && (
-        <button
-          type="submit"
-          name="intencion"
-          value="otro-email"
-          formNoValidate
-          className="text-sm text-muted underline"
-        >
-          Usar otro email
-        </button>
-      )}
     </form>
   );
 }

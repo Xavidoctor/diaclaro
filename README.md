@@ -20,7 +20,8 @@ Tu centro de organización personal: captura rápida, plan del día realista, á
 ```
 app/                 Pantallas (cada carpeta es una dirección: app/login → /login)
   page.tsx           Pantalla Hoy (de momento, un saludo)
-  login/             Acceso con código por email
+  login/             Acceso con enlace por email
+  auth/confirm/      Adonde vuelve el enlace del email: abre la sesión
   manifest.ts        Datos para instalarla como app (PWA)
 lib/                 Lógica que no es pantalla
   supabase/          Conexión con Supabase (servidor y proxy)
@@ -54,8 +55,10 @@ npm run build     # compila como en producción
 
 1. Crea un proyecto gratuito en [supabase.com](https://supabase.com) (región en Europa).
 2. En **Project Settings → API Keys**, copia la URL del proyecto y la *publishable key* en `.env.local` y en Vercel.
-3. En **Authentication → Email Templates**, añade el código a las plantillas **Confirm signup** (la usa el primer acceso) y **Magic Link** (los siguientes), por ejemplo: `Tu código de DíaClaro es: {{ .Token }}`. La app pide el código en lugar de usar el enlace, así funciona también desde la app instalada en el móvil.
-4. En **Authentication → URL Configuration**, pon como *Site URL* la dirección de Vercel.
+3. Las plantillas de email se quedan como vienen: el email trae un enlace para entrar. (Para editarlas, Supabase pide un servidor de correo propio; no hace falta.)
+4. En **Authentication → URL Configuration**:
+   - *Site URL*: la dirección de Vercel, por ejemplo `https://diaclaro.vercel.app`.
+   - *Redirect URLs*: añade `https://diaclaro.vercel.app/auth/confirm` (con tu dirección real) y, para probar en tu ordenador, `http://localhost:3000/auth/confirm`.
 5. Cuando hayas entrado por primera vez, en **Authentication → Sign In / Providers** desactiva **Allow new users to sign up**. Así nadie más puede crearse una cuenta.
 
 ## Publicar en Vercel (una vez)
@@ -69,4 +72,5 @@ npm run build     # compila como en producción
 
 - Las claves nunca se suben al repositorio (`.env.local` está en `.gitignore`).
 - La *publishable key* es pública por diseño; los datos se protegen con reglas RLS en cada tabla (desde la etapa 1).
+- Abre el enlace del email en el mismo navegador donde lo pediste (en Android, la app instalada comparte sesión con Chrome).
 - Activa la verificación en dos pasos en GitHub, Supabase, Vercel y tu email.

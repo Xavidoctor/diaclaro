@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { supabaseEnv } from "@/lib/supabase/env";
 
 // Rutas que se pueden abrir sin haber iniciado sesión.
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/auth"];
 
 // Se ejecuta antes de cada petición (desde proxy.ts):
 // 1. renueva la sesión si ha caducado y guarda las cookies nuevas;
