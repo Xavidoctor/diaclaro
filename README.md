@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DíaClaro
 
-## Getting Started
+Tu centro de organización personal: captura rápida, plan del día realista, áreas y proyectos, y rutinas. Web instalable en el móvil.
 
-First, run the development server:
+- Propuesta y plan: [DíaClaro v2](https://claude.ai/artifact/2zyaRKY9L5brpHoRtUDRtp)
+- Etapa actual: **0, preparación** (proyecto, login y publicación).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Tecnología
+
+| Pieza | Para qué |
+| --- | --- |
+| [Next.js](https://nextjs.org) + TypeScript | Pantallas y funciones de servidor en un solo proyecto |
+| Tailwind CSS | Estilos |
+| [Supabase](https://supabase.com) | Base de datos Postgres y login |
+| [Vercel](https://vercel.com) | Publicación de la web |
+| Vitest | Pruebas automáticas |
+
+## Cómo está organizado
+
+```
+app/                 Pantallas (cada carpeta es una dirección: app/login → /login)
+  page.tsx           Pantalla Hoy (de momento, un saludo)
+  login/             Acceso con código por email
+  manifest.ts        Datos para instalarla como app (PWA)
+lib/                 Lógica que no es pantalla
+  supabase/          Conexión con Supabase (servidor y proxy)
+  auth/validacion.ts Comprobaciones del formulario de acceso, con pruebas
+  saludo.ts          Saludo según la hora, con pruebas
+proxy.ts             Se ejecuta antes de cada petición: renueva la sesión y protege las páginas
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Regla del proyecto: los cálculos (horarios, planificación) viven en `lib/` como funciones puras con pruebas; las pantallas solo muestran y recogen datos.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Ponerlo en marcha en tu ordenador
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Necesitas [Node.js](https://nodejs.org) 22 o superior.
 
-## Learn More
+```bash
+npm install
+cp .env.example .env.local   # y rellena los dos valores de Supabase
+npm run dev                  # abre http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+Otras órdenes útiles:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm test          # pruebas automáticas
+npm run lint      # revisa el estilo del código
+npm run typecheck # revisa los tipos de TypeScript
+npm run build     # compila como en producción
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Configurar Supabase (una vez)
 
-## Deploy on Vercel
+1. Crea un proyecto gratuito en [supabase.com](https://supabase.com) (región en Europa).
+2. En **Project Settings → API Keys**, copia la URL del proyecto y la *publishable key* en `.env.local` y en Vercel.
+3. En **Authentication → Email Templates**, añade el código a las plantillas **Confirm signup** (la usa el primer acceso) y **Magic Link** (los siguientes), por ejemplo: `Tu código de DíaClaro es: {{ .Token }}`. La app pide el código en lugar de usar el enlace, así funciona también desde la app instalada en el móvil.
+4. En **Authentication → URL Configuration**, pon como *Site URL* la dirección de Vercel.
+5. Cuando hayas entrado por primera vez, en **Authentication → Sign In / Providers** desactiva **Allow new users to sign up**. Así nadie más puede crearse una cuenta.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Publicar en Vercel (una vez)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Entra en [vercel.com](https://vercel.com) con tu cuenta de GitHub (plan Hobby, gratuito).
+2. **Add New → Project** e importa este repositorio.
+3. En **Environment Variables**, añade `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+4. **Deploy**. A partir de ahí, cada cambio en `main` se publica solo.
+
+## Seguridad
+
+- Las claves nunca se suben al repositorio (`.env.local` está en `.gitignore`).
+- La *publishable key* es pública por diseño; los datos se protegen con reglas RLS en cada tabla (desde la etapa 1).
+- Activa la verificación en dos pasos en GitHub, Supabase, Vercel y tu email.
