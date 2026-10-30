@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { sumarDias } from "./fechas";
 
 // Reglas de la Bandeja. Son funciones puras: no tocan la base de datos,
 // así que se pueden probar con `npm test`.
@@ -161,3 +162,28 @@ export function enlaceNotas(filtros: {
   const texto = params.toString();
   return texto ? `/bandeja?${texto}` : "/bandeja";
 }
+
+// Las tareas que hay que tener en cuenta hoy, para la pantalla Hoy.
+// "hoy" es una fecha como "2026-10-30" (en tu zona horaria).
+// Solo cuentan las pendientes; las de fecha futura entran si caen en los
+// próximos `diasAviso` días, para que no te pillen por sorpresa.
+export function tareasParaHoy<T extends TareaParaAgrupar>(
+  tareas: T[],
+  hoy: string,
+  diasAviso = 3,
+) {
+  const pendientes = tareas.filter((t) => !t.done_at);
+  const conFecha = pendientes
+    .filter((t) => t.due_date)
+    .sort((a, b) => a.due_date!.localeCompare(b.due_date!));
+  const limite = sumarDias(hoy, diasAviso);
+  return {
+    atrasadas: conFecha.filter((t) => t.due_date! < hoy),
+    deHoy: conFecha.filter((t) => t.due_date === hoy),
+    proximas: conFecha.filter(
+      (t) => t.due_date! > hoy && t.due_date! <= limite,
+    ),
+    sinFecha: pendientes.filter((t) => !t.due_date).length,
+  };
+}
+

@@ -7,6 +7,7 @@ import {
 } from "@/app/actions";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
+import { TareasDeHoy } from "@/app/componentes/tareas-de-hoy";
 import { SaludoLocal } from "@/app/saludo-local";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
@@ -25,7 +26,7 @@ export default async function HoyPage() {
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) redirect("/login");
 
-  // Primera versión de Hoy: tu agenda y tus rutinas del día.
+  // Hoy: tu agenda, tus tareas y tus rutinas del día.
   const { timezone } = await leerAjustes();
   const hoy = hoyEn(timezone);
   const [eventos, rutinas, registros] = await Promise.all([
@@ -88,6 +89,8 @@ export default async function HoyPage() {
             </ul>
           )}
         </section>
+
+        <TareasDeHoy hoy={hoy} />
 
         <section className="flex flex-col gap-3">
           <header className="flex items-baseline justify-between gap-4">

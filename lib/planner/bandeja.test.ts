@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   agruparTareas,
+  tareasParaHoy,
   enlaceNotas,
   limpiarBusqueda,
   ordenarNotas,
@@ -208,5 +209,42 @@ describe("enlaceNotas", () => {
     expect(enlaceNotas({ ver: "archivo", etiqueta: "año", tipo: "idea" })).toBe(
       "/bandeja?ver=archivo&etiqueta=a%C3%B1o&tipo=idea",
     );
+  });
+});
+
+describe("tareasParaHoy", () => {
+  const t = (
+    id: string,
+    due_date: string | null,
+    done_at: string | null = null,
+  ) => ({
+    id,
+    due_date,
+    done_at,
+    created_at: "2026-10-01T00:00:00Z",
+  });
+
+  it("separa atrasadas, de hoy y próximas, y cuenta las que no tienen fecha", () => {
+    const r = tareasParaHoy(
+      [
+        t("vieja", "2026-10-28"),
+        t("hoy", "2026-10-30"),
+        t("lunes", "2026-11-02"),
+        t("lejos", "2026-11-20"),
+        t("sin1", null),
+        t("sin2", null),
+        t("hecha", "2026-10-30", "2026-10-30T09:00:00Z"),
+      ],
+      "2026-10-30",
+    );
+    expect(r.atrasadas.map((x) => x.id)).toEqual(["vieja"]);
+    expect(r.deHoy.map((x) => x.id)).toEqual(["hoy"]);
+    expect(r.proximas.map((x) => x.id)).toEqual(["lunes"]);
+    expect(r.sinFecha).toBe(2);
+  });
+
+  it("cruza bien el cambio de mes", () => {
+    const r = tareasParaHoy([t("dia1", "2026-12-01")], "2026-11-29");
+    expect(r.proximas.map((x) => x.id)).toEqual(["dia1"]);
   });
 });
