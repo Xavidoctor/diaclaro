@@ -14,7 +14,7 @@ import {
   leerRegla,
   tocaEseDia,
 } from "@/lib/planner/agenda";
-import { esFecha, hoyEn, nombreDia } from "@/lib/planner/fechas";
+import { esFecha, nombreDia } from "@/lib/planner/fechas";
 
 export const metadata: Metadata = { title: "Evento" };
 
@@ -116,7 +116,7 @@ export default async function EventoPage({
         <h2 className="text-lg font-semibold">
           {evento.repeat_rule ? "Todos los días" : "Datos"}
         </h2>
-        <FormEvento evento={evento} diaInicial={hoyEn()} />
+        <FormEvento evento={evento} diaInicial={evento.start_date} />
       </section>
 
       <form action={eliminarEvento} className="border-t border-border pt-4">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FormEvento } from "@/app/agenda/form-evento";
+import { leerAjustes } from "@/lib/data/ajustes";
 import { leerFechaParam } from "@/lib/planner/agenda";
 import { hoyEn } from "@/lib/planner/fechas";
 
@@ -11,7 +12,7 @@ export default async function NuevoEventoPage({
   searchParams,
 }: PageProps<"/agenda/nuevo">) {
   const params = await searchParams;
-  const dia = leerFechaParam(params.dia, hoyEn());
+  const dia = leerFechaParam(params.dia, hoyEn((await leerAjustes()).timezone));
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
