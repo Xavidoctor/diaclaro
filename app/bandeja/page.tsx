@@ -88,10 +88,12 @@ async function PestanaNotas({
   filtros: FiltrosNotas;
 }) {
   const { busqueda, etiqueta, tipo } = filtros;
-  const [notas, conEtiquetas] = await Promise.all([
+  const [notas, conEtiquetas, { areas, proyectos }] = await Promise.all([
     listarNotas(ver, filtros).then(ordenarNotas),
     listarEtiquetasUsadas(),
+    cargarOpcionesProyecto(),
   ]);
+  const grupos = opcionesProyecto(areas, proyectos);
   const etiquetas = contarEtiquetas(conEtiquetas);
   const hayFiltros = Boolean(busqueda || etiqueta || tipo);
 
@@ -199,7 +201,7 @@ async function PestanaNotas({
       ) : (
         <ul className="flex flex-col gap-3">
           {notas.map((nota) => (
-            <NotaItem key={nota.id} nota={nota} ver={ver} />
+            <NotaItem key={nota.id} nota={nota} ver={ver} grupos={grupos} />
           ))}
         </ul>
       )}
