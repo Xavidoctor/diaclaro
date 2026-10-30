@@ -5,6 +5,7 @@ import { CapturaRapida } from "@/app/componentes/captura-rapida";
 import { NotaItem } from "@/app/bandeja/nota-item";
 import { TareaItem } from "@/app/bandeja/tarea-item";
 import { badgeVariants } from "@/components/ui/badge";
+import { iaDisponible } from "@/lib/ai/groq";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import {
   listarEtiquetasUsadas,
@@ -94,6 +95,7 @@ async function PestanaNotas({
     cargarOpcionesProyecto(),
   ]);
   const grupos = opcionesProyecto(areas, proyectos);
+  const ia = iaDisponible();
   const etiquetas = contarEtiquetas(conEtiquetas);
   const hayFiltros = Boolean(busqueda || etiqueta || tipo);
 
@@ -201,7 +203,13 @@ async function PestanaNotas({
       ) : (
         <ul className="flex flex-col gap-3">
           {notas.map((nota) => (
-            <NotaItem key={nota.id} nota={nota} ver={ver} grupos={grupos} />
+            <NotaItem
+              key={nota.id}
+              nota={nota}
+              ver={ver}
+              grupos={grupos}
+              ia={ia}
+            />
           ))}
         </ul>
       )}

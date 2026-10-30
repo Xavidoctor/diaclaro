@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { proyectosParaIA } from "@/app/componentes/proyectos-ia";
 import { redirect } from "next/navigation";
 import { iaDisponible, pedirTexto } from "@/lib/ai/groq";
 import {
@@ -8,14 +9,11 @@ import {
   MAX_TEXTO_IA,
   mensajesInterpretar,
   type Propuesta,
-  type ProyectoParaIA,
 } from "@/lib/ai/interpretar-texto";
 import { crearEvento } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
-import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { crearNota, crearTarea } from "@/lib/data/bandeja";
 import { apuntarUsoIA, MAX_USOS_IA_DIA } from "@/lib/data/uso-ia";
-import { opcionesProyecto } from "@/lib/planner/areas";
 import { primerEnlace } from "@/lib/planner/bandeja";
 import { extraerEtiquetas, tipoInicial } from "@/lib/planner/etiquetas";
 import { hoyEn } from "@/lib/planner/fechas";
@@ -29,16 +27,6 @@ async function exigirSesion() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) redirect("/login");
-}
-
-// Tus proyectos activos, con su área, para que la IA pueda sugerir uno.
-async function proyectosParaIA(): Promise<ProyectoParaIA[]> {
-  const { areas, proyectos } = await cargarOpcionesProyecto();
-  return opcionesProyecto(areas, proyectos).flatMap((g) =>
-    g.proyectos
-      .filter((p) => !p.archivado)
-      .map((p) => ({ id: p.id, nombre: p.name, area: g.area })),
-  );
 }
 
 export type InterpretarState = {
