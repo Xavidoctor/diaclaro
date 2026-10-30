@@ -24,7 +24,7 @@ export function SaludoLocal() {
 
   return (
     <>
-      <span className="block text-sm font-normal text-muted first-letter:uppercase">
+      <span className="block text-xs font-semibold uppercase tracking-wider text-muted">
         {dia}
       </span>
       {saludo(ahora.getHours())}
