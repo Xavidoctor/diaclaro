@@ -27,6 +27,7 @@ app/                 Pantallas (cada carpeta es una dirección: app/login → /l
   bandeja/           Bandeja: pestañas Notas y Tareas, archivo y papelera
   agenda/            Agenda: compromisos de los próximos 14 días, con repeticiones y cambios de un día
   ajustes/           Ajustes: horas habituales, zona horaria y rutinas
+  areas/             Áreas: tus grandes temas, con sus proyectos y asignaturas y las horas de cada semana
   componentes/       Piezas que usan varias pantallas (captura, menú de abajo)
   login/             Acceso con enlace por email
   auth/confirm/      Adonde vuelve el enlace del email: abre la sesión
@@ -67,11 +68,14 @@ npm run build     # compila como en producción
 
 1. Crea un proyecto gratuito en [supabase.com](https://supabase.com) (región en Europa).
 2. En **Project Settings → API Keys**, copia la URL del proyecto y la *publishable key* en `.env.local` y en Vercel.
-3. Las plantillas de email se quedan como vienen: el email trae un enlace para entrar. (Para editarlas, Supabase pide un servidor de correo propio; no hace falta.)
+3. El correo de acceso sale por **SMTP de Gmail** (gratis), así no hay límite de pocos emails por hora y las plantillas se pueden editar:
+   - En la cuenta de Google que envía los correos, activa la verificación en dos pasos y crea una **contraseña de aplicación**.
+   - En **Authentication → Emails → SMTP Settings**, activa *Custom SMTP* con host `smtp.gmail.com`, puerto `465`, tu dirección de Gmail como usuario y la contraseña de aplicación (nunca la contraseña normal).
+   - En **Authentication → Emails → Templates**, las plantillas están traducidas al español. El enlace sigue siendo el de siempre: el email trae un enlace para entrar.
 4. En **Authentication → URL Configuration**:
    - *Site URL*: la dirección de Vercel, por ejemplo `https://diaclaro.vercel.app`.
    - *Redirect URLs*: añade `https://diaclaro.vercel.app/auth/confirm` (con tu dirección real) y, para probar en tu ordenador, `http://localhost:3000/auth/confirm`.
-5. Cuando hayas entrado por primera vez, en **Authentication → Sign In / Providers** desactiva **Allow new users to sign up**. Así nadie más puede crearse una cuenta.
+5. El registro está **abierto** (**Authentication → Sign In / Providers → Allow new users to sign up** activado), para que tus amigos puedan crearse una cuenta con su email. Cada persona solo ve sus propios datos gracias a las reglas RLS de cada tabla. Si algún día quieres cerrarlo, desactiva esa opción.
 
 ## Aplicar los cambios de la base de datos (migraciones)
 
@@ -87,6 +91,7 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | `20261030010000_bandeja_tipos_y_etiquetas.sql` | Tipo de nota y etiquetas en `notes` |
 | `20261030020000_agenda_eventos.sql` | Tablas `events` (compromisos, que pueden repetirse) y `event_exceptions` (cambios de un solo día), con sus reglas RLS |
 | `20261030030000_ajustes_y_rutinas.sql` | Tablas `settings` (tus ajustes), `routines` (rutinas) y `routine_logs` (cada vez que marcas una como hecha), con sus reglas RLS |
+| `20261030040000_areas_y_proyectos.sql` | Tablas `areas` (con sus horas a la semana y si son tiempo personal) y `projects` (proyectos y asignaturas de cada área), con sus reglas RLS |
 
 ## Publicar en Vercel (una vez)
 
