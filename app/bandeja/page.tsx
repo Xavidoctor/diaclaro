@@ -4,24 +4,47 @@ import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
 import { NotaItem } from "@/app/bandeja/nota-item";
 import { TareaItem } from "@/app/bandeja/tarea-item";
-import { listarNotas, listarTareas, type VistaNotas } from "@/lib/data/bandeja";
+import { badgeVariants } from "@/components/ui/badge";
+import {
+  listarEtiquetasUsadas,
+  listarNotas,
+  listarTareas,
+  type FiltrosNotas,
+  type VistaNotas,
+} from "@/lib/data/bandeja";
 import {
   agruparTareas,
+  enlaceNotas,
   limpiarBusqueda,
   ordenarNotas,
 } from "@/lib/planner/bandeja";
+import {
+  NOMBRE_TIPO,
+  TIPOS_NOTA,
+  contarEtiquetas,
+  esTipoNota,
+  limpiarEtiqueta,
+} from "@/lib/planner/etiquetas";
 
 export const metadata: Metadata = { title: "Bandeja" };
 
 // La Bandeja: todo lo que apuntas, en dos pestañas (Notas y Tareas).
-// Lo que se ve depende de la dirección: /bandeja?pestana=tareas, ?ver=archivo, ?q=texto…
+// Lo que se ve depende de la dirección: /bandeja?pestana=tareas, ?ver=archivo, ?q=texto,
+// ?etiqueta=ade, ?tipo=idea…
 export default async function BandejaPage({
   searchParams,
 }: PageProps<"/bandeja">) {
   const params = await searchParams;
   const pestana = params.pestana === "tareas" ? "tareas" : "notas";
   const ver = elegirVista(params.ver);
-  const busqueda = limpiarBusqueda(params.q);
+  const filtros: FiltrosNotas = {
+    busqueda: limpiarBusqueda(params.q),
+    etiqueta:
+      typeof params.etiqueta === "string"
+        ? limpiarEtiqueta(params.etiqueta)
+        : null,
+    tipo: esTipoNota(params.tipo) ? params.tipo : null,
+  };
 
   return (
     <>
@@ -38,7 +61,7 @@ export default async function BandejaPage({
         </nav>
 
         {pestana === "notas" ? (
-          <PestanaNotas ver={ver} busqueda={busqueda} />
+          <PestanaNotas ver={ver} filtros={filtros} />
         ) : (
           <PestanaTareas papelera={ver === "papelera"} />
         )}
@@ -54,37 +77,87 @@ function elegirVista(valor: unknown): VistaNotas {
 
 async function PestanaNotas({
   ver,
-  busqueda,
+  filtros,
 }: {
   ver: VistaNotas;
-  busqueda: string;
+  filtros: FiltrosNotas;
 }) {
-  const notas = ordenarNotas(await listarNotas(ver, busqueda));
+  const { busqueda, etiqueta, tipo } = filtros;
+  const [notas, conEtiquetas] = await Promise.all([
+    listarNotas(ver, filtros).then(ordenarNotas),
+    listarEtiquetasUsadas(),
+  ]);
+  const etiquetas = contarEtiquetas(conEtiquetas);
+  const hayFiltros = Boolean(busqueda || etiqueta || tipo);
 
   return (
     <section className="flex flex-col gap-4">
       {ver === "activas" && <CapturaRapida />}
 
-      <form role="search" action="/bandeja" className="flex gap-2">
+      <form role="search" action="/bandeja" className="flex flex-col gap-2">
         {ver !== "activas" && <input type="hidden" name="ver" value={ver} />}
-        <label htmlFor="buscar" className="sr-only">
-          Buscar en las notas
-        </label>
-        <input
-          id="buscar"
-          name="q"
-          type="search"
-          defaultValue={busqueda}
-          placeholder="Buscar en las notas"
-          className="input flex-1 py-2"
-        />
+        {etiqueta && <input type="hidden" name="etiqueta" value={etiqueta} />}
+        <div className="flex gap-2">
+          <label htmlFor="buscar" className="sr-only">
+            Buscar en las notas
+          </label>
+          <input
+            id="buscar"
+            name="q"
+            type="search"
+            defaultValue={busqueda}
+            placeholder="Buscar en las notas"
+            className="input min-w-0 flex-1 py-2"
+          />
+          <label htmlFor="tipo" className="sr-only">
+            Tipo de nota
+          </label>
+          <select
+            id="tipo"
+            name="tipo"
+            defaultValue={tipo ?? ""}
+            className="input w-32 px-2 py-2 text-sm"
+          >
+            <option value="">Todos</option>
+            {TIPOS_NOTA.map((t) => (
+              <option key={t} value={t}>
+                {NOMBRE_TIPO[t]}
+              </option>
+            ))}
+          </select>
+        </div>
         <button
           type="submit"
-          className="rounded-xl border border-border px-4 text-sm"
+          className="self-start rounded-xl border border-border px-4 py-2 text-sm"
         >
           Buscar
         </button>
       </form>
+
+      {etiquetas.length > 0 && (
+        <nav aria-label="Filtrar por etiqueta" className="flex flex-wrap gap-2">
+          {etiquetas.map(({ etiqueta: e, cuantas }) => {
+            const activa = e === etiqueta;
+            return (
+              <Link
+                key={e}
+                href={enlaceNotas({
+                  ver,
+                  q: busqueda,
+                  tipo,
+                  etiqueta: activa ? null : e,
+                })}
+                aria-current={activa ? "page" : undefined}
+                className={badgeVariants({
+                  variant: activa ? "default" : "outline",
+                })}
+              >
+                #{e} · {cuantas}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
 
       <nav aria-label="Qué notas ver" className="flex gap-4 text-sm">
         <Filtro href="/bandeja" activo={ver === "activas"}>
@@ -96,14 +169,22 @@ async function PestanaNotas({
         <Filtro href="/bandeja?ver=papelera" activo={ver === "papelera"}>
           Papelera
         </Filtro>
+        {hayFiltros && (
+          <Link
+            href={enlaceNotas({ ver })}
+            className="ml-auto text-muted underline"
+          >
+            Quitar filtros
+          </Link>
+        )}
       </nav>
 
       {notas.length === 0 ? (
-        <p className="text-muted">{mensajeVacio(ver, busqueda)}</p>
+        <p className="text-muted">{mensajeVacio(ver, hayFiltros)}</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {notas.map((nota) => (
-            <NotaItem key={nota.id} nota={nota} />
+            <NotaItem key={nota.id} nota={nota} ver={ver} />
           ))}
         </ul>
       )}
@@ -111,8 +192,8 @@ async function PestanaNotas({
   );
 }
 
-function mensajeVacio(ver: VistaNotas, busqueda: string) {
-  if (busqueda) return `No hay notas con “${busqueda}”.`;
+function mensajeVacio(ver: VistaNotas, hayFiltros: boolean) {
+  if (hayFiltros) return "No hay notas con estos filtros.";
   if (ver === "archivo") return "El archivo está vacío.";
   if (ver === "papelera") return "La papelera está vacía.";
   return "Nada por aquí. Apunta lo primero que tengas en la cabeza.";

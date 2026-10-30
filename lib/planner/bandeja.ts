@@ -144,3 +144,20 @@ export function agruparTareas<T extends TareaParaAgrupar>(tareas: T[]) {
     .sort((a, b) => b.done_at!.localeCompare(a.done_at!));
   return { sinPlanificar, conFecha, hechas };
 }
+
+// Dirección de la pestaña Notas con sus filtros, sin los que estén vacíos:
+// { ver: "archivo", etiqueta: "ade" } → "/bandeja?ver=archivo&etiqueta=ade".
+export function enlaceNotas(filtros: {
+  ver?: "activas" | "archivo" | "papelera";
+  q?: string;
+  etiqueta?: string | null;
+  tipo?: string | null;
+}): string {
+  const params = new URLSearchParams();
+  if (filtros.ver && filtros.ver !== "activas") params.set("ver", filtros.ver);
+  if (filtros.q) params.set("q", filtros.q);
+  if (filtros.etiqueta) params.set("etiqueta", filtros.etiqueta);
+  if (filtros.tipo) params.set("tipo", filtros.tipo);
+  const texto = params.toString();
+  return texto ? `/bandeja?${texto}` : "/bandeja";
+}

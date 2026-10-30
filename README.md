@@ -17,6 +17,7 @@ Tu centro de organización personal: captura rápida, plan del día realista, á
 | [rrule](https://github.com/jkbrzt/rrule) (BSD-3) | Calcula los días de los eventos que se repiten, con el formato estándar de los calendarios |
 | [date-fns](https://date-fns.org) (MIT) | Sumar días y escribir fechas en español |
 | Zod | Comprobar los datos que llegan de los formularios |
+| [shadcn/ui](https://ui.shadcn.com) | Componentes ya hechos (se copian a `components/ui/` y son nuestros) |
 
 ## Cómo está organizado
 
@@ -34,6 +35,7 @@ lib/                 Lógica que no es pantalla
   supabase/          Conexión con Supabase (servidor y proxy)
   planner/           Reglas puras (sin base de datos), con pruebas
   data/              Única parte que lee y guarda en Supabase
+components/ui/       Componentes de shadcn/ui (se añaden con `npx shadcn@latest add <nombre>`)
   auth/validacion.ts Comprobaciones del formulario de acceso, con pruebas
   saludo.ts          Saludo según la hora, con pruebas
 supabase/migrations/ Cambios de la base de datos, en archivos SQL numerados por fecha
@@ -82,8 +84,9 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | Archivo | Qué crea |
 | --- | --- |
 | `20261030000000_bandeja_notas_y_tareas.sql` | Tablas `notes` y `tasks`, con sus reglas RLS y la búsqueda en español |
-| `20261030030000_ajustes_y_rutinas.sql` | Tablas `settings` (tus ajustes), `routines` (rutinas) y `routine_logs` (cada vez que marcas una como hecha), con sus reglas RLS |
+| `20261030010000_bandeja_tipos_y_etiquetas.sql` | Tipo de nota y etiquetas en `notes` |
 | `20261030020000_agenda_eventos.sql` | Tablas `events` (compromisos, que pueden repetirse) y `event_exceptions` (cambios de un solo día), con sus reglas RLS |
+| `20261030030000_ajustes_y_rutinas.sql` | Tablas `settings` (tus ajustes), `routines` (rutinas) y `routine_logs` (cada vez que marcas una como hecha), con sus reglas RLS |
 
 ## Publicar en Vercel (una vez)
 

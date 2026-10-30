@@ -2,18 +2,38 @@
 
 import { useActionState } from "react";
 import { capturar, type CapturaState } from "@/app/bandeja/actions";
+import { useColaSinConexion } from "@/app/componentes/cola-sin-conexion";
 
 // El cuadro para apuntar algo en segundos: escribes y pulsas Enter.
-// Mayúsculas + Enter hace un salto de línea.
+// Mayúsculas + Enter hace un salto de línea. Escribe #algo para añadir una etiqueta.
+// Si no hay conexión, lo guarda en el móvil y lo envía cuando vuelve la red.
 export function CapturaRapida({
   destino = "nota",
 }: {
   destino?: "nota" | "tarea";
 }) {
+  const { pendientes, encolar } = useColaSinConexion();
+
+  async function accion(prev: CapturaState, formData: FormData) {
+    const texto = String(formData.get("texto") ?? "").trim();
+    const guardarEnElMovil = (): CapturaState => {
+      encolar(texto, destino);
+      return { envios: prev.envios + 1 };
+    };
+    if (texto && !navigator.onLine) return guardarEnElMovil();
+    try {
+      return await capturar(prev, formData);
+    } catch (error) {
+      // Un TypeError aquí significa que la petición no ha llegado (sin red).
+      if (texto && error instanceof TypeError) return guardarEnElMovil();
+      throw error;
+    }
+  }
+
   const [estado, formAction, guardando] = useActionState<
     CapturaState,
     FormData
-  >(capturar, { envios: 0 });
+  >(accion, { envios: 0 });
   const esTarea = destino === "tarea";
 
   return (
@@ -60,11 +80,13 @@ export function CapturaRapida({
         <p aria-live="polite" className="text-xs text-muted">
           {guardando
             ? "Guardando…"
-            : estado.envios > 0
-              ? "Guardado en la Bandeja."
-              : esTarea
-                ? "Enter para guardar la tarea."
-                : "Enter para guardar. Decides después si es nota o tarea."}
+            : pendientes > 0
+              ? `Sin conexión: ${pendientes === 1 ? "1 captura guardada" : `${pendientes} capturas guardadas`} en el móvil. Se enviarán al volver la red.`
+              : estado.envios > 0
+                ? "Guardado en la Bandeja."
+                : esTarea
+                  ? "Enter para guardar la tarea."
+                  : "Enter para guardar. Usa #etiqueta si quieres clasificarla."}
         </p>
       )}
     </form>
