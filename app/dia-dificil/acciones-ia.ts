@@ -10,7 +10,7 @@ import {
 } from "@/lib/ai/dia-dificil";
 import { iaDisponible, pedirTexto } from "@/lib/ai/groq";
 import { leerAjustes } from "@/lib/data/ajustes";
-import { apuntarUsoIA, MAX_USOS_IA_DIA } from "@/lib/data/uso-ia";
+import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
 import { leerMotivo } from "@/lib/planner/dia-dificil";
 import { hoyEn } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
@@ -25,7 +25,7 @@ async function prepararIA(): Promise<string | null> {
   if (!iaDisponible()) return "La IA no está configurada.";
   const hoy = hoyEn((await leerAjustes()).timezone);
   if (!(await apuntarUsoIA(hoy)))
-    return `Hoy ya has usado la IA ${MAX_USOS_IA_DIA} veces. Elige el motivo con los botones.`;
+    return `Hoy ya has usado la IA ${await topeIA()} veces. Elige el motivo con los botones.`;
   return null;
 }
 

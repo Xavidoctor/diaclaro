@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { deshacerRutinaHecha, marcarRutinaHecha } from "@/app/actions";
 import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
+import { AvisoDemo } from "@/app/componentes/aviso-demo";
 import { AvisoGoogle, EtiquetaGoogle } from "@/app/componentes/aviso-google";
 import { AvisoSobrecarga } from "@/app/componentes/aviso-sobrecarga";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
@@ -69,6 +70,8 @@ export default async function HoyPage() {
             <SaludoLocal nombre={perfil.display_name} />
           </h1>
         </header>
+
+        <AvisoDemo />
 
         <AyudaPantalla seccion="hoy" />
 

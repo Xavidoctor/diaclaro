@@ -6,7 +6,7 @@ import { mensajesResumirNotas } from "@/lib/ai/resumir-notas";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { leerProyecto } from "@/lib/data/areas";
 import { listarNotasDeProyecto } from "@/lib/data/bandeja";
-import { apuntarUsoIA, MAX_USOS_IA_DIA } from "@/lib/data/uso-ia";
+import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
 import { hoyEn } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,7 +37,7 @@ export async function resumirNotas(
   const hoy = hoyEn((await leerAjustes()).timezone);
   if (!(await apuntarUsoIA(hoy)))
     return {
-      error: `Hoy ya has usado la IA ${MAX_USOS_IA_DIA} veces. Mañana vuelve a estar disponible.`,
+      error: `Hoy ya has usado la IA ${await topeIA()} veces. Mañana vuelve a estar disponible.`,
     };
 
   const { mensajes, incluidas } = mensajesResumirNotas({

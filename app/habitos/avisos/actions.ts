@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { enviarAviso } from "@/lib/avisos/web-push";
+import { esCuentaDemo } from "@/lib/data/demo";
 import {
   borrarSuscripcion,
   guardarSuscripcion,
@@ -23,6 +24,12 @@ export type ResultadoAviso = { ok: true } | { ok: false; error: string };
 // Guarda la dirección de avisos de este dispositivo.
 export async function activarAvisos(datos: unknown): Promise<ResultadoAviso> {
   await exigirSesion();
+  // Las cuentas demo las comparte más gente: los avisos le llegarían a otro.
+  if (await esCuentaDemo())
+    return {
+      ok: false,
+      error: "En las cuentas de prueba no se pueden activar los avisos.",
+    };
   const r = leerSuscripcion(datos);
   if (!r.ok) return r;
   try {
