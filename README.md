@@ -93,6 +93,7 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | `20261030030000_ajustes_y_rutinas.sql` | Tablas `settings` (tus ajustes), `routines` (rutinas) y `routine_logs` (cada vez que marcas una como hecha), con sus reglas RLS |
 | `20261030040000_areas_y_proyectos.sql` | Tablas `areas` (con sus horas a la semana y si son tiempo personal) y `projects` (proyectos y asignaturas de cada área), con sus reglas RLS |
 | `20261030050000_tareas_en_proyectos.sql` | Columna `project_id` en `tasks`: cada tarea puede ir en un proyecto o asignatura (opcional) |
+| `20261030090000_temporizador_foco.sql` | Tabla `focus_sessions` (cada rato del temporizador de foco), con sus reglas RLS |
 
 ## Publicar en Vercel (una vez)
 
