@@ -30,6 +30,7 @@ export default async function ProgresoPage({
   const { dias, resumen } = await cargarProgreso(desde, hasta, ajustes);
   const esEsta = desde === estaSemana;
   const sinHoras = dias.every((d) => d.enPie === null && d.sueno === null);
+  const suenoAprox = dias.filter((d) => d.suenoAprox).length;
 
   return (
     <>
@@ -84,7 +85,11 @@ export default async function ProgresoPage({
             <Dato
               nombre="Sueño"
               media={resumen.sueno}
-              nota="Aproximado: con tu hora de acostarte prevista"
+              nota={
+                suenoAprox > 0
+                  ? `Aproximado en ${suenoAprox === 1 ? "1 día" : `${suenoAprox} días`}: falta «Me voy a dormir»`
+                  : "Con tu hora real de acostarte"
+              }
             />
             <Dato
               nombre="En la cama despierto"
@@ -131,8 +136,12 @@ export default async function ProgresoPage({
           <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-muted">
             <li>
               Sueño: desde tu hora de acostarte de la noche anterior hasta que
-              pulsas Despierto (o Levantado). La hora de acostarte es la que
-              pusiste ese día o la de Ajustes, así que es aproximado.
+              pulsas Despierto (o Levantado). La hora de acostarte es la de{" "}
+              <Link href="/dormir" className="enlace">
+                Me voy a dormir
+              </Link>
+              ; si no la pulsaste, se usa la hora prevista (la de ese día o la
+              de Ajustes) y el sueño sale como aproximado.
             </li>
             <li>En pie: desde Levantado hasta tu hora de acostarte.</li>
             <li>
@@ -233,7 +242,10 @@ function FilaDia({ dia }: { dia: DiaProgreso }) {
         </div>
       )}
       <dl className="grid grid-cols-3 gap-x-3 gap-y-1 text-sm">
-        <Par nombre="Sueño" valor={hora(dia.sueno)} />
+        <Par
+          nombre={dia.suenoAprox ? "Sueño (aprox.)" : "Sueño"}
+          valor={hora(dia.sueno)}
+        />
         <Par nombre="En pie" valor={hora(dia.enPie)} />
         <Par nombre="En la cama" valor={hora(dia.enCama)} />
         <Par nombre="Usadas" valor={hora(dia.usado)} />

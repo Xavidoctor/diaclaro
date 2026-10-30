@@ -34,6 +34,9 @@ export async function CierreDeHoy({ hoy }: { hoy: string }) {
           {deHoy ? "Ver" : "Cerrar el día"}
         </Link>
       </div>
+      <Link href="/dormir" className="enlace self-start text-sm">
+        Me voy a dormir
+      </Link>
     </section>
   );
 }

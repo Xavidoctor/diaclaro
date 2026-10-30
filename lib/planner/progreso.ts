@@ -14,8 +14,8 @@ import { diaEn } from "./resumen-semana";
 //   - Sin apuntar ("horas muertas"): lo que queda de "en pie" sin nada apuntado.
 //
 // Nunca se inventa una hora: si falta un dato, ese número se queda vacío.
-// De momento la hora de acostarte es la que pusiste (la de ese día o la de
-// Ajustes), no la real, así que el sueño es aproximado.
+// La hora de acostarte es la real (botón "Me voy a dormir") y, si no la hay,
+// la que pusiste para ese día o la de Ajustes: entonces el sueño es aproximado.
 
 const DIA = 24 * 60;
 
@@ -25,6 +25,7 @@ export type HorasDelDia = {
   despierto: string | null; // "9:50", botón "Despierto"
   levantado: string | null; // "10:12", botón "Levantado"
   acostarse: string | null; // "23:30" o "01:00": hora de acostarte de ese día
+  acostarseReal: boolean; // true si viene de "Me voy a dormir"
 };
 
 // Lo que has apuntado, con el día en que pasó.
@@ -43,6 +44,7 @@ export type MinutosDelDia = { on_date: string; minutes: number };
 export type DiaProgreso = {
   fecha: string;
   sueno: number | null;
+  suenoAprox: boolean; // true si se usó la hora de acostarte prevista
   enCama: number | null;
   enPie: number | null;
   usado: number;
@@ -164,9 +166,11 @@ export function calcularDia(datos: {
     dia.acostarse,
     ahora,
   );
+  const sueno = minutosDeSueno(anterior?.acostarse ?? null, despertar);
   return {
     fecha: dia.fecha,
-    sueno: minutosDeSueno(anterior?.acostarse ?? null, despertar),
+    sueno,
+    suenoAprox: sueno !== null && !anterior?.acostarseReal,
     enCama: minutosEnCama(dia.despierto, dia.levantado),
     enPie,
     usado,

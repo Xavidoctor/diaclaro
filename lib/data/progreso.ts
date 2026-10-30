@@ -1,8 +1,10 @@
 import "server-only";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
+import { listarHorasDormir } from "@/lib/data/dormir";
 import { minutosDeFocoPorTarea } from "@/lib/data/foco";
 import { horaCorta, ocurrenciasEntre } from "@/lib/planner/agenda";
 import type { Ajustes } from "@/lib/planner/ajustes";
+import type { HoraDormir } from "@/lib/planner/dormir";
 import { horaEn, hoyEn, sumarDias } from "@/lib/planner/fechas";
 import {
   calcularDia,
@@ -37,10 +39,14 @@ export async function cargarProgreso(
   const dias: string[] = [];
   for (let f = desde; f <= ultimo; f = sumarDias(f, 1)) dias.push(f);
 
-  const [inicios, sesiones, tareas, candidaturas, rutinas, eventos] =
+  const [inicios, dormir, sesiones, tareas, candidaturas, rutinas, eventos] =
     await Promise.all([
       // Un día antes, para saber a qué hora te acostaste la primera noche.
       iniciosEntre(sumarDias(desde, -1), ultimo),
+      // Si aún no está la tabla de "Me voy a dormir", se usa la hora prevista.
+      listarHorasDormir(sumarDias(desde, -1), ultimo).catch(
+        () => [] as HoraDormir[],
+      ),
       sesionesEntre(desde, ultimo),
       tareasHechasCerca(desde, ultimo),
       // Si falta la tabla de candidaturas, cuentan 0.
@@ -65,16 +71,21 @@ export async function cargarProgreso(
     ocurrenciasEntre(eventos, excepciones, desde, ultimo),
   );
 
-  // Las horas de cada día. La hora de acostarte es la que pusiste ese día
-  // en "Empiezo el día" o, si no, la de Ajustes.
+  // Las horas de cada día. La hora de acostarte es la real ("Me voy a
+  // dormir"); si no la hay, la que pusiste ese día o, si no, la de Ajustes.
   const porFecha = new Map(inicios.map((i) => [i.on_date, i]));
+  const realPorFecha = new Map(dormir.map((d) => [d.on_date, d.bed_time]));
   function horasDe(fecha: string): HorasDelDia {
     const i = porFecha.get(fecha);
     return {
       fecha,
       despierto: horaCorta(i?.awake_time ?? null),
       levantado: horaCorta(i?.start_time ?? null),
-      acostarse: horaCorta(i?.sleep_time ?? null) ?? ajustes.sleep_time,
+      acostarse:
+        realPorFecha.get(fecha) ??
+        horaCorta(i?.sleep_time ?? null) ??
+        ajustes.sleep_time,
+      acostarseReal: realPorFecha.has(fecha),
     };
   }
   const ahora = horaEn(zona);

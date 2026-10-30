@@ -20,6 +20,7 @@ function horas(cambios: Partial<HorasDelDia>): HorasDelDia {
     despierto: null,
     levantado: null,
     acostarse: null,
+    acostarseReal: false,
     ...cambios,
   };
 }
@@ -119,10 +120,22 @@ describe("calcularDia", () => {
       agenda: 2 * 60,
     });
     expect(dia.sueno).toBe(8 * 60);
+    expect(dia.suenoAprox).toBe(true); // la hora de anoche era la prevista
     expect(dia.enCama).toBe(20);
     expect(dia.enPie).toBe(15 * 60);
     expect(dia.sinApuntar).toBe(8 * 60);
     expect(dia.esHoy).toBe(false);
+  });
+
+  it("con «Me voy a dormir» anoche, el sueño es real", () => {
+    const dia = calcularDia({
+      dia: horas({ despierto: "8:10" }),
+      anterior: horas({ acostarse: "00:40", acostarseReal: true }),
+      usado: 0,
+      agenda: 0,
+    });
+    expect(dia.sueno).toBe(7 * 60 + 30);
+    expect(dia.suenoAprox).toBe(false);
   });
 
   it("si solo pulsaste Despierto, el día empieza ahí", () => {
@@ -163,6 +176,7 @@ function dia(cambios: Partial<DiaProgreso>): DiaProgreso {
   return {
     fecha: "2026-10-27",
     sueno: null,
+    suenoAprox: false,
     enCama: null,
     enPie: null,
     usado: 0,
