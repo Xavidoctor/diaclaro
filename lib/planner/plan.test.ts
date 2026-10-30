@@ -126,7 +126,7 @@ describe("motivoOrden", () => {
       "Fecha que no se puede mover",
     );
     expect(motivoOrden(tarea("a", { due_date: "2026-10-29" }), HOY)).toBe(
-      "Atrasada",
+      "Pendiente de otro día",
     );
     expect(motivoOrden(tarea("a", { kind: "entrega" }), HOY)).toBe(
       "Entrega para hoy",

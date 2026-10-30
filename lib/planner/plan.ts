@@ -70,7 +70,7 @@ export function motivoOrden(t: TareaParaPlan, hoy: string): string {
     case 4:
       return "Tiempo personal";
     default:
-      if (t.due_date && t.due_date < hoy) return "Atrasada";
+      if (t.due_date && t.due_date < hoy) return "Pendiente de otro día";
       return t.kind === "entrega" ? "Entrega para hoy" : "Para hoy";
   }
 }

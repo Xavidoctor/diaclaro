@@ -201,6 +201,17 @@ export async function cambiarTarea(
   comprobar(error, "cambiar la tarea");
 }
 
+// Pone el mismo día a varias tareas a la vez (por ejemplo, "pasar todas a hoy").
+export async function moverTareas(ids: string[], dia: string) {
+  if (ids.length === 0) return;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tasks")
+    .update({ due_date: dia })
+    .in("id", ids);
+  comprobar(error, "mover las tareas");
+}
+
 export async function leerNota(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase

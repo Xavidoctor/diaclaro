@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sumarDias } from "./fechas";
+import { esFecha, fechaCorta, sumarDias } from "./fechas";
 
 // Reglas de la Bandeja. Son funciones puras: no tocan la base de datos,
 // así que se pueden probar con `npm test`.
@@ -187,3 +187,53 @@ export function tareasParaHoy<T extends TareaParaAgrupar>(
   };
 }
 
+
+// Cuánto hace que tocaba una tarea que no acabaste:
+// "de ayer", "de hace 3 días" o, si hace más de una semana, "del 12 oct.".
+export function textoPendienteDesde(fecha: string, hoy: string): string {
+  if (fecha === sumarDias(hoy, -1)) return "de ayer";
+  for (let dias = 2; dias <= 7; dias++) {
+    if (fecha === sumarDias(hoy, -dias)) return `de hace ${dias} días`;
+  }
+  return `del ${fechaCorta(fecha)}`;
+}
+
+// Las tareas apuntadas para un día concreto (las hechas, al final).
+export function tareasDelDia<T extends TareaParaAgrupar>(
+  tareas: T[],
+  dia: string,
+): T[] {
+  return tareas
+    .filter((t) => t.due_date === dia)
+    .sort((a, b) => Number(Boolean(a.done_at)) - Number(Boolean(b.done_at)));
+}
+
+// Los días que tienen alguna tarea sin hacer (para marcarlos en el calendario).
+export function diasConTareas(tareas: TareaParaAgrupar[]): string[] {
+  return [
+    ...new Set(
+      tareas.filter((t) => !t.done_at && t.due_date).map((t) => t.due_date!),
+    ),
+  ];
+}
+
+// El día al que quieres mover una tarea. Hoy o más adelante: no tiene
+// sentido moverla a un día que ya ha pasado.
+export function leerDiaParaMover(
+  valor: unknown,
+  hoy: string,
+): Resultado<string> {
+  if (typeof valor !== "string" || !esFecha(valor)) {
+    return { ok: false, error: "Elige un día del calendario." };
+  }
+  if (valor < hoy) {
+    return { ok: false, error: "Elige hoy o un día que aún no ha pasado." };
+  }
+  return { ok: true, valor };
+}
+
+// La lista de ids que llega de un formulario ("id1,id2,id3"), sin repetidos.
+export function leerIds(valor: unknown): string[] {
+  if (typeof valor !== "string") return [];
+  return [...new Set(valor.split(",").map((v) => v.trim()).filter(Boolean))];
+}
