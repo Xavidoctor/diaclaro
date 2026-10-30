@@ -144,6 +144,8 @@ En **Ajustes → Documentos importantes** (`/documentos`) puedes guardar fotos y
 
 En Android, con la app instalada en la pantalla de inicio, sale **DíaClaro** en el menú **Compartir** de la galería y de las capturas. Si no sale, desinstala la app de la pantalla de inicio y vuelve a instalarla desde Chrome, para que el móvil lea los cambios. Por este camino el límite es de 4 MB por archivo; desde la pantalla, de 20 MB.
 
+**Sin internet:** cada vez que abres «Documentos importantes» con conexión, el móvil guarda una copia de tus documentos en el propio navegador. Si luego abres DíaClaro sin internet, sale la pantalla «Sin conexión» (`public/sin-conexion.html`, servida por `public/sw.js`) con esa copia. La copia se puede borrar desde la misma pantalla, y si entra otra cuenta en ese móvil se borra sola.
+
 Si algún día cambias el secreto del cliente, cada persona tendrá que volver a pulsar **Conectar con Google**.
 
 ## Avisos con la app cerrada (opcional, una vez)

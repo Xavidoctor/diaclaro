@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sin conexión · DíaClaro</title>
+    <!--
+      Pantalla que sale cuando no tienes internet (la sirve public/sw.js).
+      Enseña la copia de tus documentos importantes guardada en este móvil.
+      Lee la misma base de datos que app/documentos/almacen-movil.ts.
+    -->
+    <style>
+      :root {
+        --background: #f2f5f1;
+        --surface: #ffffff;
+        --foreground: #1d2a24;
+        --muted: #5f6f66;
+        --border: #dde5df;
+        --primary: #3a7458;
+        --secondary: #e3efe7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background: #0f1512;
+          --surface: #17201b;
+          --foreground: #e4ebe6;
+          --muted: #9fb0a6;
+          --border: #26322b;
+          --primary: #7cc4a0;
+          --secondary: #1f2b24;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--background);
+        color: var(--foreground);
+        font-family: system-ui, sans-serif;
+        line-height: 1.5;
+      }
+      main { max-width: 36rem; margin: 0 auto; padding: 2rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+      h1 { font-size: 1.75rem; margin: 0; }
+      p { margin: 0; }
+      .muted { color: var(--muted); font-size: 0.875rem; }
+      input {
+        width: 100%; padding: 0.6rem 0.8rem; border-radius: 0.75rem;
+        border: 1px solid var(--border); background: var(--surface); color: var(--foreground); font: inherit;
+      }
+      ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+      button.doc {
+        width: 100%; display: flex; align-items: center; gap: 0.75rem; text-align: left;
+        background: var(--surface); color: inherit; border: 1px solid var(--border);
+        border-radius: 1rem; padding: 0.75rem; font: inherit; cursor: pointer;
+      }
+      .mini {
+        width: 3.5rem; height: 3.5rem; flex-shrink: 0; border-radius: 0.5rem;
+        background: var(--secondary); object-fit: cover; display: flex; align-items: center; justify-content: center;
+      }
+      .boton {
+        align-self: flex-start; background: var(--primary); color: var(--background);
+        border: 0; border-radius: 999px; padding: 0.6rem 1.2rem; font: inherit; cursor: pointer;
+      }
+      #visor {
+        position: fixed; inset: 0; background: rgba(0, 0, 0, 0.92); display: none;
+        flex-direction: column; padding: 1rem; gap: 0.75rem;
+      }
+      #visor.abierto { display: flex; }
+      #visor img, #visor iframe { flex: 1; min-height: 0; width: 100%; object-fit: contain; border: 0; background: #fff; }
+      #visor img { background: transparent; }
+      #visor .boton { align-self: flex-end; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Sin conexión</h1>
+      <p class="muted">
+        No hay internet. Aquí tienes la copia de tus documentos importantes
+        guardada en este móvil.
+      </p>
+      <button class="boton" type="button" onclick="location.reload()">Reintentar</button>
+      <input id="buscar" type="search" placeholder="Buscar: dni, billete…" aria-label="Buscar" />
+      <p id="aviso" class="muted" role="status"></p>
+      <ul id="lista"></ul>
+    </main>
+    <div id="visor" role="dialog" aria-label="Documento">
+      <button class="boton" type="button" id="cerrar">Cerrar</button>
+    </div>
+    <script>
+      // Quita tildes y mayúsculas para buscar.
+      const normalizar = (t) =>
+        t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+      let documentos = [];
+      const enlaces = [];
+
+      function abrirBase() {
+        return new Promise((resolver, fallar) => {
+          const peticion = indexedDB.open("diaclaro-documentos", 1);
+          peticion.onupgradeneeded = () => {
+            peticion.result.createObjectStore("documentos", { keyPath: "id" });
+            peticion.result.createObjectStore("ajustes");
+          };
+          peticion.onsuccess = () => resolver(peticion.result);
+          peticion.onerror = () => fallar(peticion.error);
+        });
+      }
+
+      function ver(doc) {
+        const visor = document.getElementById("visor");
+        visor.querySelectorAll("img, iframe").forEach((e) => e.remove());
+        const url = URL.createObjectURL(doc.archivo);
+        enlaces.push(url);
+        const el = document.createElement(doc.mime.startsWith("image/") ? "img" : "iframe");
+        el.src = url;
+        if (el.tagName === "IMG") el.alt = doc.nombre;
+        else el.title = doc.nombre;
+        visor.appendChild(el);
+        visor.classList.add("abierto");
+      }
+
+      function pintar() {
+        const palabras = normalizar(document.getElementById("buscar").value).split(/\s+/).filter(Boolean);
+        const lista = document.getElementById("lista");
+        lista.replaceChildren();
+        const visibles = documentos.filter((d) => {
+          const texto = normalizar(d.nombre + " " + d.tipoNombre);
+          return palabras.every((p) => texto.includes(p));
+        });
+        for (const d of visibles) {
+          const li = document.createElement("li");
+          const boton = document.createElement("button");
+          boton.type = "button";
+          boton.className = "doc";
+          let mini;
+          if (d.mime.startsWith("image/")) {
+            mini = document.createElement("img");
+            const url = URL.createObjectURL(d.archivo);
+            enlaces.push(url);
+            mini.src = url;
+            mini.alt = "";
+          } else {
+            mini = document.createElement("span");
+            mini.textContent = "PDF";
+          }
+          mini.className = "mini";
+          const texto = document.createElement("span");
+          const nombre = document.createElement("span");
+          nombre.textContent = d.nombre;
+          const tipo = document.createElement("span");
+          tipo.className = "muted";
+          tipo.style.display = "block";
+          tipo.textContent = d.tipoNombre;
+          texto.append(nombre, tipo);
+          boton.append(mini, texto);
+          boton.onclick = () => ver(d);
+          li.appendChild(boton);
+          lista.appendChild(li);
+        }
+        document.getElementById("aviso").textContent =
+          documentos.length === 0
+            ? "En este móvil aún no hay copia. Abre «Documentos importantes» con internet y se guardará sola."
+            : visibles.length === 0
+              ? "No hay nada que coincida con tu búsqueda."
+              : "";
+      }
+
+      document.getElementById("buscar").addEventListener("input", pintar);
+      document.getElementById("cerrar").addEventListener("click", () => {
+        const visor = document.getElementById("visor");
+        visor.classList.remove("abierto");
+        visor.querySelectorAll("img, iframe").forEach((e) => e.remove());
+      });
+
+      abrirBase()
+        .then(
+          (base) =>
+            new Promise((resolver, fallar) => {
+              const peticion = base.transaction("documentos").objectStore("documentos").getAll();
+              peticion.onsuccess = () => resolver(peticion.result);
+              peticion.onerror = () => fallar(peticion.error);
+            }),
+        )
+        .then((lista) => {
+          documentos = lista.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+          pintar();
+        })
+        .catch(() => {
+          document.getElementById("aviso").textContent =
+            "No he podido abrir la copia de este móvil.";
+        });
+    </script>
+  </body>
+</html>

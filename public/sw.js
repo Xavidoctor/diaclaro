@@ -1,5 +1,53 @@
-// Service worker de DíaClaro: recibe los avisos aunque la app esté cerrada.
-// (No guarda nada en caché: la app sigue funcionando igual que siempre).
+// Service worker de DíaClaro: recibe los avisos aunque la app esté cerrada
+// y, si no hay internet, enseña tus documentos importantes guardados en el
+// móvil (public/sin-conexion.html). Solo guarda en caché esa pantalla:
+// con conexión, la app funciona igual que siempre.
+
+const CACHE = "diaclaro-sin-conexion-v1";
+const SIN_CONEXION = "/sin-conexion.html";
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((cache) => cache.add(SIN_CONEXION))
+      .then(() => self.skipWaiting()),
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  // Borra cachés viejas de esta pantalla y empieza a funcionar ya.
+  event.waitUntil(
+    caches
+      .keys()
+      .then((claves) =>
+        Promise.all(
+          claves
+            .filter((c) => c.startsWith("diaclaro-") && c !== CACHE)
+            .map((c) => caches.delete(c)),
+        ),
+      )
+      .then(() => self.clients.claim()),
+  );
+});
+
+// Solo cuando abres una pantalla (no imágenes ni datos) y falla la red.
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  if (request.method !== "GET" || request.mode !== "navigate") return;
+  event.respondWith(
+    fetch(request).catch(() =>
+      caches.match(SIN_CONEXION).then(
+        (guardada) =>
+          guardada ||
+          new Response("Sin conexión", {
+            status: 503,
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          }),
+      ),
+    ),
+  );
+});
 
 self.addEventListener("push", (event) => {
   let datos = {};
