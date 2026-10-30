@@ -5,8 +5,10 @@ import { editarTarea, type EditarTareaState } from "@/app/bandeja/actions";
 import type { Tarea } from "@/lib/data/bandeja";
 import { opcionesVisibles, type GrupoOpciones } from "@/lib/planner/areas";
 
-// Formulario para cambiar el título, la fecha, los minutos y el proyecto de una tarea.
-// Fecha, minutos y proyecto son opcionales: si los dejas vacíos, se quedan vacíos.
+// Formulario para cambiar el título, la fecha, los minutos, la importancia y el
+// proyecto de una tarea. Todo menos el título es opcional: si lo dejas vacío,
+// se queda vacío. La importancia y la fecha dura le dicen a la app qué puede
+// proponerte recortar cuando te pasas (lo importante nunca lo toca).
 export function FichaTarea({
   tarea,
   grupos,
@@ -53,6 +55,31 @@ export function FichaTarea({
             defaultValue={tarea.estimated_minutes ?? ""}
             className="input py-2"
           />
+        </label>
+      </div>
+      <div className="flex items-end gap-3">
+        <label className="flex flex-1 flex-col gap-1 text-sm">
+          Importancia
+          <select
+            name="importance"
+            defaultValue={tarea.importance ?? ""}
+            className="input py-2"
+          >
+            <option value="">Sin indicar</option>
+            <option value="alta">Alta</option>
+            <option value="normal">Normal</option>
+            <option value="baja">Baja</option>
+          </select>
+        </label>
+        <label className="flex flex-1 items-center gap-2 py-2 text-sm">
+          <input
+            type="checkbox"
+            name="hard_deadline"
+            value="si"
+            defaultChecked={tarea.hard_deadline}
+            className="h-5 w-5"
+          />
+          Fecha que no se puede mover
         </label>
       </div>
       {opciones.length > 0 && (
