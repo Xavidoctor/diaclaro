@@ -73,6 +73,38 @@ describe("contenidoAviso", () => {
   });
 });
 
+describe("avisos de rutinas con foco", () => {
+  const { habito: _sinHabito, ...base } = peticion;
+  void _sinHabito;
+  const deRutina = {
+    ...base,
+    rutina: "7b2c3d4e-1234-4abc-8def-0123456789ab",
+    titulo: "Estudiar",
+    hora: "16:00",
+    minutos: 10,
+  };
+
+  it("acepta un aviso de rutina", () => {
+    expect(leerPeticionAviso(deRutina)).toEqual({ ok: true, valor: deRutina });
+  });
+
+  it("tiene que ser de un hábito o de una rutina, no de los dos ni de ninguno", () => {
+    expect(leerPeticionAviso(base).ok).toBe(false);
+    expect(leerPeticionAviso({ ...deRutina, habito: peticion.habito }).ok).toBe(
+      false,
+    );
+  });
+
+  it("dice cuánto falta y abre Foco con esa rutina", () => {
+    expect(contenidoAviso(deRutina)).toEqual({
+      title: "En 10 min: Estudiar",
+      body: "Empieza a las 16:00. Ve terminando lo que estés haciendo y prepárate.",
+      tag: `rutina-${deRutina.rutina}`,
+      url: `/foco?rutina=${deRutina.rutina}`,
+    });
+  });
+});
+
 describe("leerSuscripcion", () => {
   it("convierte lo que da el navegador", () => {
     expect(

@@ -61,7 +61,9 @@ export type ValoresFormRutina = Record<
   | "duration_minutes"
   | "window_start"
   | "window_end"
-  | "part_of_day",
+  | "part_of_day"
+  | "focus"
+  | "focus_alarm_minutes",
   string
 > & { dias: string[] };
 
@@ -84,6 +86,8 @@ function valoresEscritos(formData: FormData): ValoresFormRutina {
     window_start: texto("window_start"),
     window_end: texto("window_end"),
     part_of_day: texto("part_of_day"),
+    focus: texto("focus"),
+    focus_alarm_minutes: texto("focus_alarm_minutes"),
     dias: formData.getAll("dias").map(String),
   };
 }
@@ -113,7 +117,8 @@ export async function guardarRutina(
       valores,
     };
   }
-  redirect("/ajustes");
+  // Si entraste desde Hoy, vuelves a Hoy.
+  redirect(formData.get("volver") === "hoy" ? "/" : "/ajustes");
 }
 
 // Pausar: deja de salir en Hoy, pero no se borra.
@@ -128,7 +133,7 @@ export async function pausarRutina(formData: FormData) {
 export async function eliminarRutina(formData: FormData) {
   await exigirSesion();
   await borrarRutina(leerId(formData));
-  redirect("/ajustes");
+  redirect(formData.get("volver") === "hoy" ? "/" : "/ajustes");
 }
 
 // ---- Google Calendar ----

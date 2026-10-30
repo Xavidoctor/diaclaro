@@ -29,7 +29,7 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
       "Arriba están los botones «Despierto» y «Levantado». Pulsa «Levantado» al salir de la cama y la app calcula tu día desde esa hora.",
       "«Tu plan de hoy» te enseña la siguiente tarea y tus 3 prioridades. El orden sale de la fecha y la importancia que pones en cada tarea.",
       "Si lo que tienes no cabe en el tiempo que te queda, sale un aviso con ideas para recortar. No cambia nada hasta que pulsas «Aceptar».",
-      "Más abajo tienes la agenda del día, tus rutinas (pulsa «Hecho» cuando las hagas), tus hábitos y el cierre del día.",
+      "Más abajo tienes la agenda del día, tus rutinas (pulsa «+ Añadir» para crear una y «Hecho» cuando las hagas; si tiene modo foco, «Empezar»), tus hábitos y el cierre del día.",
     ],
     enlace: { href: "/", texto: "Ir a Hoy" },
   },

@@ -11,6 +11,7 @@ import {
   restante,
   terminado,
   textoReloj,
+  tiempoEnReloj,
   totalMinutos,
   transcurrido,
 } from "./foco";
@@ -78,6 +79,29 @@ describe("leerGuardado", () => {
   });
 });
 
+describe("cronómetro (sin objetivo)", () => {
+  it("cuenta hacia arriba y no termina solo", () => {
+    const t = iniciar(null, null, T0);
+    expect(tiempoEnReloj(t, T0 + 90 * MIN)).toBe(90 * MIN);
+    expect(terminado(t, T0 + 90 * MIN)).toBe(false);
+    expect(minutosHechos(t, T0 + 90 * MIN)).toBe(90);
+  });
+
+  it("la cuenta atrás enseña lo que falta", () => {
+    expect(tiempoEnReloj(iniciar(25, null, T0), T0 + 5 * MIN)).toBe(20 * MIN);
+  });
+
+  it("recuerda la rutina y lee los guardados antiguos sin rutina", () => {
+    const rutina = { id: "r1", title: "Estudiar" };
+    const t = iniciar(null, null, T0, rutina);
+    expect(t).toMatchObject({ rutinaId: "r1", tareaTitulo: "Estudiar" });
+    expect(leerGuardado(JSON.stringify(t))).toEqual(t);
+    const { rutinaId: _r, ...antiguo } = iniciar(25, null, T0);
+    void _r;
+    expect(leerGuardado(JSON.stringify(antiguo))?.rutinaId).toBeNull();
+  });
+});
+
 describe("prepararObjetivo", () => {
   it("acepta minutos enteros", () => {
     expect(prepararObjetivo(" 45 ")).toEqual({ ok: true, valor: 45 });
@@ -106,6 +130,7 @@ describe("prepararSesion", () => {
       ok: true,
       valor: {
         task_id: tarea.id,
+        routine_id: null,
         started_at: "2026-10-30T09:00:00.000Z",
         ended_at: "2026-10-30T09:25:00.000Z",
         planned_minutes: 25,
@@ -118,6 +143,12 @@ describe("prepararSesion", () => {
     const r = prepararSesion({ ...base, tarea: "", objetivo: "" }, ahora);
     expect(r.ok && r.valor.task_id).toBeNull();
     expect(r.ok && r.valor.planned_minutes).toBeNull();
+  });
+
+  it("guarda la rutina si viene de una rutina con foco", () => {
+    const rutina = "7b2c3d4e-1234-4abc-8def-0123456789ab";
+    const r = prepararSesion({ ...base, tarea: "", rutina }, ahora);
+    expect(r.ok && r.valor.routine_id).toBe(rutina);
   });
 
   it("pide al menos 1 minuto", () => {

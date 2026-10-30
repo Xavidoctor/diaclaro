@@ -11,7 +11,7 @@ import type {
 // Las reglas RLS ya hacen que cada persona solo vea lo suyo.
 
 const CAMPOS_RUTINA =
-  "id, title, notes, repeat_rule, times_per_day, duration_minutes, window_start, window_end, part_of_day, active";
+  "id, title, notes, repeat_rule, times_per_day, duration_minutes, window_start, window_end, part_of_day, focus, focus_alarm_minutes, active";
 
 function comprobar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`No se ha podido ${que}: ${error.message}`);

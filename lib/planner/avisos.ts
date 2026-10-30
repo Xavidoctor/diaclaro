@@ -12,18 +12,25 @@ const esquemaPeticion = z.object({
   endpoint: z.url().max(1000),
   p256dh: z.string().min(1).max(200),
   auth: z.string().min(1).max(100),
-  habito: z.uuid(),
+  // Cada aviso es de un hábito o de una rutina (nunca de los dos).
+  habito: z.uuid().optional(),
+  // Aviso antes de empezar una rutina con foco (migración 20261030380000).
+  rutina: z.uuid().optional(),
   titulo: z.string().min(1).max(100),
+  // Hábito: la hora del recordatorio. Rutina: la hora a la que empieza.
   hora: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   // Una de tus frases, al azar (desde la migración 20261030350000). null = ninguna.
   frase: z.string().min(1).max(200).nullish(),
+  // Rutina: cuántos minutos antes de empezar llega el aviso.
+  minutos: z.number().int().min(1).max(120).optional(),
 });
 
 export type PeticionAviso = z.infer<typeof esquemaPeticion>;
 
 export function leerPeticionAviso(datos: unknown): Resultado<PeticionAviso> {
   const r = esquemaPeticion.safeParse(datos);
-  if (!r.success) return { ok: false, error: "Petición no válida." };
+  if (!r.success || !r.data.habito === !r.data.rutina)
+    return { ok: false, error: "Petición no válida." };
   return { ok: true, valor: r.data };
 }
 
@@ -36,8 +43,21 @@ export type ContenidoAviso = {
 };
 
 export function contenidoAviso(
-  p: Pick<PeticionAviso, "habito" | "titulo" | "hora" | "frase">,
+  p: Pick<
+    PeticionAviso,
+    "habito" | "rutina" | "titulo" | "hora" | "frase" | "minutos"
+  >,
 ): ContenidoAviso {
+  if (p.rutina) {
+    const cuando = p.minutos ? `En ${p.minutos} min` : "Dentro de poco";
+    return {
+      title: `${cuando}: ${p.titulo}`,
+      body: `Empieza a las ${p.hora}. Ve terminando lo que estés haciendo y prepárate.`,
+      tag: `rutina-${p.rutina}`,
+      // Al tocarlo, se abre Foco con esa rutina lista para empezar.
+      url: `/foco?rutina=${p.rutina}`,
+    };
+  }
   const recordatorio = `Recordatorio de las ${p.hora}.`;
   return {
     title: p.titulo,

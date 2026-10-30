@@ -13,6 +13,7 @@ export type SesionFoco = {
   planned_minutes: number | null;
   minutes: number;
   tasks: { title: string } | null;
+  routines: { title: string } | null;
 };
 
 function comprobar(error: { message: string } | null, que: string) {
@@ -24,7 +25,7 @@ export async function listarSesionesDelDia(fecha: string) {
   const { data, error } = await supabase
     .from("focus_sessions")
     .select(
-      "id, task_id, on_date, started_at, planned_minutes, minutes, tasks(title)",
+      "id, task_id, on_date, started_at, planned_minutes, minutes, tasks(title), routines(title)",
     )
     .eq("on_date", fecha)
     .order("started_at")
