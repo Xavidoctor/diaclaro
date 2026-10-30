@@ -13,6 +13,7 @@ import {
 } from "@/lib/planner/agenda";
 import { diasDesde, hoyEn, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import { juntarAgendas } from "@/lib/planner/google-calendar";
+import { ChevronLeft, ChevronRight, Plus, Repeat } from "lucide-react";
 
 export const metadata: Metadata = { title: "Agenda" };
 
@@ -48,7 +49,11 @@ export default async function AgendaPage({
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
         <header className="flex items-center justify-between gap-4">
           <h1 className="text-3xl font-semibold tracking-tight">Agenda</h1>
-          <Link href="/agenda/nuevo" className="button-primary py-2 text-sm">
+          <Link
+            href="/agenda/nuevo"
+            className="button-primary gap-1 py-2 text-sm"
+          >
+            <Plus aria-hidden className="size-4" />
             Añadir
           </Link>
         </header>
@@ -56,20 +61,25 @@ export default async function AgendaPage({
         <nav aria-label="Cambiar de días" className="flex gap-4 text-sm">
           <Link
             href={`/agenda?desde=${sumarDias(desde, -DIAS_VISTA)}`}
-            className="underline"
+            className="enlace inline-flex min-h-11 items-center gap-0.5"
           >
-            ← Anteriores
+            <ChevronLeft aria-hidden className="size-4" />
+            Anteriores
           </Link>
           {desde !== hoy && (
-            <Link href="/agenda" className="underline">
+            <Link
+              href="/agenda"
+              className="enlace inline-flex min-h-11 items-center"
+            >
               Hoy
             </Link>
           )}
           <Link
             href={`/agenda?desde=${sumarDias(desde, DIAS_VISTA)}`}
-            className="ml-auto underline"
+            className="enlace ml-auto inline-flex min-h-11 items-center gap-0.5"
           >
-            Siguientes →
+            Siguientes
+            <ChevronRight aria-hidden className="size-4" />
           </Link>
         </nav>
 
@@ -124,12 +134,10 @@ export default async function AgendaPage({
                             <span className="text-xs text-muted">Cambiado</span>
                           )}
                           {!o.cambiada && o.seRepite && (
-                            <span
+                            <Repeat
                               aria-label="Se repite"
-                              className="text-xs text-muted"
-                            >
-                              ↻
-                            </span>
+                              className="size-4 shrink-0 self-center text-muted"
+                            />
                           )}
                         </Link>
                       )}

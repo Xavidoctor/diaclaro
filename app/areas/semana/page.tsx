@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { cargarResumenSemana } from "@/lib/data/resumen-semana";
 import { leerFechaParam } from "@/lib/planner/agenda";
@@ -35,9 +37,7 @@ export default async function SemanaPage({
   return (
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-        <Link href="/areas" className="text-sm underline">
-          ← Áreas
-        </Link>
+        <EnlaceVolver href="/areas">Áreas</EnlaceVolver>
         <header className="flex flex-col gap-1">
           <h1 className="text-3xl font-semibold tracking-tight">
             {esEsta ? "Esta semana" : "Tu semana"}
@@ -52,13 +52,18 @@ export default async function SemanaPage({
         <nav aria-label="Cambiar de semana" className="flex gap-4 text-sm">
           <Link
             href={`/areas/semana?semana=${sumarDias(desde, -7)}`}
-            className="underline"
+            className="enlace inline-flex min-h-11 items-center gap-0.5"
           >
-            ← Semana anterior
+            <ChevronLeft aria-hidden className="size-4" />
+            Semana anterior
           </Link>
           {!esEsta && (
-            <Link href="/areas/semana" className="ml-auto underline">
-              Esta semana →
+            <Link
+              href="/areas/semana"
+              className="enlace ml-auto inline-flex min-h-11 items-center gap-0.5"
+            >
+              Esta semana
+              <ChevronRight aria-hidden className="size-4" />
             </Link>
           )}
         </nav>
@@ -66,7 +71,7 @@ export default async function SemanaPage({
         {resumen.filas.length === 0 ? (
           <p className="card text-sm">
             Aún no tienes áreas.{" "}
-            <Link href="/areas" className="underline">
+            <Link href="/areas" className="enlace">
               Crea tus áreas
             </Link>{" "}
             y ponles horas para ver aquí cómo va tu semana.
