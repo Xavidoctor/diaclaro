@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EnlaceVolver } from "@/app/componentes/enlace-volver";
-import { eliminarHabito } from "@/app/habitos/actions";
+import { SeccionPausa } from "@/app/componentes/seccion-pausa";
+import { eliminarHabito, pausarHabito } from "@/app/habitos/actions";
 import { FormHabito } from "@/app/habitos/form-habito";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { leerHabito, listarApuntesDeHabito } from "@/lib/data/habitos";
@@ -60,6 +61,14 @@ export default async function HabitoPage({
           </ul>
         )}
       </section>
+
+      <SeccionPausa
+        accion={pausarHabito}
+        id={habito.id}
+        campo="activo"
+        activo={habito.active}
+        que="hábito"
+      />
 
       <form action={eliminarHabito} className="border-t border-border pt-4">
         <input type="hidden" name="id" value={habito.id} />

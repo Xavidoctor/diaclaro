@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { eliminarRutina } from "@/app/ajustes/actions";
+import { eliminarRutina, pausarRutina } from "@/app/ajustes/actions";
 import { FormRutina } from "@/app/ajustes/form-rutina";
 import { EnlaceVolver } from "@/app/componentes/enlace-volver";
+import { SeccionPausa } from "@/app/componentes/seccion-pausa";
 import { leerRutina } from "@/lib/data/rutinas";
 
 export const metadata: Metadata = { title: "Rutina" };
@@ -22,6 +23,14 @@ export default async function RutinaPage({
       </h1>
       <FormRutina rutina={rutina} />
 
+      <SeccionPausa
+        accion={pausarRutina}
+        id={rutina.id}
+        campo="activa"
+        activo={rutina.active}
+        que="rutina"
+      />
+
       <form action={eliminarRutina} className="border-t border-border pt-4">
         <input type="hidden" name="id" value={rutina.id} />
         <details>
@@ -30,8 +39,7 @@ export default async function RutinaPage({
           </summary>
           <p className="mt-2 text-sm text-muted">
             Se borra también el registro de las veces que la hiciste. Si solo
-            quieres dejarla de lado un tiempo, mejor púlsale «Pausar» en
-            Ajustes.
+            quieres dejarla de lado un tiempo, mejor púlsale «Pausar».
           </p>
           <button type="submit" className="mt-2 text-sm text-danger underline">
             Sí, borrarla
