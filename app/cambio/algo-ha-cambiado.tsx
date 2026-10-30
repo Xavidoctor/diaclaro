@@ -8,6 +8,7 @@ import {
   type CambioState,
   type PropuestaCambio,
 } from "@/app/cambio/actions";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 // Paso 1: cuentas qué ha cambiado. Paso 2: aceptas los cambios que quieras.
 export function AlgoHaCambiado() {
@@ -49,10 +50,9 @@ export function AlgoHaCambiado() {
       {estado.cambios && (
         <section key={estado.intento} className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Cambios propuestos</h2>
-          <p className="text-sm text-muted">
-            Los ha propuesto una IA y puede equivocarse. Nada cambia hasta que
-            pulses «Aceptar» en cada uno.
-          </p>
+          <SaberMas resumen="Los ha propuesto una IA y puede equivocarse.">
+            Nada cambia hasta que pulses «Aceptar» en cada uno.
+          </SaberMas>
           <ul className="flex flex-col gap-2">
             {estado.cambios.map((c) => (
               <FilaCambio key={c.valor} cambio={c} />

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { guardarAjustesAction, type AjustesState } from "@/app/ajustes/actions";
 import { ZONAS_HORARIAS, type Ajustes } from "@/lib/planner/ajustes";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 // Horas habituales (todas opcionales) y zona horaria.
 export function FormAjustes({ ajustes }: { ajustes: Ajustes }) {
@@ -14,11 +15,10 @@ export function FormAjustes({ ajustes }: { ajustes: Ajustes }) {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <p className="text-sm text-muted">
-        Todo es opcional. Si no pones una hora, se queda vacía: la app no se la
-        inventa. Más adelante el plan del día las usará para saber cuánto tiempo
-        tienes.
-      </p>
+      <SaberMas resumen="Todo es opcional.">
+        Si no pones una hora, se queda vacía: la app no se la inventa. El plan
+        del día las usa para saber cuánto tiempo tienes.
+      </SaberMas>
       <div className="grid grid-cols-2 gap-3">
         <Hora
           nombre="wake_time"

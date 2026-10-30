@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { AlgoHaCambiado } from "@/app/cambio/algo-ha-cambiado";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { iaDisponible } from "@/lib/ai/groq";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 export const metadata: Metadata = { title: "Algo ha cambiado" };
 
@@ -22,10 +23,10 @@ export default async function CambioPage() {
           <h1 className="text-3xl font-semibold tracking-tight">
             Algo ha cambiado
           </h1>
-          <p className="text-sm text-muted">
-            Cuéntalo con tus palabras: una cita que se cancela o cambia de hora,
-            una entrega que se mueve… Te propongo los cambios y tú decides.
-          </p>
+          <SaberMas resumen="Cuéntalo con tus palabras y tú decides.">
+            Por ejemplo, una cita que se cancela o cambia de hora, o una entrega
+            que se mueve. Te propongo los cambios y tú aceptas los que quieras.
+          </SaberMas>
         </header>
 
         {iaDisponible() ? (

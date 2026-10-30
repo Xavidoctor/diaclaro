@@ -10,6 +10,7 @@ import { leerAjustes } from "@/lib/data/ajustes";
 import { listarRutinas } from "@/lib/data/rutinas";
 import { describirRepeticion, leerRegla } from "@/lib/planner/agenda";
 import { textoFranja, textoVeces } from "@/lib/planner/rutinas";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 export const metadata: Metadata = { title: "Ajustes" };
 
@@ -48,10 +49,10 @@ export default async function AjustesPage({
               Añadir
             </Link>
           </header>
-          <p className="text-sm text-muted">
-            Cosas que haces a menudo y sin hora fija, como pasear al perro.
-            Salen cada día en Hoy para marcarlas cuando las hagas.
-          </p>
+          <SaberMas resumen="Cosas que haces a menudo y sin hora fija.">
+            Por ejemplo, pasear al perro. Salen cada día en Hoy para marcarlas
+            cuando las hagas.
+          </SaberMas>
           {rutinas.length === 0 ? (
             <p className="text-sm text-muted">Aún no tienes rutinas.</p>
           ) : (
@@ -88,10 +89,10 @@ export default async function AjustesPage({
         <section className="card flex items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold">Hábitos</h2>
-            <p className="text-sm text-muted">
-              Opcional: apunta lo que quieras observar (agua, lectura,
-              sueño…), sin juicios. Solo salen en Hoy si añades alguno.
-            </p>
+            <SaberMas resumen="Opcional: lo que quieras observar, sin juicios.">
+              Por ejemplo agua, lectura o sueño. Solo salen en Hoy si añades
+              alguno.
+            </SaberMas>
           </div>
           <Link
             href="/habitos"
@@ -119,12 +120,17 @@ export default async function AjustesPage({
 
         <section className="card flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Guía de uso</h2>
-          <p className="text-sm text-muted">
-            El recorrido te enseña dónde tocar, paso a paso, como la primera
-            vez. La guía explica cada pantalla con más calma. Arriba de Hoy,
-            Agenda, Bandeja y Áreas hay un recuadro pequeño de ayuda: puedes
-            ocultarlo si ya lo tienes claro y volver a mostrarlo aquí.
-          </p>
+          <SaberMas resumen="Vuelve a ver cómo se usa la app.">
+            <p>
+              El recorrido te enseña dónde tocar, paso a paso, como la primera
+              vez. La guía explica cada pantalla con más calma.
+            </p>
+            <p>
+              Arriba de Hoy, Agenda, Bandeja y Áreas hay un recuadro pequeño de
+              ayuda: puedes ocultarlo si ya lo tienes claro y volver a mostrarlo
+              aquí.
+            </p>
+          </SaberMas>
           <div className="flex flex-wrap gap-2">
             <BotonRecorrido />
             <Link href="/guia" className="button-secondary">
@@ -136,11 +142,11 @@ export default async function AjustesPage({
 
         <section className="card flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Copia de seguridad</h2>
-          <p className="text-sm text-muted">
-            Descarga un archivo con todos tus datos: notas, tareas, agenda,
-            rutinas, áreas, foco, cierres del día y hábitos. Hazlo una vez a la
-            semana y guárdalo en un sitio seguro, por ejemplo en Google Drive.
-          </p>
+          <SaberMas resumen="Descarga un archivo con todos tus datos.">
+            Notas, tareas, agenda, rutinas, áreas, foco, cierres del día y
+            hábitos. Hazlo una vez a la semana y guárdalo en un sitio seguro,
+            por ejemplo en Google Drive.
+          </SaberMas>
           {/* Un enlace normal (no Link): es una descarga, no otra pantalla. */}
           <a href="/exportar" download className="button-primary self-start">
             Descargar copia

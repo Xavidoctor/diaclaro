@@ -1,4 +1,5 @@
 // Sección «Pausar» de la pantalla de editar (rutinas y hábitos).
+import { SaberMas } from "@/app/componentes/saber-mas";
 // Pausar = deja de salir en Hoy hasta que la reanudes. No se borra nada.
 export function SeccionPausa({
   accion,
@@ -21,11 +22,17 @@ export function SeccionPausa({
     >
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name={campo} value={activo ? "no" : "si"} />
-      <p className="text-sm text-muted">
-        {activo
-          ? `¿Un tiempo sin ${que === "rutina" ? "esta rutina" : "este hábito"}? Si ${articulo} pausas, deja de salir en Hoy hasta que ${articulo} reanudes. No se borra nada.`
-          : `${que === "rutina" ? "Esta rutina está en pausa" : "Este hábito está en pausa"}: no sale en Hoy.`}
-      </p>
+      {activo ? (
+        <SaberMas
+          resumen={`¿Un tiempo sin ${que === "rutina" ? "esta rutina" : "este hábito"}?`}
+        >
+          {`Si ${articulo} pausas, deja de salir en Hoy hasta que ${articulo} reanudes. No se borra nada.`}
+        </SaberMas>
+      ) : (
+        <p className="text-sm text-muted">
+          {`${que === "rutina" ? "Esta rutina está en pausa" : "Este hábito está en pausa"}: no sale en Hoy.`}
+        </p>
+      )}
       <button type="submit" className="button-secondary self-start text-sm">
         {activo ? "Pausar" : "Reanudar"}
       </button>

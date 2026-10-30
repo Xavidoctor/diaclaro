@@ -4,6 +4,7 @@ import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { leerFechaParam } from "@/lib/planner/agenda";
 import { hoyEn } from "@/lib/planner/fechas";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 export const metadata: Metadata = { title: "Añadir a la agenda" };
 
@@ -18,10 +19,9 @@ export default async function NuevoEventoPage({
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
       <EnlaceVolver href="/agenda">Agenda</EnlaceVolver>
       <h1 className="text-3xl font-semibold tracking-tight">Añadir</h1>
-      <p className="text-sm text-muted">
-        Un compromiso con día: una tutoría, una clase, una cita. Para una clase
-        extra o un cambio puntual, crea uno que no se repita.
-      </p>
+      <SaberMas resumen="Un compromiso con día: una tutoría, una clase, una cita.">
+        Para una clase extra o un cambio puntual, crea uno que no se repita.
+      </SaberMas>
       <FormEvento diaInicial={dia} />
     </main>
   );

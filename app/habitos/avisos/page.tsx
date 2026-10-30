@@ -3,6 +3,7 @@ import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { AvisosDispositivo } from "@/app/habitos/avisos/avisos-dispositivo";
 import { PrepararClaves } from "@/app/habitos/avisos/preparar-claves";
 import { avisosConfigurados, clavePublica } from "@/lib/avisos/web-push";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 export const metadata: Metadata = { title: "Avisos" };
 
@@ -18,11 +19,11 @@ export default function AvisosPage() {
       <h1 className="text-3xl font-semibold tracking-tight">
         Avisos con la app cerrada
       </h1>
-      <p className="text-sm text-muted">
+      <SaberMas resumen="Un aviso al móvil, aunque DíaClaro esté cerrada.">
         Si un hábito tiene hora de recordatorio y a esa hora aún no has apuntado
-        nada, te llega un aviso al móvil, aunque DíaClaro esté cerrada. Solo uno
-        por hábito y día. Se activa en cada dispositivo por separado.
-      </p>
+        nada, te llega un aviso. Solo uno por hábito y día. Se activa en cada
+        dispositivo por separado.
+      </SaberMas>
 
       {listo ? (
         <AvisosDispositivo clave={clave} />

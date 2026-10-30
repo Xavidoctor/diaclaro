@@ -6,6 +6,7 @@ import { OrdenarConIA } from "@/app/ordenar/ordenar-con-ia";
 import { iaDisponible } from "@/lib/ai/groq";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { opcionesProyecto, opcionesVisibles } from "@/lib/planner/areas";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 export const metadata: Metadata = { title: "Ordenar con IA" };
 
@@ -24,10 +25,10 @@ export default async function OrdenarPage() {
           <h1 className="text-3xl font-semibold tracking-tight">
             Ordenar con IA
           </h1>
-          <p className="text-sm text-muted">
-            Escribe todo de golpe, como te salga. La IA lo separa en tareas,
-            citas y notas, y tú decides qué se guarda.
-          </p>
+          <SaberMas resumen="Escribe todo de golpe, como te salga.">
+            La IA lo separa en tareas, citas y notas, y tú decides qué se
+            guarda.
+          </SaberMas>
         </header>
 
         {disponible ? (

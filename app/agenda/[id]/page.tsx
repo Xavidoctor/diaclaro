@@ -15,6 +15,7 @@ import {
   tocaEseDia,
 } from "@/lib/planner/agenda";
 import { esFecha, nombreDia } from "@/lib/planner/fechas";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 export const metadata: Metadata = { title: "Evento" };
 
@@ -72,10 +73,9 @@ export default async function EventoPage({
             </>
           ) : (
             <>
-              <p className="text-sm text-muted">
-                Cambia este día sin tocar los demás. Por ejemplo, si esta semana
-                pasa a otro día o a otra hora.
-              </p>
+              <SaberMas resumen="Cambia este día sin tocar los demás.">
+                Por ejemplo, si esta semana pasa a otro día o a otra hora.
+              </SaberMas>
               <CambioDia
                 id={evento.id}
                 dia={diaValido}

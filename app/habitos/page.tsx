@@ -26,6 +26,7 @@ import {
   type RegistroHabito,
 } from "@/lib/planner/habitos";
 import { parseISO } from "date-fns";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 export const metadata: Metadata = { title: "Hábitos" };
 
@@ -59,19 +60,18 @@ export default async function HabitosPage() {
           Avisos con la app cerrada
         </Link>
 
-        <p className="text-sm text-muted">
-          Apunta lo que quieras observar, a tu ritmo. Aquí no hay rachas que se
-          rompen ni notas: solo tus datos, para que veas cómo vas. Lo que
-          apuntas aquí nunca se envía a la IA.
-        </p>
+        <SaberMas resumen="Apunta lo que quieras observar, a tu ritmo.">
+          Aquí no hay rachas que se rompen ni notas: solo tus datos, para que
+          veas cómo vas. Lo que apuntas aquí nunca se envía a la IA.
+        </SaberMas>
 
         {habitos.length === 0 && (
           <section className="card flex flex-col gap-3">
             <h2 className="text-lg font-semibold">Ideas para empezar</h2>
-            <p className="text-sm text-muted">
-              Toca una para rellenar el formulario. Puedes cambiarlo todo antes
-              de guardar, o empezar de cero con «Añadir».
-            </p>
+            <SaberMas resumen="Toca una para rellenar el formulario.">
+              Puedes cambiarlo todo antes de guardar, o empezar de cero con
+              «Añadir».
+            </SaberMas>
             <div className="flex flex-wrap gap-2">
               {Object.entries(IDEAS).map(([clave, idea]) => (
                 <Link

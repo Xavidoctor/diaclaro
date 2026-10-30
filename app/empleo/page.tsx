@@ -10,6 +10,7 @@ import {
   separarCandidaturas,
 } from "@/lib/planner/candidaturas";
 import { hoyEn } from "@/lib/planner/fechas";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 export const metadata: Metadata = { title: "Candidaturas" };
 
@@ -39,11 +40,10 @@ export default async function EmpleoPage() {
         {candidaturas.length === 0 ? (
           <section className="card flex flex-col gap-2">
             <p>Aún no has apuntado ninguna candidatura.</p>
-            <p className="text-sm text-muted">
-              Apunta cada oferta con la empresa y el puesto. Si pones un día de
-              seguimiento, ese día te saldrá en Hoy para que no se te olvide
-              llamar o escribir.
-            </p>
+            <SaberMas resumen="Apunta cada oferta con la empresa y el puesto.">
+              Si pones un día de seguimiento, ese día te saldrá en Hoy para que
+              no se te olvide llamar o escribir.
+            </SaberMas>
           </section>
         ) : (
           <>
