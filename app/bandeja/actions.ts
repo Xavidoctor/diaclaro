@@ -11,6 +11,7 @@ import {
   crearTarea,
   leerNota,
 } from "@/lib/data/bandeja";
+import { prepararProyectoDeTarea } from "@/lib/planner/areas";
 import {
   prepararCambiosTarea,
   prepararCaptura,
@@ -202,7 +203,14 @@ export async function editarTarea(
     estimated_minutes: formData.get("estimated_minutes"),
   });
   if (!r.ok) return { error: r.error };
-  await cambiarTarea(leerId(formData), r.valor);
+  // El proyecto solo se cambia si el formulario trae el selector.
+  const cambios: Parameters<typeof cambiarTarea>[1] = { ...r.valor };
+  if (formData.has("project_id")) {
+    const p = prepararProyectoDeTarea(formData.get("project_id"));
+    if (!p.ok) return { error: p.error };
+    cambios.project_id = p.valor;
+  }
+  await cambiarTarea(leerId(formData), cambios);
   refresh();
   return { guardado: true };
 }

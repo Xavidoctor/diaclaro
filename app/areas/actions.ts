@@ -1,0 +1,185 @@
+"use server";
+
+import { refresh } from "next/cache";
+import { redirect } from "next/navigation";
+import {
+  borrarArea,
+  borrarProyecto,
+  cambiarArea,
+  cambiarProyecto,
+  crearArea,
+  crearAreasSugeridas,
+  crearProyecto,
+  moverArea as moverAreaEnLista,
+} from "@/lib/data/areas";
+import { crearTarea } from "@/lib/data/bandeja";
+import { prepararArea, prepararProyecto } from "@/lib/planner/areas";
+import { prepararCambiosTarea } from "@/lib/planner/bandeja";
+import { createClient } from "@/lib/supabase/server";
+
+// Acciones de Áreas y Proyectos. Cada una comprueba primero que hay sesión.
+
+async function exigirSesion() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) redirect("/login");
+}
+
+function leerTexto(formData: FormData, campo: string): string {
+  const valor = formData.get(campo);
+  if (typeof valor !== "string" || valor === "")
+    throw new Error(`Falta ${campo}.`);
+  return valor;
+}
+
+// Si algo falla, "valores" devuelve lo escrito para no perderlo
+// ("envios" cambia en cada intento y sirve para redibujar el formulario).
+export type FormState<V> = { envios: number; error?: string; valores?: V };
+
+const ERROR_CONEXION =
+  "No se ha podido guardar. Revisa la conexión y vuelve a probar.";
+
+// ---- Áreas ----
+
+export type ValoresFormArea = {
+  name: string;
+  horas: string;
+  personal_time: boolean;
+};
+
+// Crear o cambiar un área (si el formulario trae "id", es cambiar).
+export async function guardarArea(
+  prev: FormState<ValoresFormArea>,
+  formData: FormData,
+): Promise<FormState<ValoresFormArea>> {
+  await exigirSesion();
+  const envios = prev.envios + 1;
+  const valores = {
+    name: String(formData.get("name") ?? ""),
+    horas: String(formData.get("horas") ?? ""),
+    personal_time: formData.get("personal_time") === "si",
+  };
+  const r = prepararArea({
+    name: valores.name,
+    horas: valores.horas,
+    personal_time: formData.get("personal_time"),
+  });
+  if (!r.ok) return { envios, error: r.error, valores };
+
+  const id = formData.get("id");
+  try {
+    if (typeof id === "string" && id !== "") await cambiarArea(id, r.valor);
+    else await crearArea(r.valor);
+  } catch {
+    return { envios, error: ERROR_CONEXION, valores };
+  }
+  if (typeof id === "string" && id !== "") redirect(`/areas/${id}`);
+  redirect("/areas");
+}
+
+export async function crearSugeridas() {
+  await exigirSesion();
+  await crearAreasSugeridas();
+  refresh();
+}
+
+// Archivar: deja de contar en el resumen de la semana, pero no se borra.
+export async function archivarArea(formData: FormData) {
+  await exigirSesion();
+  await cambiarArea(leerTexto(formData, "id"), {
+    archived_at:
+      formData.get("archivar") === "si" ? new Date().toISOString() : null,
+  });
+  refresh();
+}
+
+export async function eliminarArea(formData: FormData) {
+  await exigirSesion();
+  await borrarArea(leerTexto(formData, "id"));
+  redirect("/areas");
+}
+
+// Sube o baja un área un puesto en la lista.
+export async function moverArea(formData: FormData) {
+  await exigirSesion();
+  const paso = formData.get("paso") === "subir" ? -1 : 1;
+  await moverAreaEnLista(leerTexto(formData, "id"), paso);
+  refresh();
+}
+
+// ---- Proyectos ----
+
+export type ValoresFormProyecto = Record<
+  "name" | "kind" | "notes" | "url",
+  string
+>;
+
+// Crear o cambiar un proyecto dentro de un área.
+export async function guardarProyecto(
+  prev: FormState<ValoresFormProyecto>,
+  formData: FormData,
+): Promise<FormState<ValoresFormProyecto>> {
+  await exigirSesion();
+  const envios = prev.envios + 1;
+  const texto = (campo: string) => String(formData.get(campo) ?? "");
+  const valores = {
+    name: texto("name"),
+    kind: texto("kind"),
+    notes: texto("notes"),
+    url: texto("url"),
+  };
+  const r = prepararProyecto(valores);
+  if (!r.ok) return { envios, error: r.error, valores };
+
+  const areaId = leerTexto(formData, "area_id");
+  const id = formData.get("id");
+  try {
+    if (typeof id === "string" && id !== "") await cambiarProyecto(id, r.valor);
+    else await crearProyecto(areaId, r.valor);
+  } catch {
+    return { envios, error: ERROR_CONEXION, valores };
+  }
+  redirect(`/areas/${areaId}`);
+}
+
+export async function archivarProyecto(formData: FormData) {
+  await exigirSesion();
+  await cambiarProyecto(leerTexto(formData, "id"), {
+    archived_at:
+      formData.get("archivar") === "si" ? new Date().toISOString() : null,
+  });
+  refresh();
+}
+
+export async function eliminarProyecto(formData: FormData) {
+  await exigirSesion();
+  await borrarProyecto(leerTexto(formData, "id"));
+  redirect(`/areas/${leerTexto(formData, "area_id")}`);
+}
+
+// Añade una tarea directamente dentro de un proyecto.
+export async function anadirTareaAProyecto(
+  prev: FormState<{ title: string }>,
+  formData: FormData,
+): Promise<FormState<{ title: string }>> {
+  await exigirSesion();
+  const envios = prev.envios + 1;
+  const title = String(formData.get("title") ?? "");
+  // Mismas reglas que al editar una tarea; fecha y minutos se quedan vacíos.
+  const r = prepararCambiosTarea({
+    title,
+    due_date: "",
+    estimated_minutes: "",
+  });
+  if (!r.ok) return { envios, error: r.error, valores: { title } };
+  try {
+    await crearTarea({
+      title: r.valor.title,
+      project_id: leerTexto(formData, "project_id"),
+    });
+  } catch {
+    return { envios, error: ERROR_CONEXION, valores: { title } };
+  }
+  refresh();
+  return { envios };
+}
