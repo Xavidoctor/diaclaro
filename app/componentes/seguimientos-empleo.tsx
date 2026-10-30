@@ -20,7 +20,7 @@ export async function SeguimientosEmpleo({ hoy }: { hoy: string }) {
     <section className="flex flex-col gap-3">
       <header className="flex items-baseline justify-between gap-4">
         <h2 className="text-lg font-semibold">Seguimientos de empleo</h2>
-        <Link href="/empleo" className="text-sm underline">
+        <Link href="/empleo" className="enlace text-sm">
           Ver todas
         </Link>
       </header>

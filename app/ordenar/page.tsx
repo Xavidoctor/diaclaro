@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { OrdenarConIA } from "@/app/ordenar/ordenar-con-ia";
 import { iaDisponible } from "@/lib/ai/groq";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
@@ -18,9 +19,7 @@ export default async function OrdenarPage() {
   return (
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-        <Link href="/bandeja" className="text-sm underline">
-          ← Bandeja
-        </Link>
+        <EnlaceVolver href="/bandeja">Bandeja</EnlaceVolver>
         <header className="flex flex-col gap-1">
           <h1 className="text-3xl font-semibold tracking-tight">
             Ordenar con IA
@@ -37,7 +36,7 @@ export default async function OrdenarPage() {
           <p className="card text-sm">
             La IA aún no está configurada en esta app. Mientras tanto, apunta
             las cosas en la{" "}
-            <Link href="/bandeja" className="underline">
+            <Link href="/bandeja" className="enlace">
               Bandeja
             </Link>
             .

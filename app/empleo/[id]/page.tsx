@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import {
   cambiarEstado,
   eliminarCandidatura,
@@ -49,9 +50,7 @@ export default async function CandidaturaPage({
   return (
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-        <Link href="/empleo" className="text-sm underline">
-          ← Candidaturas
-        </Link>
+        <EnlaceVolver href="/empleo">Candidaturas</EnlaceVolver>
         <header className="flex flex-col gap-1">
           <h1 className="break-words text-3xl font-semibold tracking-tight">
             {c.company}
@@ -63,7 +62,7 @@ export default async function CandidaturaPage({
             {area && (
               <>
                 {" · "}
-                <Link href={`/areas/${area.id}`} className="underline">
+                <Link href={`/areas/${area.id}`} className="enlace">
                   {area.name}
                 </Link>
               </>
@@ -74,7 +73,7 @@ export default async function CandidaturaPage({
               href={c.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm underline"
+              className="enlace text-sm"
             >
               Ver la oferta
             </a>

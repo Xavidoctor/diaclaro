@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { aceptarDiaDificil, aceptarUnCambio } from "@/app/dia-dificil/actions";
 import { ContarConIA, ExplicarDiaConIA } from "@/app/dia-dificil/ayuda-ia";
 import { cargarDiaDificil } from "@/app/dia-dificil/situacion";
@@ -32,9 +33,7 @@ export default async function DiaDificilPage({
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-6 py-8">
         <header className="flex flex-col gap-1">
-          <Link href="/" className="text-sm text-muted underline">
-            Volver a Hoy
-          </Link>
+          <EnlaceVolver href="/">Hoy</EnlaceVolver>
           <h1 className="text-3xl font-semibold tracking-tight">Día difícil</h1>
           <p className="text-sm text-muted">
             Pasa. Vamos a quedarnos con lo que de verdad importa hoy.
