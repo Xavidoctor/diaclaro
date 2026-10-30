@@ -19,7 +19,7 @@ import {
 } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { cambiarTarea, listarTareas } from "@/lib/data/bandeja";
-import { apuntarUsoIA, MAX_USOS_IA_DIA } from "@/lib/data/uso-ia";
+import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
 import { ocurrenciasEntre } from "@/lib/planner/agenda";
 import { hoyEn, sumarDias } from "@/lib/planner/fechas";
 import { leerCambioAceptado } from "@/lib/planner/propuestas";
@@ -94,7 +94,7 @@ export async function interpretarCambio(
     return {
       intento,
       texto,
-      error: `Hoy ya has usado la IA ${MAX_USOS_IA_DIA} veces. Mañana vuelve a estar disponible.`,
+      error: `Hoy ya has usado la IA ${await topeIA()} veces. Mañana vuelve a estar disponible.`,
     };
 
   const { eventos, tareas } = await loQueTienes(hoy);

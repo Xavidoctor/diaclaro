@@ -1,10 +1,16 @@
 import "server-only";
+import { esCuentaDemo } from "@/lib/data/demo";
+import { topeUsosIA } from "@/lib/planner/demo";
 import { createClient } from "@/lib/supabase/server";
 
 // Contador de usos de la IA por persona y día (tabla ai_usage).
 // Sirve para que nadie agote el plan gratuito de Groq, que es compartido.
+// El tope es 20 al día, y 5 en las cuentas de demostración.
 
-export const MAX_USOS_IA_DIA = 20;
+// Cuántos usos tienes al día (para los mensajes de «ya has llegado al tope»).
+export async function topeIA(): Promise<number> {
+  return topeUsosIA(await esCuentaDemo());
+}
 
 // Apunta un uso si aún queda. Devuelve false si ya has llegado al tope de hoy.
 export async function apuntarUsoIA(hoy: string): Promise<boolean> {
@@ -21,7 +27,7 @@ export async function apuntarUsoIA(hoy: string): Promise<boolean> {
   if (error)
     throw new Error(`No se ha podido leer el uso de la IA: ${error.message}`);
   const usos = (data?.calls as number | undefined) ?? 0;
-  if (usos >= MAX_USOS_IA_DIA) return false;
+  if (usos >= (await topeIA())) return false;
 
   const { error: errorGuardar } = await supabase
     .from("ai_usage")

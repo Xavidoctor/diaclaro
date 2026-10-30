@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EntrarDemo } from "@/app/login/entrar-demo";
 import { LoginForm } from "@/app/login/login-form";
 
 export const metadata: Metadata = { title: "Entrar" };
@@ -24,6 +25,8 @@ export default async function LoginPage({
         </p>
       </div>
       <LoginForm errorInicial={errorInicial} />
+      {/* Las cuentas de prueba solo salen si Vercel tiene DEMO_PASSWORD. */}
+      {process.env.DEMO_PASSWORD && <EntrarDemo />}
     </main>
   );
 }

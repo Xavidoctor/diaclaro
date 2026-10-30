@@ -10,7 +10,7 @@ import {
 } from "@/lib/ai/sugerir-proyecto";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { cambiarNota, leerNota } from "@/lib/data/bandeja";
-import { apuntarUsoIA, MAX_USOS_IA_DIA } from "@/lib/data/uso-ia";
+import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
 import { prepararProyectoDeTarea } from "@/lib/planner/areas";
 import { hoyEn } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
@@ -50,7 +50,7 @@ export async function sugerirProyecto(
   const hoy = hoyEn((await leerAjustes()).timezone);
   if (!(await apuntarUsoIA(hoy)))
     return {
-      error: `Hoy ya has usado la IA ${MAX_USOS_IA_DIA} veces. Mañana vuelve a estar disponible.`,
+      error: `Hoy ya has usado la IA ${await topeIA()} veces. Mañana vuelve a estar disponible.`,
     };
 
   const mensajes = mensajesSugerirProyecto({ nota: nota.body, proyectos });

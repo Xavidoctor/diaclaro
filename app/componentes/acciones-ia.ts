@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { cargarSituacion } from "@/app/componentes/situacion-hoy";
 import { mensajesExplicarCarga } from "@/lib/ai/explicar-carga";
 import { iaDisponible, pedirTexto } from "@/lib/ai/groq";
-import { apuntarUsoIA, MAX_USOS_IA_DIA } from "@/lib/data/uso-ia";
+import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
 import { createClient } from "@/lib/supabase/server";
 
 // Acción del botón "Explícamelo": pide a la IA que te cuente el día con
@@ -25,7 +25,7 @@ export async function explicarConIA(): Promise<ExplicacionState> {
 
   if (!(await apuntarUsoIA(hoy)))
     return {
-      error: `Hoy ya has usado la IA ${MAX_USOS_IA_DIA} veces. Mañana vuelve a estar disponible.`,
+      error: `Hoy ya has usado la IA ${await topeIA()} veces. Mañana vuelve a estar disponible.`,
     };
 
   const texto = await pedirTexto(

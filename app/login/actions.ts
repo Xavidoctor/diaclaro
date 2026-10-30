@@ -1,8 +1,10 @@
 "use server";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { enlaceDeVuelta, normalizarEmail } from "@/lib/auth/validacion";
+import { emailDemo, leerNumeroDemo } from "@/lib/planner/demo";
 
 export type LoginState = {
   enviado: boolean;
@@ -42,4 +44,24 @@ export async function enviarEnlace(
   }
 
   return { enviado: true, email };
+}
+
+// Botones «Demo 1/2/3»: entra con una cuenta de demostración, sin email.
+// La contraseña está solo en Vercel (DEMO_PASSWORD), nunca en el navegador.
+export async function entrarDemo(
+  _prev: string | null,
+  formData: FormData,
+): Promise<string | null> {
+  const numero = leerNumeroDemo(formData.get("demo"));
+  const password = process.env.DEMO_PASSWORD;
+  if (!numero || !password) return "Las cuentas de prueba no están activadas.";
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: emailDemo(numero),
+    password,
+  });
+  if (error)
+    return "No he podido entrar en la cuenta de prueba. Prueba otra vez en un momento.";
+  redirect("/");
 }

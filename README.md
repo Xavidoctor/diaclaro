@@ -162,6 +162,18 @@ Sirve para que el recordatorio de un hábito llegue al móvil aunque DíaClaro e
 
 Cada 5 minutos, Supabase mira qué hábitos han llegado a su hora y aún no tienen nada apuntado, y pide a `/api/avisos/enviar` que mande el aviso (como mucho uno por hábito y día, y solo durante las 3 horas siguientes a su hora). Si la web cambia de dirección, guarda la nueva en Vault con el nombre `diaclaro_avisos_url` (por ejemplo `https://tu-web.vercel.app/api/avisos/enviar`). Si algún día cambias `AVISOS_SECRETO`, cámbialo también en Vault: **Project Settings → Vault**, o borra el secreto `diaclaro_avisos` y créalo de nuevo con la línea del paso 4.
 
+## Cuentas de demostración (opcional, una vez)
+
+Tres cuentas para que cualquiera pruebe DíaClaro sin email: en **/login** salen los botones **Demo 1**, **Demo 2** y **Demo 3**. Cada una trae datos de ejemplo y, en Hoy, un botón **Restablecer** que lo borra todo y vuelve a poner los ejemplos.
+
+1. En Supabase → **Authentication → Users → Add user → Create new user**, crea `demo1@example.com`, `demo2@example.com` y `demo3@example.com`. Las tres con **la misma contraseña** (larga, inventada) y con **Auto Confirm User** marcado.
+2. Ejecuta la migración `20261030410000_cuentas_demo.sql` en el **SQL Editor**. Al final debe salir `cuentas_demo = 3`.
+3. En Vercel → **Settings → Environment Variables** (Production) añade `DEMO_PASSWORD` con esa contraseña. Después, **Redeploy**.
+
+Para quitarlas: borra `DEMO_PASSWORD` en Vercel (los botones desaparecen) y, si quieres, borra los tres usuarios en Supabase.
+
+Qué protege: las cuentas demo son usuarios normales, así que las reglas RLS impiden que vean datos de nadie más. «Restablecer» solo funciona en ellas (la base de datos lo comprueba). No pueden conectar Google ni activar avisos (las comparte más gente), nadie puede cambiarles el email ni la contraseña, y la IA tiene un tope de 5 usos al día por cuenta que no se reinicia al restablecer.
+
 ## Seguridad
 
 - Las claves nunca se suben al repositorio (`.env.local` está en `.gitignore`).

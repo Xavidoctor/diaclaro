@@ -13,7 +13,7 @@ import {
 } from "@/lib/data/habitos";
 import { iaDisponible, pedirTexto } from "@/lib/ai/groq";
 import { leerFrases, mensajesFrasesHabito } from "@/lib/ai/frases-habito";
-import { apuntarUsoIA, MAX_USOS_IA_DIA } from "@/lib/data/uso-ia";
+import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
 import { hoyEn } from "@/lib/planner/fechas";
 import {
   anadirFrase,
@@ -202,7 +202,7 @@ export async function pedirIdeasDeFrases(
   if (!habito) return { error: "No encuentro este hábito." };
   if (!(await apuntarUsoIA(await hoy())))
     return {
-      error: `Hoy ya has usado la IA ${MAX_USOS_IA_DIA} veces. Mañana vuelve a estar disponible.`,
+      error: `Hoy ya has usado la IA ${await topeIA()} veces. Mañana vuelve a estar disponible.`,
     };
 
   const mensajes = mensajesFrasesHabito({

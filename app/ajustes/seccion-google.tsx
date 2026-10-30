@@ -1,4 +1,5 @@
 import { desconectarGoogle } from "@/app/ajustes/actions";
+import { esCuentaDemo } from "@/lib/data/demo";
 import { leerConexionGoogle } from "@/lib/data/google";
 import { googleDisponible } from "@/lib/google/api";
 import { SaberMas } from "@/app/componentes/saber-mas";
@@ -12,11 +13,13 @@ const MENSAJES: Record<string, string> = {
     "Falta el permiso para ver el calendario. Vuelve a conectar y deja marcada la casilla del calendario.",
   error: "No se ha podido conectar. Prueba otra vez en un momento.",
   "no-disponible": "La conexión con Google aún no está activada en esta app.",
+  demo: "En las cuentas de prueba no se puede conectar Google.",
 };
 
 // Sección de Ajustes para conectar (o quitar) tu Google Calendar.
 export async function SeccionGoogle({ mensaje }: { mensaje?: string }) {
-  const disponible = googleDisponible();
+  const demo = await esCuentaDemo();
+  const disponible = googleDisponible() && !demo;
   const conexion = disponible
     ? await leerConexionGoogle().catch(() => null)
     : null;
@@ -34,7 +37,11 @@ export async function SeccionGoogle({ mensaje }: { mensaje?: string }) {
           {aviso}
         </p>
       )}
-      {!disponible ? (
+      {demo ? (
+        <p className="text-sm text-muted">
+          En las cuentas de prueba no se puede conectar Google.
+        </p>
+      ) : !disponible ? (
         <p className="text-sm text-muted">Aún no está activado en esta app.</p>
       ) : conexion ? (
         <div className="flex flex-wrap items-center justify-between gap-3">

@@ -5,6 +5,7 @@ import {
   COOKIE_VOLVER,
   RUTA_VUELTA,
 } from "@/app/api/google/estado";
+import { esCuentaDemo } from "@/lib/data/demo";
 import { googleDisponible, urlParaConectar } from "@/lib/google/api";
 import { direccionDeVuelta } from "@/lib/planner/drive";
 
@@ -17,6 +18,12 @@ export async function GET(request: NextRequest) {
   if (!googleDisponible()) {
     return NextResponse.redirect(
       new URL("/ajustes?google=no-disponible#google", request.url),
+    );
+  }
+  // Las cuentas demo las comparte más gente: verían tu Google.
+  if (await esCuentaDemo()) {
+    return NextResponse.redirect(
+      new URL("/ajustes?google=demo#google", request.url),
     );
   }
   const estado = randomBytes(24).toString("base64url");
