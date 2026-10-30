@@ -23,6 +23,7 @@ import {
   leerCampoEtiquetas,
   tipoInicial,
 } from "@/lib/planner/etiquetas";
+import { leerMinutosReales } from "@/lib/planner/tiempos";
 import { createClient } from "@/lib/supabase/server";
 
 // Acciones de la Bandeja. Se ejecutan en el servidor cuando pulsas un botón.
@@ -173,11 +174,17 @@ export async function convertirEnTarea(formData: FormData) {
 
 // ---- Tareas ----
 
+// Marca una tarea como hecha (con los minutos que has tardado, si los dices)
+// o la devuelve a pendiente (y entonces se borran esos minutos).
 export async function marcarTarea(formData: FormData) {
   await exigirSesion();
   const hecha = formData.get("hecha") === "si";
+  const minutos = formData.get("minutos");
   await cambiarTarea(leerId(formData), {
     done_at: hecha ? new Date().toISOString() : null,
+    actual_minutes: hecha
+      ? leerMinutosReales(minutos === "otros" ? formData.get("otros") : minutos)
+      : null,
   });
   refresh();
 }

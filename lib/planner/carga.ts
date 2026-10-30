@@ -1,5 +1,6 @@
 import type { Ocurrencia } from "./agenda";
 import type { RutinaDelDia } from "./rutinas";
+import { minutosCorregidos, type Factor, type TipoTarea } from "./tiempos";
 
 // Aviso de sobrecarga. Funciones puras, con pruebas en carga.test.ts.
 //
@@ -10,6 +11,7 @@ import type { RutinaDelDia } from "./rutinas";
 
 export type TareaConMinutos = {
   title: string;
+  kind: TipoTarea;
   estimated_minutes: number | null;
 };
 
@@ -20,6 +22,8 @@ export type EntradaCarga = {
   tareas: TareaConMinutos[]; // pendientes de hoy y atrasadas
   agenda: Ocurrencia[]; // la agenda de hoy
   rutinas: RutinaDelDia[]; // las rutinas de hoy
+  // Lo que sueles tardar de verdad por tipo de tarea (ver tiempos.ts).
+  factores?: Partial<Record<TipoTarea, Factor>>;
 };
 
 export type Carga =
@@ -30,6 +34,7 @@ export type Carga =
       libre: number; // minutos hasta la hora de acostarte
       diferencia: number; // libre - apuntado (negativo si te pasas)
       sinDuracion: string[]; // cosas de hoy sin minutos
+      ajuste: number; // minutos sumados (o restados) por lo que sueles tardar
     };
 
 // "16:05" → 965 minutos desde las 00:00.
@@ -74,15 +79,25 @@ function minutosEvento(o: Ocurrencia, ahora: number): number | null {
 export function calcularCarga(entrada: EntradaCarga): Carga {
   const { ahora, horaLevantarse, horaAcostarse, tareas, agenda, rutinas } =
     entrada;
+  const factores = entrada.factores ?? {};
   if (!horaAcostarse) return { estado: "falta-hora-acostarse" };
 
   const actual = aMinutos(ahora);
   let apuntado = 0;
+  let ajuste = 0;
   const sinDuracion: string[] = [];
 
   for (const tarea of tareas) {
-    if (tarea.estimated_minutes) apuntado += tarea.estimated_minutes;
-    else sinDuracion.push(tarea.title);
+    if (!tarea.estimated_minutes) {
+      sinDuracion.push(tarea.title);
+      continue;
+    }
+    const minutos = minutosCorregidos(
+      tarea.estimated_minutes,
+      factores[tarea.kind],
+    );
+    apuntado += minutos;
+    ajuste += minutos - tarea.estimated_minutes;
   }
 
   for (const o of agenda) {
@@ -108,6 +123,7 @@ export function calcularCarga(entrada: EntradaCarga): Carga {
     libre,
     diferencia,
     sinDuracion,
+    ajuste,
   };
 }
 

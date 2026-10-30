@@ -6,6 +6,7 @@ import { tareasParaHoy } from "@/lib/planner/bandeja";
 import { calcularCarga, textoDuracion } from "@/lib/planner/carga";
 import { horaEn } from "@/lib/planner/fechas";
 import type { RutinaDelDia } from "@/lib/planner/rutinas";
+import { factoresPorTipo, textoFactor } from "@/lib/planner/tiempos";
 
 // Tarjeta de Hoy que te dice si lo que te queda por hacer cabe en el tiempo
 // que te queda hasta acostarte. El cálculo está en lib/planner/carga.ts.
@@ -20,7 +21,10 @@ export async function AvisoSobrecarga({
   agenda: Ocurrencia[];
   rutinas: RutinaDelDia[];
 }) {
-  const { atrasadas, deHoy } = tareasParaHoy(await listarTareas(false), hoy);
+  const tareas = await listarTareas(false);
+  const { atrasadas, deHoy } = tareasParaHoy(tareas, hoy);
+  // Lo que sueles tardar de verdad, aprendido de tus tareas hechas.
+  const factores = factoresPorTipo(tareas);
   const ahora = horaEn(ajustes.timezone);
   const carga = calcularCarga({
     ahora,
@@ -29,6 +33,7 @@ export async function AvisoSobrecarga({
     tareas: [...atrasadas, ...deHoy],
     agenda,
     rutinas,
+    factores,
   });
 
   if (carga.estado === "falta-hora-acostarse") {
@@ -45,7 +50,7 @@ export async function AvisoSobrecarga({
     );
   }
 
-  const { estado, apuntado, libre, diferencia, sinDuracion } = carga;
+  const { estado, apuntado, libre, diferencia, sinDuracion, ajuste } = carga;
   const tePasas = estado === "te-pasas";
 
   return (
@@ -60,10 +65,21 @@ export async function AvisoSobrecarga({
           : `Te cabe lo de hoy (te sobran ${textoDuracion(diferencia)})`}
       </p>
       <p className="text-muted">
-        Te quedan {textoDuracion(apuntado)} por hacer y{" "}
-        {textoDuracion(libre)} hasta las {ajustes.sleep_time}, sin contar
-        comidas ni descansos.
+        Te quedan {textoDuracion(apuntado)} por hacer y {textoDuracion(libre)}{" "}
+        hasta las {ajustes.sleep_time}, sin contar comidas ni descansos.
       </p>
+      {ajuste !== 0 && factores.tarea && (
+        <p className="text-muted">
+          Ya cuenta que sueles tardar {textoFactor(factores.tarea)} (según tus
+          últimas {factores.tarea.muestras} tareas).
+        </p>
+      )}
+      {ajuste !== 0 && !factores.tarea && factores.entrega && (
+        <p className="text-muted">
+          Ya cuenta que en las entregas sueles tardar{" "}
+          {textoFactor(factores.entrega)}.
+        </p>
+      )}
       {sinDuracion.length > 0 && (
         <p className="text-muted">
           {sinDuracion.length === 1

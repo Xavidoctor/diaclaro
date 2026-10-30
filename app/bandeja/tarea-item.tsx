@@ -1,5 +1,6 @@
 import { borrarTarea, marcarTarea, papeleraTarea } from "@/app/bandeja/actions";
 import { BotonAccion } from "@/app/bandeja/boton-accion";
+import { CasillaHecha } from "@/app/bandeja/casilla-hecha";
 import { FichaTarea } from "@/app/bandeja/ficha-tarea";
 import type { Tarea } from "@/lib/data/bandeja";
 
@@ -23,20 +24,23 @@ export function TareaItem({ tarea }: { tarea: Tarea }) {
   return (
     <li className="card flex flex-col gap-2 p-4">
       <div className="flex items-start gap-3">
-        {!enPapelera && (
+        {!enPapelera && !hecha && (
+          <CasillaHecha
+            id={tarea.id}
+            titulo={tarea.title}
+            previstos={tarea.estimated_minutes}
+          />
+        )}
+        {!enPapelera && hecha && (
           <form action={marcarTarea}>
             <input type="hidden" name="id" value={tarea.id} />
-            <input type="hidden" name="hecha" value={hecha ? "no" : "si"} />
+            <input type="hidden" name="hecha" value="no" />
             <button
               type="submit"
-              aria-label={hecha ? "Marcar como pendiente" : "Marcar como hecha"}
-              className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-md border-2 ${
-                hecha
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border"
-              }`}
+              aria-label="Marcar como pendiente"
+              className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-md border-2 border-primary bg-primary text-primary-foreground"
             >
-              {hecha ? "✓" : ""}
+              ✓
             </button>
           </form>
         )}
@@ -46,11 +50,14 @@ export function TareaItem({ tarea }: { tarea: Tarea }) {
           >
             {tarea.title}
           </p>
-          {(tarea.due_date || tarea.estimated_minutes) && (
+          {(tarea.due_date ||
+            tarea.estimated_minutes ||
+            tarea.actual_minutes) && (
             <p className="text-sm text-muted">
               {[
                 tarea.due_date && verFecha(tarea.due_date),
                 tarea.estimated_minutes && `${tarea.estimated_minutes} min`,
+                tarea.actual_minutes && `tardaste ${tarea.actual_minutes} min`,
               ]
                 .filter(Boolean)
                 .join(" · ")}

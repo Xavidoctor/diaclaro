@@ -92,7 +92,9 @@ describe("calcularCarga", () => {
   it("dice que cabe cuando sobra tiempo", () => {
     const carga = calcularCarga({
       ...base,
-      tareas: [{ title: "Repasar tema 1", estimated_minutes: 60 }],
+      tareas: [
+        { title: "Repasar tema 1", kind: "tarea", estimated_minutes: 60 },
+      ],
     });
     expect(carga).toMatchObject({
       estado: "cabe",
@@ -106,7 +108,7 @@ describe("calcularCarga", () => {
     const carga = calcularCarga({
       ...base,
       ahora: "20:00",
-      tareas: [{ title: "Entrega", estimated_minutes: 150 }],
+      tareas: [{ title: "Entrega", kind: "tarea", estimated_minutes: 150 }],
       agenda: [evento("Clase", "21:00", "22:00")],
       rutinas: [rutina("Paseo", 1, 15)],
     });
@@ -121,7 +123,9 @@ describe("calcularCarga", () => {
   it("no se inventa minutos: los guarda aparte", () => {
     const carga = calcularCarga({
       ...base,
-      tareas: [{ title: "Llamar al banco", estimated_minutes: null }],
+      tareas: [
+        { title: "Llamar al banco", kind: "tarea", estimated_minutes: null },
+      ],
       agenda: [evento("Tutoría", null, null)],
       rutinas: [rutina("Leer", 1, null)],
     });
@@ -129,6 +133,18 @@ describe("calcularCarga", () => {
       apuntado: 0,
       sinDuracion: ["Llamar al banco", "Tutoría", "Leer"],
     });
+  });
+
+  it("corrige las tareas con lo que sueles tardar", () => {
+    const carga = calcularCarga({
+      ...base,
+      tareas: [
+        { title: "Repasar", kind: "tarea", estimated_minutes: 60 },
+        { title: "Entrega", kind: "entrega", estimated_minutes: 60 },
+      ],
+      factores: { tarea: { factor: 1.5, muestras: 5 } },
+    });
+    expect(carga).toMatchObject({ apuntado: 90 + 60, ajuste: 30 });
   });
 
   it("de la agenda solo cuenta lo que queda", () => {
