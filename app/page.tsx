@@ -106,7 +106,7 @@ export default async function HoyPage() {
         <section className="flex flex-col gap-3">
           <header className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-semibold">Agenda de hoy</h2>
-            <Link href="/agenda" className="text-sm underline">
+            <Link href="/agenda" className="enlace text-sm">
               Ver 14 días
             </Link>
           </header>
@@ -152,7 +152,7 @@ export default async function HoyPage() {
         <section className="flex flex-col gap-3">
           <header className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-semibold">Rutinas</h2>
-            <Link href="/ajustes" className="text-sm underline">
+            <Link href="/ajustes" className="enlace text-sm">
               Cambiar
             </Link>
           </header>
