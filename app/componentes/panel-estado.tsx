@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Briefcase,
   ChartColumn,
+  ChevronDown,
   ExternalLink,
   LifeBuoy,
   Moon,
@@ -16,6 +17,7 @@ import {
   Timer,
   Wallet,
   X,
+  Zap,
 } from "lucide-react";
 import {
   cargarEstado,
@@ -34,7 +36,7 @@ import {
   type Deslizamiento,
 } from "@/lib/planner/panel-estado";
 
-// Panel «Tu estado»: sale por la izquierda al deslizar el dedo a la derecha
+// Panel «Tu estado»: sale por la derecha al deslizar el dedo hacia la izquierda
 // (o al pulsar la pestaña del borde). Junta tu progreso, tu carpetero de
 // documentos, tus notas y atajos útiles.
 
@@ -155,9 +157,9 @@ export function PanelEstado() {
         onClick={abrir}
         aria-label="Abrir tu estado"
         aria-expanded={abierto}
-        className="fixed top-1/2 left-0 z-30 flex h-20 w-5 -translate-y-1/2 items-center justify-start"
+        className="fixed top-1/2 right-0 z-30 flex h-20 w-5 -translate-y-1/2 items-center justify-end"
       >
-        <span aria-hidden className="h-12 w-1.5 rounded-r-full bg-primary/40" />
+        <span aria-hidden className="h-12 w-1.5 rounded-l-full bg-primary/40" />
       </button>
 
       {/* El fondo oscuro: tocarlo cierra el panel. */}
@@ -174,8 +176,8 @@ export function PanelEstado() {
         aria-modal={abierto}
         aria-labelledby="titulo-estado"
         inert={!abierto}
-        className={`fixed inset-y-0 left-0 z-50 flex w-[88%] max-w-sm flex-col overflow-y-auto bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] shadow-xl transition-transform duration-300 ${
-          abierto ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 right-0 z-50 flex w-[88%] max-w-sm flex-col overflow-y-auto bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] shadow-xl transition-transform duration-300 ${
+          abierto ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Al pulsar cualquier enlace del panel, se cierra. */}
@@ -210,20 +212,17 @@ export function PanelEstado() {
             </p>
           )}
 
+          {/* Las notas fijadas se ven nada más abrir; lo demás, al tocarlo. */}
+          <Notas datos={datos?.notas} cargando={!datos && cargando} />
           <Progreso datos={datos?.progreso} cargando={!datos && cargando} />
           <Carpetero datos={datos?.documentos} cargando={!datos && cargando} />
-          <Notas datos={datos?.notas} cargando={!datos && cargando} />
-
-          <section aria-labelledby="atajos" className="flex flex-col gap-3">
-            <h3 id="atajos" className="text-lg font-semibold">
-              Atajos
-            </h3>
+          <Plegable Icono={Zap} titulo="Atajos">
             <ul className="grid grid-cols-2 gap-2">
               {ATAJOS.map(({ href, nombre, Icono }) => (
                 <li key={href}>
                   <Link
                     href={href}
-                    className="card flex min-h-12 items-center gap-2 p-3 text-sm font-medium"
+                    className="flex min-h-12 items-center gap-2 rounded-xl bg-secondary p-3 text-sm font-medium"
                   >
                     <Icono aria-hidden className="size-5 text-primary" />
                     {nombre}
@@ -231,7 +230,7 @@ export function PanelEstado() {
                 </li>
               ))}
             </ul>
-          </section>
+          </Plegable>
         </div>
       </div>
     </>
@@ -242,29 +241,39 @@ function Cargando() {
   return <p className="text-sm text-muted">Cargando…</p>;
 }
 
-function Titulo({
-  id,
+// Una sección cerrada: solo se ve su título hasta que la tocas.
+function Plegable({
   Icono,
+  titulo,
   children,
   href,
   enlace,
 }: {
-  id: string;
   Icono: typeof Wallet;
-  children: string;
-  href: string;
-  enlace: string;
+  titulo: string;
+  children: React.ReactNode;
+  href?: string;
+  enlace?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <h3 id={id} className="flex items-center gap-2 text-lg font-semibold">
+    <details className="group card p-0">
+      <summary className="flex min-h-14 cursor-pointer list-none items-center gap-2 px-4 text-lg font-semibold [&::-webkit-details-marker]:hidden">
         <Icono aria-hidden className="size-5 text-primary" />
+        {titulo}
+        <ChevronDown
+          aria-hidden
+          className="ml-auto size-5 text-muted transition-transform group-open:rotate-180"
+        />
+      </summary>
+      <div className="flex flex-col gap-3 px-4 pb-4">
         {children}
-      </h3>
-      <Link href={href} className="enlace text-sm">
-        {enlace}
-      </Link>
-    </div>
+        {href && enlace && (
+          <Link href={href} className="enlace self-start text-sm">
+            {enlace}
+          </Link>
+        )}
+      </div>
+    </details>
   );
 }
 
@@ -280,15 +289,12 @@ function Progreso({
   cargando: boolean;
 }) {
   return (
-    <section aria-labelledby="estado-progreso" className="flex flex-col gap-3">
-      <Titulo
-        id="estado-progreso"
-        Icono={ChartColumn}
-        href="/areas/progreso"
-        enlace="Ver más"
-      >
-        Progreso
-      </Titulo>
+    <Plegable
+      Icono={ChartColumn}
+      titulo="Progreso"
+      href="/areas/progreso"
+      enlace="Ver tu progreso completo"
+    >
       {cargando && <Cargando />}
       {datos === null && (
         <p className="text-sm text-muted">Ahora no puedo calcularlo.</p>
@@ -312,7 +318,7 @@ function Progreso({
           .
         </p>
       )}
-    </section>
+    </Plegable>
   );
 }
 
@@ -347,19 +353,16 @@ function Carpetero({
   cargando: boolean;
 }) {
   return (
-    <section aria-labelledby="estado-docs" className="flex flex-col gap-3">
-      <Titulo
-        id="estado-docs"
-        Icono={Wallet}
-        href="/documentos"
-        enlace={
-          datos?.estado === "ok" && datos.total > datos.lista.length
-            ? `Ver los ${datos.total}`
-            : "Abrir"
-        }
-      >
-        Documentos
-      </Titulo>
+    <Plegable
+      Icono={Wallet}
+      titulo="Documentos"
+      href="/documentos"
+      enlace={
+        datos?.estado === "ok" && datos.total > datos.lista.length
+          ? `Ver los ${datos.total}`
+          : "Abrir Documentos importantes"
+      }
+    >
       {cargando && <Cargando />}
       {datos?.estado === "no-disponible" && (
         <p className="text-sm text-muted">
@@ -420,10 +423,11 @@ function Carpetero({
           ))}
         </ul>
       )}
-    </section>
+    </Plegable>
   );
 }
 
+// Las últimas notas. La chincheta de arriba cambia a tus notas fijadas.
 function Notas({
   datos,
   cargando,
@@ -431,28 +435,51 @@ function Notas({
   datos: EstadoPanel["notas"] | undefined;
   cargando: boolean;
 }) {
+  const [soloFijadas, setSoloFijadas] = useState(false);
+  const lista = datos ? (soloFijadas ? datos.fijadas : datos.ultimas) : null;
   return (
     <section aria-labelledby="estado-notas" className="flex flex-col gap-3">
-      <Titulo
-        id="estado-notas"
-        Icono={StickyNote}
-        href="/bandeja"
-        enlace="Bandeja"
-      >
-        Notas
-      </Titulo>
+      <div className="flex items-center justify-between gap-2">
+        <h3
+          id="estado-notas"
+          className="flex items-center gap-2 text-lg font-semibold"
+        >
+          <StickyNote aria-hidden className="size-5 text-primary" />
+          {soloFijadas ? "Notas fijadas" : "Últimas notas"}
+        </h3>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setSoloFijadas((v) => !v)}
+            aria-pressed={soloFijadas}
+            aria-label="Ver solo las notas fijadas"
+            className={`flex size-11 items-center justify-center rounded-full ${
+              soloFijadas
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-primary"
+            }`}
+          >
+            <Pin aria-hidden className="size-5" />
+          </button>
+          <Link href="/bandeja" className="enlace px-2 text-sm">
+            Bandeja
+          </Link>
+        </div>
+      </div>
       {cargando && <Cargando />}
       {datos === null && (
         <p className="text-sm text-muted">Ahora no puedo cargar tus notas.</p>
       )}
-      {datos?.length === 0 && (
+      {lista?.length === 0 && (
         <p className="text-sm text-muted">
-          No tienes notas. Apunta lo que se te ocurra en la Bandeja.
+          {soloFijadas
+            ? "No tienes notas fijadas. En la Bandeja, fija las que quieras tener siempre a mano."
+            : "No tienes notas. Apunta lo que se te ocurra en la Bandeja."}
         </p>
       )}
-      {datos && datos.length > 0 && (
+      {lista && lista.length > 0 && (
         <ul className="flex flex-col gap-2">
-          {datos.map((n) => (
+          {lista.map((n) => (
             <li key={n.id}>
               <Link
                 href="/bandeja"

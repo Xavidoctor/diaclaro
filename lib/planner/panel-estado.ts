@@ -3,7 +3,8 @@ import {
   type DocumentoImportante,
 } from "./documentos-importantes";
 
-// Reglas del panel «Tu estado» (el menú que sale al deslizar a la derecha).
+// Reglas del panel «Tu estado» (el menú que sale al deslizar el dedo
+// de derecha a izquierda).
 // Funciones puras, con pruebas en panel-estado.test.ts.
 
 // ---- El gesto ----
@@ -22,30 +23,28 @@ function esHorizontal(d: Deslizamiento): boolean {
   return dx >= DISTANCIA_MINIMA && dy <= dx / 2;
 }
 
-// Deslizar a la derecha abre el panel. Solo cuenta si empiezas en la mitad
-// izquierda de la pantalla, para no chocar con otros gestos.
+// Deslizar de derecha a izquierda abre el panel. Solo cuenta si empiezas en
+// la mitad derecha de la pantalla, para no chocar con otros gestos.
 export function abreElPanel(d: Deslizamiento, anchoPantalla: number): boolean {
-  return d.x1 > d.x0 && d.x0 <= anchoPantalla / 2 && esHorizontal(d);
+  return d.x1 < d.x0 && d.x0 >= anchoPantalla / 2 && esHorizontal(d);
 }
 
-// Deslizar a la izquierda (estando abierto) lo cierra.
+// Deslizar de izquierda a derecha (estando abierto) lo cierra.
 export function cierraElPanel(d: Deslizamiento): boolean {
-  return d.x1 < d.x0 && esHorizontal(d);
+  return d.x1 > d.x0 && esHorizontal(d);
 }
 
 // ---- Las notas ----
 
 export type NotaCorta = { id: string; body: string; pinned: boolean };
 
-// Las notas que salen en el panel: primero las fijadas y luego las más
-// nuevas (llegan ya ordenadas de más nueva a más antigua).
-export function notasDestacadas<T extends NotaCorta>(
+// Las notas que salen en el panel: solo las fijadas, de la más nueva a la
+// más antigua (llegan ya en ese orden).
+export function notasFijadas<T extends NotaCorta>(
   notas: T[],
   cuantas: number,
 ): T[] {
-  const fijadas = notas.filter((n) => n.pinned);
-  const resto = notas.filter((n) => !n.pinned);
-  return [...fijadas, ...resto].slice(0, cuantas);
+  return notas.filter((n) => n.pinned).slice(0, cuantas);
 }
 
 // Una línea corta para enseñar la nota: la primera línea, sin pasar de `max`.

@@ -9,7 +9,7 @@ import { leerDocumentoDrive } from "@/lib/planner/documentos-importantes";
 import type { DocumentoImportante } from "@/lib/planner/documentos-importantes";
 import { hoyEn, sumarDias } from "@/lib/planner/fechas";
 import {
-  notasDestacadas,
+  notasFijadas,
   ordenarCartera,
   resumenNota,
 } from "@/lib/planner/panel-estado";
@@ -31,13 +31,16 @@ export type EstadoDocumentos =
   | { estado: "ok"; lista: DocumentoImportante[]; total: number }
   | { estado: "sin-drive" | "no-disponible" | "fallo" };
 
+export type NotaPanel = { id: string; texto: string; fijada: boolean };
+
 export type EstadoPanel = {
   progreso: EstadoProgreso | null;
-  notas: { id: string; texto: string; fijada: boolean }[] | null;
+  // Las últimas notas y, aparte, las fijadas (para el botón de la chincheta).
+  notas: { ultimas: NotaPanel[]; fijadas: NotaPanel[] } | null;
   documentos: EstadoDocumentos;
 };
 
-const NOTAS_EN_PANEL = 4;
+const NOTAS_EN_PANEL = 5;
 const DOCUMENTOS_EN_PANEL = 6;
 
 export async function cargarEstado(): Promise<EstadoPanel | null> {
@@ -87,11 +90,15 @@ async function notasDelPanel() {
     etiqueta: null,
     tipo: null,
   });
-  return notasDestacadas(notas, NOTAS_EN_PANEL).map((n) => ({
+  const corta = (n: (typeof notas)[number]): NotaPanel => ({
     id: n.id,
     texto: resumenNota(n.body),
     fijada: n.pinned,
-  }));
+  });
+  return {
+    ultimas: notas.slice(0, NOTAS_EN_PANEL).map(corta),
+    fijadas: notasFijadas(notas, NOTAS_EN_PANEL).map(corta),
+  };
 }
 
 async function documentosDelPanel(): Promise<EstadoDocumentos> {

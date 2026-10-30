@@ -3,7 +3,7 @@ import type { DocumentoImportante } from "./documentos-importantes";
 import {
   abreElPanel,
   cierraElPanel,
-  notasDestacadas,
+  notasFijadas,
   ordenarCartera,
   resumenNota,
 } from "./panel-estado";
@@ -11,55 +11,55 @@ import {
 describe("el gesto de deslizar", () => {
   const ancho = 400;
 
-  it("abre al deslizar a la derecha desde la mitad izquierda", () => {
-    expect(abreElPanel({ x0: 20, y0: 300, x1: 160, y1: 320 }, ancho)).toBe(
+  it("abre al deslizar de derecha a izquierda desde la mitad derecha", () => {
+    expect(abreElPanel({ x0: 380, y0: 300, x1: 240, y1: 320 }, ancho)).toBe(
       true,
     );
   });
 
   it("no abre si el dedo se mueve poco", () => {
-    expect(abreElPanel({ x0: 20, y0: 300, x1: 60, y1: 300 }, ancho)).toBe(
+    expect(abreElPanel({ x0: 380, y0: 300, x1: 340, y1: 300 }, ancho)).toBe(
       false,
     );
   });
 
   it("no abre al bajar por la pantalla aunque se tuerza un poco", () => {
-    expect(abreElPanel({ x0: 20, y0: 100, x1: 110, y1: 400 }, ancho)).toBe(
+    expect(abreElPanel({ x0: 380, y0: 100, x1: 290, y1: 400 }, ancho)).toBe(
       false,
     );
   });
 
-  it("no abre si empiezas en la mitad derecha", () => {
-    expect(abreElPanel({ x0: 260, y0: 300, x1: 390, y1: 300 }, ancho)).toBe(
+  it("no abre si empiezas en la mitad izquierda", () => {
+    expect(abreElPanel({ x0: 140, y0: 300, x1: 10, y1: 300 }, ancho)).toBe(
       false,
     );
   });
 
-  it("no abre al deslizar a la izquierda", () => {
-    expect(abreElPanel({ x0: 180, y0: 300, x1: 20, y1: 300 }, ancho)).toBe(
+  it("no abre al deslizar de izquierda a derecha", () => {
+    expect(abreElPanel({ x0: 220, y0: 300, x1: 380, y1: 300 }, ancho)).toBe(
       false,
     );
   });
 
-  it("cierra al deslizar a la izquierda", () => {
-    expect(cierraElPanel({ x0: 300, y0: 300, x1: 100, y1: 310 })).toBe(true);
-    expect(cierraElPanel({ x0: 100, y0: 300, x1: 300, y1: 310 })).toBe(false);
+  it("cierra al deslizar de izquierda a derecha", () => {
+    expect(cierraElPanel({ x0: 100, y0: 300, x1: 300, y1: 310 })).toBe(true);
+    expect(cierraElPanel({ x0: 300, y0: 300, x1: 100, y1: 310 })).toBe(false);
   });
 });
 
-describe("notasDestacadas", () => {
+describe("notasFijadas", () => {
   const notas = [
     { id: "a", body: "nueva", pinned: false },
     { id: "b", body: "fijada", pinned: true },
-    { id: "c", body: "vieja", pinned: false },
+    { id: "c", body: "otra fijada", pinned: true },
   ];
 
-  it("pone primero las fijadas y luego las más nuevas", () => {
-    expect(notasDestacadas(notas, 3).map((n) => n.id)).toEqual(["b", "a", "c"]);
+  it("solo deja las fijadas, en el mismo orden", () => {
+    expect(notasFijadas(notas, 5).map((n) => n.id)).toEqual(["b", "c"]);
   });
 
   it("no pasa del número pedido", () => {
-    expect(notasDestacadas(notas, 2)).toHaveLength(2);
+    expect(notasFijadas(notas, 1)).toHaveLength(1);
   });
 });
 
