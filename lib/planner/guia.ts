@@ -38,7 +38,7 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
     titulo: "Apuntar algo rápido",
     resumen: "Para sacar una idea de la cabeza en segundos.",
     pasos: [
-      "Escribe en el cuadro «Apunta algo» de Hoy y pulsa Enter. Se guarda en la Bandeja.",
+      "Escribe en el cuadro «Apunta algo» de Hoy y pulsa Enter. Se guarda en Notas (o en Tareas, si eliges tarea).",
       "Escribe #algo (por ejemplo #ade) para ponerle una etiqueta.",
       "Si no tienes conexión, se guarda en el móvil y se envía sola cuando vuelve la red.",
     ],
@@ -46,14 +46,15 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
   },
   {
     id: "bandeja",
-    titulo: "Bandeja",
-    resumen: "Todo lo que apuntas, separado en Notas y Tareas.",
+    titulo: "Tareas y Notas",
+    resumen:
+      "Todo lo que apuntas. Cada una tiene su botón en el menú de abajo.",
     pasos: [
-      "En la pestaña Notas puedes buscar, filtrar por etiqueta, fijar arriba lo importante y archivar lo que ya no necesitas.",
-      "En la pestaña Tareas toca una tarea para ponerle fecha, importancia, minutos y proyecto. Cuanto más completes, mejor te ordena el plan.",
+      "En Notas puedes buscar, filtrar por etiqueta, fijar arriba lo importante y archivar lo que ya no necesitas.",
+      "En Tareas toca una tarea para ponerle fecha, importancia, minutos y proyecto. Cuanto más completes, mejor te ordena el plan.",
       "Si tienes la cabeza llena, pulsa «¿Mucho en la cabeza? Ordénalo con IA»: escribes todo de golpe y te propone tareas, citas y notas. Tú eliges qué se guarda.",
     ],
-    enlace: { href: "/bandeja", texto: "Ir a la Bandeja" },
+    enlace: { href: "/bandeja?pestana=tareas", texto: "Ir a Tareas" },
   },
   {
     id: "agenda",

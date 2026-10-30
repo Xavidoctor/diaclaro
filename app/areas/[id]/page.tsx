@@ -112,8 +112,8 @@ export default async function AreaPage({ params }: PageProps<"/areas/[id]">) {
               </summary>
               <p className="mt-2 text-muted">
                 Se borran también todos sus proyectos (sus tareas se quedan en
-                la Bandeja, sin proyecto). Si solo quieres dejarla de lado,
-                mejor archívala.
+                Tareas, sin proyecto). Si solo quieres dejarla de lado, mejor
+                archívala.
               </p>
               <button type="submit" className="mt-2 text-danger underline">
                 Sí, borrarla

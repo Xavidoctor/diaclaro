@@ -20,7 +20,7 @@ export default async function OrdenarPage() {
   return (
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-        <EnlaceVolver href="/bandeja">Bandeja</EnlaceVolver>
+        <EnlaceVolver href="/bandeja">Notas</EnlaceVolver>
         <header className="flex flex-col gap-1">
           <h1 className="text-3xl font-semibold tracking-tight">
             Ordenar con IA

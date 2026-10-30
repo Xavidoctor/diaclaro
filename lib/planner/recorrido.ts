@@ -25,7 +25,7 @@ export const PASOS: PasoRecorrido[] = [
     objetivo: "captura",
     titulo: "Apunta lo que sea",
     texto:
-      "Escribe aquí lo que se te pase por la cabeza y pulsa Enter. Se guarda en la Bandeja y ya lo ordenarás después.",
+      "Escribe aquí lo que se te pase por la cabeza y pulsa Enter. Se guarda en Notas y ya lo ordenarás después.",
   },
   {
     ruta: "/",
@@ -43,17 +43,17 @@ export const PASOS: PasoRecorrido[] = [
   },
   {
     ruta: "/",
-    objetivo: "menu-bandeja",
-    titulo: "Abre la Bandeja",
-    texto: "Toca «Bandeja» en el menú de abajo.",
+    objetivo: "menu-notas",
+    titulo: "Abre tus notas",
+    texto: "Toca «Notas» en el menú de abajo.",
     ir: "/bandeja",
   },
   {
     ruta: "/bandeja",
-    objetivo: "pestanas",
-    titulo: "Notas y tareas",
+    objetivo: "menu-tareas",
+    titulo: "Notas y Tareas",
     texto:
-      "Todo lo que apuntas acaba aquí. En Tareas, toca una para ponerle fecha, importancia y minutos.",
+      "Aquí están tus notas. Tus tareas están en «Tareas»: toca una para ponerle fecha, importancia y minutos.",
   },
   {
     ruta: "/bandeja",
@@ -71,20 +71,6 @@ export const PASOS: PasoRecorrido[] = [
   },
   {
     ruta: "/agenda",
-    objetivo: "menu-areas",
-    titulo: "Abre Áreas",
-    texto: "Toca «Áreas» en el menú de abajo.",
-    ir: "/areas",
-  },
-  {
-    ruta: "/areas",
-    objetivo: "areas-anadir",
-    titulo: "Las partes de tu vida",
-    texto:
-      "Crea áreas como Estudios o Empleo, con sus proyectos dentro. Si quieres, ponles las horas de cada semana.",
-  },
-  {
-    ruta: "/areas",
     objetivo: "menu-hoy",
     titulo: "Vuelve a Hoy",
     texto: "Toca «Hoy» en el menú de abajo.",
@@ -92,10 +78,10 @@ export const PASOS: PasoRecorrido[] = [
   },
   {
     ruta: "/",
-    objetivo: "ajustes",
-    titulo: "Ajustes y ayuda",
+    objetivo: "panel-estado",
+    titulo: "Tu estado, perfil y ajustes",
     texto:
-      "Aquí pones tus horas de levantarte y acostarte. Y desde aquí puedes repetir este recorrido o leer la guía. ¡Listo!",
+      "Desliza el dedo desde la derecha (o toca esta pestaña). Ahí tienes tus Áreas, tus notas, tu perfil (la carita) y Ajustes (el engranaje), desde donde puedes repetir este recorrido. ¡Listo!",
   },
 ];
 

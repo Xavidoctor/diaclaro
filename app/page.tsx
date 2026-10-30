@@ -1,11 +1,6 @@
 import Link from "next/link";
-import { LogOut, Settings } from "lucide-react";
 import { redirect } from "next/navigation";
-import {
-  cerrarSesion,
-  deshacerRutinaHecha,
-  marcarRutinaHecha,
-} from "@/app/actions";
+import { deshacerRutinaHecha, marcarRutinaHecha } from "@/app/actions";
 import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { AvisoGoogle, EtiquetaGoogle } from "@/app/componentes/aviso-google";
@@ -24,6 +19,7 @@ import { SaludoLocal } from "@/app/saludo-local";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerInicio } from "@/lib/data/inicio-dia";
+import { leerPerfil } from "@/lib/data/perfil";
 import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
 import { ocurrenciasEntre, textoHora } from "@/lib/planner/agenda";
 import { hoyEn } from "@/lib/planner/fechas";
@@ -45,13 +41,15 @@ export default async function HoyPage() {
   const ajustes = await leerAjustes();
   const { timezone } = ajustes;
   const hoy = hoyEn(timezone);
-  const [eventos, rutinas, registros, inicio, google] = await Promise.all([
-    listarEventosHasta(hoy),
-    listarRutinas(),
-    listarRegistrosDelDia(hoy),
-    leerInicio(hoy),
-    cargarAgendaGoogle(hoy, hoy, timezone),
-  ]);
+  const [eventos, rutinas, registros, inicio, google, perfil] =
+    await Promise.all([
+      listarEventosHasta(hoy),
+      listarRutinas(),
+      listarRegistrosDelDia(hoy),
+      leerInicio(hoy),
+      cargarAgendaGoogle(hoy, hoy, timezone),
+      leerPerfil(),
+    ]);
   // Si has pulsado "Empiezo el día", el día cuenta desde esa hora.
   const ajustesHoy = ajustesDelDia(ajustes, inicio);
   const excepciones = await listarExcepciones(eventos.map((e) => e.id));
@@ -65,29 +63,11 @@ export default async function HoyPage() {
   return (
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-6 py-10">
-        <header className="flex items-start justify-between gap-4">
+        {/* Ajustes, tu perfil y salir están en el panel «Tu estado» (derecha). */}
+        <header>
           <h1 className="text-3xl font-semibold tracking-tight">
-            <SaludoLocal />
+            <SaludoLocal nombre={perfil.display_name} />
           </h1>
-          <div className="flex text-muted">
-            <Link
-              href="/ajustes"
-              aria-label="Ajustes"
-              data-guia="ajustes"
-              className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
-            >
-              <Settings aria-hidden className="size-5" />
-            </Link>
-            <form action={cerrarSesion}>
-              <button
-                type="submit"
-                aria-label="Salir"
-                className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
-              >
-                <LogOut aria-hidden className="size-5" />
-              </button>
-            </form>
-          </div>
         </header>
 
         <AyudaPantalla seccion="hoy" />

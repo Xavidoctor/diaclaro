@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { CalendarDays, Inbox, LayoutGrid, Sun } from "lucide-react";
+import { CalendarDays, ListChecks, StickyNote, Sun } from "lucide-react";
 import { PanelEstado } from "@/app/componentes/panel-estado";
 
-// Menú de abajo: Hoy, Agenda, Bandeja y Áreas, cada una con su icono.
+// Menú de abajo: Hoy, Agenda, Tareas y Notas, cada una con su icono.
+// Tareas y Notas son las dos pestañas de la Bandeja. Áreas está en el panel
+// «Tu estado» (desliza desde la derecha).
 // "guia" es lo que ilumina el recorrido de bienvenida.
 const SECCIONES = [
   { href: "/", nombre: "Hoy", guia: "menu-hoy", Icono: Sun },
@@ -12,11 +14,17 @@ const SECCIONES = [
     guia: "menu-agenda",
     Icono: CalendarDays,
   },
-  { href: "/bandeja", nombre: "Bandeja", guia: "menu-bandeja", Icono: Inbox },
-  { href: "/areas", nombre: "Áreas", guia: "menu-areas", Icono: LayoutGrid },
+  {
+    href: "/bandeja?pestana=tareas",
+    nombre: "Tareas",
+    guia: "menu-tareas",
+    Icono: ListChecks,
+  },
+  { href: "/bandeja", nombre: "Notas", guia: "menu-notas", Icono: StickyNote },
 ] as const;
 
 // "actual" marca la sección en la que estás (en Ajustes no se marca ninguna).
+// En la Bandeja, "/bandeja" es Notas y "/bandeja?pestana=tareas" es Tareas.
 export function BarraInferior({ actual }: { actual: string }) {
   return (
     <nav

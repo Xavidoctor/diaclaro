@@ -109,7 +109,7 @@ export async function interpretarCambio(
       intento,
       texto,
       error:
-        "La IA no ha respondido bien. Prueba otra vez o cámbialo a mano en la Agenda o la Bandeja.",
+        "La IA no ha respondido bien. Prueba otra vez o cámbialo a mano en la Agenda o en Tareas.",
     };
   if (r.cambios.length === 0)
     return {

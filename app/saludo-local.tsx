@@ -2,12 +2,14 @@
 
 import { useSyncExternalStore } from "react";
 import { saludo } from "@/lib/saludo";
+import { saludoConNombre } from "@/lib/planner/perfil";
 
 // La hora se lee en el navegador para usar la zona horaria del móvil u ordenador,
 // no la del servidor. Mientras carga en el servidor, se deja el hueco vacío.
 const suscribir = () => () => {};
 
-export function SaludoLocal() {
+// Con nombre: «Buenas tardes, Xavi». Sin nombre: solo «Buenas tardes».
+export function SaludoLocal({ nombre = null }: { nombre?: string | null }) {
   const enNavegador = useSyncExternalStore(
     suscribir,
     () => true,
@@ -27,7 +29,7 @@ export function SaludoLocal() {
       <span className="block text-xs font-semibold uppercase tracking-wider text-muted">
         {dia}
       </span>
-      {saludo(ahora.getHours())}
+      {saludoConNombre(saludo(ahora.getHours()), nombre)}
     </>
   );
 }

@@ -4,7 +4,9 @@ import { ChevronDown, ChevronRight, ChevronUp, Plus } from "lucide-react";
 import { crearSugeridas, moverArea } from "@/app/areas/actions";
 import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { leerAjustes } from "@/lib/data/ajustes";
 import { contarProyectosPorArea, listarAreas } from "@/lib/data/areas";
+import { cargarResumenSemana } from "@/lib/data/resumen-semana";
 import {
   AREAS_SUGERIDAS,
   resumenSemana,
@@ -12,15 +14,29 @@ import {
   textoPresupuesto,
   type Area,
 } from "@/lib/planner/areas";
+import { lunesDe } from "@/lib/planner/candidaturas";
+import { hoyEn } from "@/lib/planner/fechas";
+import {
+  porcentaje,
+  textoFila,
+  type FilaArea,
+} from "@/lib/planner/resumen-semana";
 
 export const metadata: Metadata = { title: "Áreas" };
 
 // Áreas: las grandes partes de tu vida, con sus proyectos y sus horas.
 export default async function AreasPage() {
-  const [areas, proyectos] = await Promise.all([
+  const { timezone } = await leerAjustes();
+  const [areas, proyectos, estaSemana] = await Promise.all([
     listarAreas(),
     contarProyectosPorArea(),
+    // Lo que llevas esta semana en cada área. Si falla, la lista sale igual.
+    cargarResumenSemana(lunesDe(hoyEn(timezone)), timezone).catch((error) => {
+      console.error(error);
+      return null;
+    }),
   ]);
+  const filas = new Map(estaSemana?.filas.map((f) => [f.area.id, f]));
   const activas = areas.filter((a) => !a.archived_at);
   const archivadas = areas.filter((a) => a.archived_at);
   const semana = resumenSemana(areas);
@@ -113,7 +129,12 @@ export default async function AreasPage() {
                 className="size-5 shrink-0 text-muted"
               />
             </Link>
-            <ListaAreas areas={activas} proyectos={proyectos} ordenable />
+            <ListaAreas
+              areas={activas}
+              proyectos={proyectos}
+              filas={filas}
+              ordenable
+            />
             {archivadas.length > 0 && (
               <details>
                 <summary className="cursor-pointer text-sm text-muted">
@@ -135,16 +156,19 @@ export default async function AreasPage() {
 function ListaAreas({
   areas,
   proyectos,
+  filas,
   ordenable,
 }: {
   areas: Area[];
   proyectos: Map<string, number>;
+  filas?: Map<string, FilaArea>;
   ordenable?: boolean;
 }) {
   return (
     <ul className="flex flex-col gap-2">
       {areas.map((a, i) => {
         const n = proyectos.get(a.id) ?? 0;
+        const fila = filas?.get(a.id);
         return (
           <li
             key={a.id}
@@ -159,6 +183,8 @@ function ListaAreas({
                 {textoPresupuesto(a)} ·{" "}
                 {n === 1 ? "1 proyecto" : `${n} proyectos`}
               </span>
+              {/* Tu progreso de esta semana en el área, en pequeño. */}
+              {fila && <ProgresoArea fila={fila} />}
             </Link>
             {ordenable && (
               <div className="flex flex-col">
@@ -202,5 +228,26 @@ function BotonMover({
         <Icono aria-hidden className="size-5" />
       </button>
     </form>
+  );
+}
+
+// Una barra fina con lo que llevas esta semana frente a sus horas.
+function ProgresoArea({ fila }: { fila: FilaArea }) {
+  const presupuesto = fila.area.weekly_minutes;
+  return (
+    <span className="flex flex-col gap-1 pt-1">
+      {presupuesto ? (
+        <span
+          aria-hidden
+          className="h-1.5 overflow-hidden rounded-full bg-secondary"
+        >
+          <span
+            className="block h-full rounded-full bg-primary"
+            style={{ width: `${porcentaje(fila.total, presupuesto)}%` }}
+          />
+        </span>
+      ) : null}
+      <span className="text-xs text-muted">Esta semana: {textoFila(fila)}</span>
+    </span>
   );
 }

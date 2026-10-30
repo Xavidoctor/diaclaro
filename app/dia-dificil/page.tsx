@@ -166,7 +166,7 @@ async function Propuesta({ motivo }: { motivo: Motivo }) {
           </form>
           <p className="text-sm text-muted">
             ¿Prefieres otra cosa? Acepta solo lo que quieras, o cambia la tarea
-            desde su ficha en la Bandeja.
+            desde su ficha en Tareas.
           </p>
         </section>
       ) : (

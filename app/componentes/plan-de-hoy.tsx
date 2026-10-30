@@ -31,7 +31,7 @@ export async function PlanDeHoy({ hoy }: { hoy: string }) {
         <p className="text-muted">
           No tienes tareas para hoy. Ponle la fecha de hoy a alguna en la{" "}
           <Link href="/bandeja?pestana=tareas" className="enlace">
-            Bandeja
+            Tareas
           </Link>{" "}
           y aquí verás por cuál empezar.
         </p>

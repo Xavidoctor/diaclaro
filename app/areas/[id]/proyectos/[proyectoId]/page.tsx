@@ -106,8 +106,8 @@ export default async function ProyectoPage({
         <h2 className="text-lg font-semibold">Notas</h2>
         {notas.length === 0 ? (
           <p className="text-sm text-muted">
-            Aún no hay notas aquí. En la Bandeja, abre «Editar» en una nota y
-            elige este proyecto.
+            Aún no hay notas aquí. En Notas, abre «Editar» en una nota y elige
+            este proyecto.
           </p>
         ) : (
           <>
@@ -161,7 +161,7 @@ export default async function ProyectoPage({
           <details>
             <summary className="cursor-pointer text-danger">Borrar</summary>
             <p className="mt-2 text-muted">
-              Sus tareas no se borran: se quedan en la Bandeja, sin proyecto.
+              Sus tareas no se borran: se quedan en Tareas, sin proyecto.
             </p>
             <button type="submit" className="mt-2 text-danger underline">
               Sí, borrarlo

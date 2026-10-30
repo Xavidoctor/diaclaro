@@ -30,9 +30,10 @@ import {
   limpiarEtiqueta,
 } from "@/lib/planner/etiquetas";
 
-export const metadata: Metadata = { title: "Bandeja" };
+export const metadata: Metadata = { title: "Tareas y notas" };
 
-// La Bandeja: todo lo que apuntas, en dos pestañas (Notas y Tareas).
+// Tareas y Notas: todo lo que apuntas. Cada una tiene su botón en el menú de
+// abajo, así que la pantalla enseña solo una de las dos.
 // Lo que se ve depende de la dirección: /bandeja?pestana=tareas, ?ver=archivo, ?q=texto,
 // ?etiqueta=ade, ?tipo=idea…
 export default async function BandejaPage({
@@ -53,22 +54,11 @@ export default async function BandejaPage({
   return (
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-        <h1 className="text-3xl font-semibold tracking-tight">Bandeja</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {pestana === "tareas" ? "Tareas" : "Notas"}
+        </h1>
 
         <AyudaPantalla seccion="bandeja" />
-
-        <nav
-          aria-label="Pestañas"
-          data-guia="pestanas"
-          className="flex gap-1 rounded-2xl bg-secondary p-1"
-        >
-          <Pestana href="/bandeja" activa={pestana === "notas"}>
-            Notas
-          </Pestana>
-          <Pestana href="/bandeja?pestana=tareas" activa={pestana === "tareas"}>
-            Tareas
-          </Pestana>
-        </nav>
 
         {pestana === "notas" ? (
           <PestanaNotas ver={ver} filtros={filtros} />
@@ -76,7 +66,9 @@ export default async function BandejaPage({
           <PestanaTareas papelera={ver === "papelera"} />
         )}
       </main>
-      <BarraInferior actual="/bandeja" />
+      <BarraInferior
+        actual={pestana === "tareas" ? "/bandeja?pestana=tareas" : "/bandeja"}
+      />
     </>
   );
 }
@@ -184,7 +176,7 @@ async function PestanaNotas({
         className="flex items-center gap-1 text-sm"
       >
         <Filtro href="/bandeja" activo={ver === "activas"}>
-          Bandeja
+          Notas
         </Filtro>
         <Filtro href="/bandeja?ver=archivo" activo={ver === "archivo"}>
           Archivo
@@ -311,28 +303,6 @@ function Grupo({
         </ul>
       )}
     </div>
-  );
-}
-
-function Pestana({
-  href,
-  activa,
-  children,
-}: {
-  href: string;
-  activa: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={activa ? "page" : undefined}
-      className={`flex min-h-10 flex-1 items-center justify-center rounded-xl px-4 font-semibold ${
-        activa ? "bg-surface text-primary shadow-sm" : "text-muted"
-      }`}
-    >
-      {children}
-    </Link>
   );
 }
 

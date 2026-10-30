@@ -76,7 +76,7 @@ export async function interpretar(
       intento,
       texto,
       error:
-        "La IA no ha respondido bien. Prueba otra vez o apúntalo a mano en la Bandeja.",
+        "La IA no ha respondido bien. Prueba otra vez o apúntalo a mano en Tareas o Notas.",
     };
   if (propuestas.length === 0)
     return {
@@ -130,7 +130,7 @@ export async function guardarPropuestas(
   } catch {
     return {
       error:
-        "No se ha podido guardar todo. Revisa la Bandeja y la Agenda antes de repetir, por si algo ya se guardó.",
+        "No se ha podido guardar todo. Revisa Tareas, Notas y la Agenda antes de repetir, por si algo ya se guardó.",
     };
   }
   refresh();

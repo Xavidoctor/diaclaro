@@ -6,11 +6,14 @@ import {
   Briefcase,
   ChartColumn,
   ChevronDown,
+  ChevronRight,
   ExternalLink,
+  LayoutGrid,
   LifeBuoy,
   Moon,
   Pin,
   Settings,
+  Smile,
   Sprout,
   StickyNote,
   Sunrise,
@@ -50,7 +53,6 @@ const ATAJOS = [
   { href: "/dormir", nombre: "Me voy a dormir", Icono: Moon },
   { href: "/dia-dificil", nombre: "Día difícil", Icono: LifeBuoy },
   { href: "/empleo", nombre: "Empleo", Icono: Briefcase },
-  { href: "/ajustes", nombre: "Ajustes", Icono: Settings },
 ] as const;
 
 // No abrimos el panel si el dedo empieza en algo que ya usa el gesto:
@@ -157,6 +159,7 @@ export function PanelEstado() {
         onClick={abrir}
         aria-label="Abrir tu estado"
         aria-expanded={abierto}
+        data-guia="panel-estado"
         className="fixed top-1/2 right-0 z-30 flex h-20 w-5 -translate-y-1/2 items-center justify-end"
       >
         <span aria-hidden className="h-12 w-1.5 rounded-l-full bg-primary/40" />
@@ -194,16 +197,38 @@ export function PanelEstado() {
             >
               Tu estado
             </h2>
-            <button
-              ref={botonCerrar}
-              type="button"
-              onClick={cerrar}
-              aria-label="Cerrar"
-              className="flex size-11 items-center justify-center rounded-full text-muted hover:bg-secondary"
-            >
-              <X aria-hidden className="size-5" />
-            </button>
+            {/* Tu perfil, Ajustes y cerrar. */}
+            <div className="flex items-center text-muted">
+              <Link
+                href="/perfil"
+                aria-label="Tu perfil"
+                className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
+              >
+                <Smile aria-hidden className="size-5" />
+              </Link>
+              <Link
+                href="/ajustes"
+                aria-label="Ajustes"
+                className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
+              >
+                <Settings aria-hidden className="size-5" />
+              </Link>
+              <button
+                ref={botonCerrar}
+                type="button"
+                onClick={cerrar}
+                aria-label="Cerrar"
+                className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
+              >
+                <X aria-hidden className="size-5" />
+              </button>
+            </div>
           </header>
+
+          {/* Tu frase del perfil, si has puesto una. */}
+          {datos?.frase && (
+            <p className="-mt-3 text-sm text-muted italic">«{datos.frase}»</p>
+          )}
 
           {fallo && !cargando && (
             <p role="status" className="text-sm text-muted">
@@ -214,6 +239,16 @@ export function PanelEstado() {
 
           {/* Las notas fijadas se ven nada más abrir; lo demás, al tocarlo. */}
           <Notas datos={datos?.notas} cargando={!datos && cargando} />
+          {/* Áreas, junto a tu Progreso (antes estaba en el menú de abajo). */}
+          <Link
+            href="/areas"
+            className="card flex min-h-14 items-center gap-2 px-4 text-lg font-semibold"
+          >
+            <LayoutGrid aria-hidden className="size-5 text-primary" />
+            Áreas y proyectos
+            <ChevronRight aria-hidden className="ml-auto size-5 text-muted" />
+          </Link>
+
           <Progreso datos={datos?.progreso} cargando={!datos && cargando} />
           <Carpetero datos={datos?.documentos} cargando={!datos && cargando} />
           <Plegable Icono={Zap} titulo="Atajos">
@@ -462,7 +497,7 @@ function Notas({
             <Pin aria-hidden className="size-5" />
           </button>
           <Link href="/bandeja" className="enlace px-2 text-sm">
-            Bandeja
+            Ver todas
           </Link>
         </div>
       </div>
@@ -473,8 +508,8 @@ function Notas({
       {lista?.length === 0 && (
         <p className="text-sm text-muted">
           {soloFijadas
-            ? "No tienes notas fijadas. En la Bandeja, fija las que quieras tener siempre a mano."
-            : "No tienes notas. Apunta lo que se te ocurra en la Bandeja."}
+            ? "No tienes notas fijadas. En Notas, fija las que quieras tener siempre a mano."
+            : "No tienes notas. Apunta lo que se te ocurra en Notas."}
         </p>
       )}
       {lista && lista.length > 0 && (
