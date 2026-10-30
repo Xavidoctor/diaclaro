@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cambiarTipo, mandarAPapelera } from "@/app/documentos/actions";
+import { CopiaMovil } from "@/app/documentos/copia-movil";
 import { paseDrive } from "@/app/documentos/pase-drive";
 import { Miniatura } from "@/app/documentos/miniatura";
 import { SubirDocumento } from "@/app/documentos/subir-documento";
@@ -13,6 +14,7 @@ import {
   nombreTipo,
   type DocumentoImportante,
 } from "@/lib/planner/documentos-importantes";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Documentos importantes" };
 
@@ -41,6 +43,8 @@ export default async function DocumentosPage({
   const fallo = texto(parametros.fallo);
   const aviso = MENSAJES[texto(parametros.google)];
 
+  const supabase = await createClient();
+  const { data: sesion } = await supabase.auth.getClaims();
   const pase = await paseDrive();
   let documentos: DocumentoImportante[] | null = null;
   if (pase.ok) {
@@ -112,6 +116,19 @@ export default async function DocumentosPage({
         {pase.ok && (
           <>
             <SubirDocumento />
+
+            {documentos && sesion?.claims && (
+              <CopiaMovil
+                usuario={sesion.claims.sub}
+                documentos={documentos.map((d) => ({
+                  id: d.id,
+                  nombre: d.nombre,
+                  tipo: d.tipo,
+                  tipoNombre: nombreTipo(d.tipo),
+                  mime: d.mime,
+                }))}
+              />
+            )}
 
             {documentos && documentos.length > 0 && (
               <form className="flex flex-wrap gap-2" role="search">
