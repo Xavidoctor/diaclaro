@@ -10,6 +10,7 @@ import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
 import { CierreDeHoy } from "@/app/componentes/cierre-de-hoy";
 import { FocoDeHoy } from "@/app/componentes/foco-de-hoy";
+import { HabitosDeHoy } from "@/app/componentes/habitos-de-hoy";
 import { TareasDeHoy } from "@/app/componentes/tareas-de-hoy";
 import { SaludoLocal } from "@/app/saludo-local";
 import { leerAjustes } from "@/lib/data/ajustes";
@@ -124,6 +125,8 @@ export default async function HoyPage() {
             </ul>
           )}
         </section>
+
+        <HabitosDeHoy hoy={hoy} />
 
         <CierreDeHoy hoy={hoy} />
 

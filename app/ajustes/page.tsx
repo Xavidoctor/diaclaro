@@ -82,11 +82,24 @@ export default async function AjustesPage() {
           )}
         </section>
 
+        <section className="card flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-semibold">Hábitos</h2>
+            <p className="text-sm text-muted">
+              Opcional: apunta lo que quieras observar (tabaco, ejercicio,
+              sueño…), sin juicios. Solo salen en Hoy si añades alguno.
+            </p>
+          </div>
+          <Link href="/habitos" className="button-primary shrink-0 py-2 text-sm">
+            Abrir
+          </Link>
+        </section>
+
         <section className="card flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Copia de seguridad</h2>
           <p className="text-sm text-muted">
             Descarga un archivo con todos tus datos: notas, tareas, agenda,
-            rutinas, áreas, foco y cierres del día. Hazlo una vez a la semana y
+            rutinas, áreas, foco, cierres del día y hábitos. Hazlo una vez a la semana y
             guárdalo en un sitio seguro, por ejemplo en Google Drive.
           </p>
           {/* Un enlace normal (no Link): es una descarga, no otra pantalla. */}

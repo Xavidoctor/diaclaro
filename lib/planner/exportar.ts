@@ -16,6 +16,8 @@ export const TABLAS = [
   "routine_logs",
   "focus_sessions",
   "day_reviews",
+  "habits",
+  "habit_logs",
 ] as const;
 export type Tabla = (typeof TABLAS)[number];
 
