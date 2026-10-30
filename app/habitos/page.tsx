@@ -17,7 +17,7 @@ import {
   fraseDelDia,
   numero,
   resumenSemana,
-  textoCantidad,
+  textoHoy,
   textoMeta,
   textoRecordatorio,
   textoTendencia,
@@ -168,12 +168,7 @@ function FichaHabito({
 
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1 text-sm">
-          <span>
-            Hoy:{" "}
-            {totalHoy === null
-              ? "aún nada apuntado"
-              : textoCantidad(totalHoy, habito.unit)}
-          </span>
+          <span>{textoHoy(totalHoy, habito.unit)}</span>
           {totalHoy !== null && (
             <form action={deshacerApunte}>
               <input type="hidden" name="id" value={habito.id} />
@@ -187,6 +182,7 @@ function FichaHabito({
           id={habito.id}
           unidad={habito.unit}
           ninguno={habito.direction === "menos" && totalHoy === null}
+          hecho={totalHoy !== null && totalHoy > 0}
         />
       </div>
 
