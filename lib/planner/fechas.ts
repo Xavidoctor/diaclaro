@@ -44,3 +44,13 @@ export function esFecha(valor: string): boolean {
   const fecha = parseISO(valor);
   return isValid(fecha) && format(fecha, "yyyy-MM-dd") === valor;
 }
+
+// La hora actual en la zona indicada, como "16:05".
+export function horaEn(zona: string = ZONA_HORARIA, ahora = new Date()): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: zona,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(ahora);
+}

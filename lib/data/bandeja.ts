@@ -25,7 +25,9 @@ export type Tarea = {
   title: string;
   details: string | null;
   due_date: string | null;
+  kind: "tarea" | "entrega";
   estimated_minutes: number | null;
+  actual_minutes: number | null;
   note_id: string | null;
   project_id: string | null;
   done_at: string | null;
@@ -38,7 +40,7 @@ export type VistaNotas = "activas" | "archivo" | "papelera";
 const CAMPOS_NOTA =
   "id, body, url, kind, tags, pinned, archived_at, deleted_at, created_at, tasks(id, title, done_at)";
 const CAMPOS_TAREA =
-  "id, title, details, due_date, estimated_minutes, note_id, project_id, done_at, deleted_at, created_at";
+  "id, title, details, kind, due_date, estimated_minutes, actual_minutes, note_id, project_id, done_at, deleted_at, created_at";
 
 // Lanza un error con un mensaje claro si Supabase falla.
 function comprobar(error: { message: string } | null, que: string) {
@@ -165,6 +167,7 @@ export async function cambiarTarea(
     title: string;
     due_date: string | null;
     estimated_minutes: number | null;
+    actual_minutes: number | null;
     project_id: string | null;
     done_at: string | null;
     deleted_at: string | null;
