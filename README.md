@@ -136,6 +136,12 @@ Sirve para enlazar archivos de tu Drive a un proyecto o asignatura. Usa el permi
 3. **APIs y servicios → Credenciales → Crear credenciales → Clave de API**. Edita la clave: en **Restricciones de aplicaciones** elige **Sitios web** y añade `https://diaclaro.vercel.app/*`; en **Restricciones de API** elige solo **Google Picker API**. Guarda.
 4. En Vercel añade `GOOGLE_PICKER_API_KEY` con esa clave (Production) y vuelve a desplegar. Esta clave la ve el navegador, por eso va limitada a tu web y al selector.
 
+#### Documentos importantes
+
+En **Ajustes → Documentos importantes** (`/documentos`) puedes guardar fotos y PDF (DNI, billetes, entradas…) con un tipo y buscarlos después. Se guardan en tu Drive, en la carpeta «DíaClaro · Documentos importantes», con el mismo permiso `drive.file`. No hay que configurar nada más ni hace falta migración: DíaClaro no copia los archivos en Supabase.
+
+En Android, con la app instalada en la pantalla de inicio, sale **DíaClaro** en el menú **Compartir** de la galería y de las capturas. Si no sale, desinstala la app de la pantalla de inicio y vuelve a instalarla desde Chrome, para que el móvil lea los cambios. Por este camino el límite es de 4 MB por archivo; desde la pantalla, de 20 MB.
+
 Si algún día cambias el secreto del cliente, cada persona tendrá que volver a pulsar **Conectar con Google**.
 
 ## Seguridad

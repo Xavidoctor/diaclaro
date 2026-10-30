@@ -21,6 +21,17 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "maskable",
       },
     ],
+    // «Compartir → DíaClaro»: desde la galería o justo después de una
+    // captura, la foto se guarda en tus documentos importantes (app/compartir).
+    // Solo en Android, con la app instalada en la pantalla de inicio.
+    share_target: {
+      action: "/compartir",
+      method: "POST",
+      enctype: "multipart/form-data",
+      params: {
+        files: [{ name: "archivos", accept: ["image/*", "application/pdf"] }],
+      },
+    },
     // Atajo: mantén pulsado el icono de DíaClaro y sale «Estoy despierto».
     // Abre una pantalla con los botones Despierto y Levantado.
     shortcuts: [
