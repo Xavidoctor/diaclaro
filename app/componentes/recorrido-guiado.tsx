@@ -140,6 +140,14 @@ function PasoEnPantalla({ numero }: { numero: number }) {
     else guardar(avanzar(estado));
   }
 
+  function atras() {
+    // Si el paso anterior está en otra pantalla, vuelve también a ella.
+    const anterior = retroceder(estado);
+    guardar(anterior);
+    if (anterior.tipo === "activo" && PASOS[anterior.paso].ruta !== paso.ruta)
+      router.push(PASOS[anterior.paso].ruta);
+  }
+
   return (
     <>
       {/* El foco: un hueco con una sombra enorme alrededor que oscurece el resto.
@@ -182,7 +190,7 @@ function PasoEnPantalla({ numero }: { numero: number }) {
           {numero > 0 && (
             <button
               type="button"
-              onClick={() => guardar(retroceder(estado))}
+              onClick={atras}
               className="button-secondary py-2 text-sm"
             >
               Atrás
