@@ -17,6 +17,7 @@ import {
   juntarRangos,
   leerMesParam,
   mesDe,
+  mesInicial,
   semanasDelMes,
 } from "@/lib/planner/calendario";
 import {
@@ -38,7 +39,8 @@ const DIAS_VISTA = 3;
 // para elegir cualquier día y ver lo que tienes.
 // /agenda?desde=2026-11-09 enseña los días seguidos desde esa fecha.
 // /agenda?dia=2026-12-03 elige ese día en el calendario (y abre su mes).
-// /agenda?mes=2027-01 enseña ese mes en el calendario.
+// /agenda?mes=2027-01 enseña ese mes en el calendario. Sin nada, se abre
+// el mes de hoy (o el siguiente si estás en la última semana del mes).
 export default async function AgendaPage({
   searchParams,
 }: PageProps<"/agenda">) {
@@ -49,7 +51,10 @@ export default async function AgendaPage({
   const dias = diasDesde(desde, DIAS_VISTA);
   const elegido =
     typeof params.dia === "string" && esFecha(params.dia) ? params.dia : null;
-  const mes = leerMesParam(params.mes, mesDe(elegido ?? hoy));
+  const mes = leerMesParam(
+    params.mes,
+    elegido ? mesDe(elegido) : mesInicial(hoy),
+  );
   const diasDelMes = semanasDelMes(mes).flat();
 
   // Se cargan solo los días que se ven: los de arriba, el mes y el elegido.
