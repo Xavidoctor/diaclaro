@@ -33,6 +33,8 @@ export type Habito = {
   routine_id: string | null;
   // Hora del recordatorio ("21:00"), solo si tú la pones. null = sin recordatorio.
   remind_at: string | null;
+  // Tus frases para motivarte (las tuyas y las ideas de la IA que guardaste).
+  phrases: string[];
   active: boolean;
 };
 
@@ -300,10 +302,46 @@ export function pendientesALaHora<T extends Pick<Habito, "remind_at">>(
 }
 
 // "Recordatorio a las 21:00", o null si no tiene.
-export function textoRecordatorio(
-  h: Pick<Habito, "remind_at">,
-): string | null {
+export function textoRecordatorio(h: Pick<Habito, "remind_at">): string | null {
   return h.remind_at ? `Recordatorio a las ${horaCorta(h.remind_at)}` : null;
+}
+
+// ---- Frases para motivarte ----
+// Las escribes tú o eliges ideas de la IA. Salen en los avisos (una al azar)
+// y en la pantalla de Hábitos (una cada día).
+
+export const MAX_FRASES = 20;
+export const MAX_LARGO_FRASE = 200;
+
+// La frase de hoy: cambia cada día, pero no cada vez que recargas.
+export function fraseDelDia(frases: string[], fecha: string): string | null {
+  if (frases.length === 0) return null;
+  const dia = Math.floor(Date.parse(`${fecha}T00:00:00Z`) / 86_400_000);
+  return frases[((dia % frases.length) + frases.length) % frases.length];
+}
+
+// Añade una frase si cabe y no está ya (sin fijarse en mayúsculas).
+export function anadirFrase(
+  frases: string[],
+  nueva: unknown,
+): Resultado<string[]> {
+  const texto =
+    typeof nueva === "string" ? nueva.trim().replace(/\s+/g, " ") : "";
+  if (!texto) return { ok: false, error: "Escribe la frase." };
+  if (texto.length > MAX_LARGO_FRASE)
+    return { ok: false, error: `Como mucho ${MAX_LARGO_FRASE} caracteres.` };
+  if (frases.some((f) => f.toLowerCase() === texto.toLowerCase()))
+    return { ok: false, error: "Esa frase ya la tienes." };
+  if (frases.length >= MAX_FRASES)
+    return {
+      ok: false,
+      error: `Como mucho ${MAX_FRASES} frases. Quita alguna antes.`,
+    };
+  return { ok: true, valor: [...frases, texto] };
+}
+
+export function quitarFrase(frases: string[], frase: unknown): string[] {
+  return frases.filter((f) => f !== frase);
 }
 
 // ---- Formularios ----
@@ -355,7 +393,8 @@ const esquemaHabito = z
       ctx.addIssue({ code: "custom", message: "Marca qué días toca." });
   });
 
-export type DatosHabito = Omit<Habito, "id" | "active">;
+// Las frases se cambian aparte (no van en el formulario del hábito).
+export type DatosHabito = Omit<Habito, "id" | "active" | "phrases">;
 
 export function prepararHabito(datos: {
   title: unknown;

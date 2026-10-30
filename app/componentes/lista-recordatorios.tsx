@@ -13,7 +13,7 @@ import {
 export type HabitoARecordar = Pick<
   Habito,
   "id" | "title" | "unit" | "direction" | "remind_at"
->;
+> & { frase: string | null };
 
 // ---- La hora, en tu zona horaria, que se pone al día cada 30 segundos ----
 function relojCadaRato(avisar: () => void) {
@@ -98,6 +98,7 @@ export function ListaRecordatorios({
               <Bell aria-hidden className="mt-0.5 size-5 shrink-0 text-muted" />
               <div className="flex flex-1 flex-col gap-1">
                 <span className="break-words font-medium">{h.title}</span>
+                {h.frase && <span className="text-sm italic">{h.frase}</span>}
                 <span className="text-sm text-muted">
                   Recordatorio de las {horaCorta(h.remind_at as string)}. Hoy
                   aún no has apuntado nada. ¿Lo apuntas?
