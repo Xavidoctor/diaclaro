@@ -1,6 +1,12 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { Candidatura, DatosCandidatura } from "@/lib/planner/candidaturas";
+import {
+  ordenarHistorial,
+  type Candidatura,
+  type DatosCandidatura,
+  type DatosEntrada,
+  type EntradaHistorial,
+} from "@/lib/planner/candidaturas";
 
 // Única parte de las Candidaturas de empleo que habla con Supabase.
 // Las reglas RLS ya hacen que cada persona solo vea lo suyo.
@@ -78,4 +84,37 @@ export async function borrarCandidatura(id: string) {
     .delete()
     .eq("id", id);
   comprobar(error, "borrar la candidatura");
+}
+
+// ---- Historial ----
+
+export async function listarHistorial(applicationId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("job_application_events")
+    .select("id, application_id, on_date, kind, status, note, created_at")
+    .eq("application_id", applicationId)
+    .limit(300);
+  comprobar(error, "cargar el historial");
+  return ordenarHistorial((data ?? []) as EntradaHistorial[]);
+}
+
+export async function anadirAlHistorial(
+  applicationId: string,
+  entrada: DatosEntrada,
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("job_application_events")
+    .insert({ ...entrada, application_id: applicationId });
+  comprobar(error, "guardar en el historial");
+}
+
+export async function borrarDelHistorial(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("job_application_events")
+    .delete()
+    .eq("id", id);
+  comprobar(error, "borrar del historial");
 }
