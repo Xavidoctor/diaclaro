@@ -101,6 +101,9 @@ export function calcularCarga(entrada: EntradaCarga): Carga {
   }
 
   for (const o of agenda) {
+    // De Google no cuenta lo marcado como «Disponible» ni lo de todo el día
+    // (suelen ser cumpleaños, festivos o recordatorios, no tiempo ocupado).
+    if (o.google && (o.google.libre || !o.horaInicio)) continue;
     const minutos = minutosEvento(o, actual);
     if (minutos === null) sinDuracion.push(o.titulo);
     else apuntado += minutos;
