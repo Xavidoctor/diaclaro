@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
-import { AvisoGoogle, EtiquetaGoogle } from "@/app/componentes/aviso-google";
+import { EventoGoogle } from "@/app/agenda/evento-google";
+import { AvisoGoogle } from "@/app/componentes/aviso-google";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
+import { tareasDesdeGoogle } from "@/lib/data/google";
 import {
   agruparPorDia,
   leerFechaParam,
@@ -12,7 +14,7 @@ import {
   textoHora,
 } from "@/lib/planner/agenda";
 import { diasDesde, hoyEn, nombreDia, sumarDias } from "@/lib/planner/fechas";
-import { juntarAgendas } from "@/lib/planner/google-calendar";
+import { claveGoogle, juntarAgendas } from "@/lib/planner/google-calendar";
 import { ChevronLeft, ChevronRight, Plus, Repeat } from "lucide-react";
 
 export const metadata: Metadata = { title: "Agenda" };
@@ -36,6 +38,15 @@ export default async function AgendaPage({
     cargarAgendaGoogle(desde, hasta, timezone),
   ]);
   const excepciones = await listarExcepciones(eventos.map((e) => e.id));
+  // Las tareas que ya creaste desde eventos de Google. Si falla (por ejemplo,
+  // porque falta aplicar la migración), solo se esconden los botones.
+  const importadas =
+    google.estado === "conectado"
+      ? await tareasDesdeGoogle(desde, hasta).catch((error) => {
+          console.error(error);
+          return null;
+        })
+      : null;
   const porDia = agruparPorDia(
     juntarAgendas(
       ocurrenciasEntre(eventos, excepciones, desde, hasta),
@@ -117,14 +128,11 @@ export default async function AgendaPage({
                   {ocurrencias.map((o) => (
                     <li key={`${o.eventoId}|${o.fechaOriginal}`}>
                       {o.google ? (
-                        // Lo de Google solo se ve: se cambia en Google Calendar.
-                        <div className="card flex items-baseline gap-3 p-4">
-                          <span className="w-28 shrink-0 text-sm text-muted">
-                            {textoHora(o)}
-                          </span>
-                          <span className="flex-1 break-words">{o.titulo}</span>
-                          <EtiquetaGoogle libre={o.google.libre} />
-                        </div>
+                        <EventoGoogle
+                          o={o}
+                          tareaId={importadas?.get(claveGoogle(o))}
+                          puedeImportar={importadas !== null}
+                        />
                       ) : (
                         <Link
                           href={`/agenda/${o.eventoId}?dia=${o.fechaOriginal}`}

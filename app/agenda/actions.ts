@@ -16,6 +16,8 @@ import {
   tocaEseDia,
 } from "@/lib/planner/agenda";
 import { esFecha } from "@/lib/planner/fechas";
+import { tareaDesdeGoogle } from "@/lib/planner/google-calendar";
+import { crearTareaDesdeGoogle } from "@/lib/data/google";
 import { createClient } from "@/lib/supabase/server";
 
 // Acciones de la Agenda. Se ejecutan en el servidor al pulsar un botón,
@@ -162,4 +164,23 @@ export async function moverDia(
   }
   refresh();
   return { guardado: true };
+}
+
+// ---- Eventos de Google Calendar ----
+
+// Pasa un evento de Google a tus tareas (en Google no cambia nada).
+// Con destino "foco", después te lleva al temporizador con esa tarea.
+export async function importarDeGoogle(formData: FormData) {
+  await exigirSesion();
+  const r = tareaDesdeGoogle({
+    clave: formData.get("clave"),
+    titulo: formData.get("titulo"),
+    fecha: formData.get("fecha"),
+    inicio: formData.get("inicio"),
+    fin: formData.get("fin"),
+  });
+  if (!r.ok) throw new Error(r.error);
+  const id = await crearTareaDesdeGoogle(r.tarea);
+  if (formData.get("destino") === "foco") redirect(`/foco?tarea=${id}`);
+  refresh();
 }

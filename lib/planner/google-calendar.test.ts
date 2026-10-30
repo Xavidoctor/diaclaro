@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Ocurrencia } from "./agenda";
 import {
+  claveGoogle,
   juntarAgendas,
   ocurrenciasDeGoogle,
   SIN_TITULO,
+  tareaDesdeGoogle,
   type EventoGoogle,
 } from "./google-calendar";
 
@@ -168,5 +170,49 @@ describe("juntarAgendas", () => {
       "Dentista",
       "Tutoría",
     ]);
+  });
+});
+
+describe("tareaDesdeGoogle", () => {
+  const base = {
+    clave: "google:primary:e1|2026-10-30",
+    titulo: " Dentista ",
+    fecha: "2026-10-30",
+    inicio: "16:00",
+    fin: "17:30",
+  };
+
+  it("usa la fecha y la duración del evento", () => {
+    expect(tareaDesdeGoogle(base)).toEqual({
+      ok: true,
+      tarea: {
+        title: "Dentista",
+        due_date: "2026-10-30",
+        estimated_minutes: 90,
+        google_event: "google:primary:e1|2026-10-30",
+      },
+    });
+  });
+
+  it("sin horas, la tarea queda sin minutos (no se inventan)", () => {
+    const r = tareaDesdeGoogle({ ...base, inicio: "", fin: "" });
+    expect(r.ok && r.tarea.estimated_minutes).toBeNull();
+  });
+
+  it("hasta las 23:59 cuenta hasta medianoche", () => {
+    const r = tareaDesdeGoogle({ ...base, inicio: "22:00", fin: "23:59" });
+    expect(r.ok && r.tarea.estimated_minutes).toBe(120);
+  });
+
+  it("rechaza lo que no viene de Google o tiene una fecha rara", () => {
+    expect(tareaDesdeGoogle({ ...base, clave: "abc" }).ok).toBe(false);
+    expect(tareaDesdeGoogle({ ...base, fecha: "30/10" }).ok).toBe(false);
+    expect(tareaDesdeGoogle({ ...base, titulo: "  " }).ok).toBe(false);
+  });
+
+  it("la clave junta el evento y el día", () => {
+    expect(claveGoogle({ eventoId: "google:c:e", fecha: "2026-10-30" })).toBe(
+      "google:c:e|2026-10-30",
+    );
   });
 });
