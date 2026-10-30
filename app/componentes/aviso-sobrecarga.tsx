@@ -1,20 +1,18 @@
 import Link from "next/link";
 import { aplicarRecortes } from "@/app/componentes/acciones-recortes";
-import { cargarOpcionesProyecto } from "@/lib/data/areas";
-import { listarTareas, type Tarea } from "@/lib/data/bandeja";
+import { ExplicarConIA } from "@/app/componentes/explicar-con-ia";
+import { calcularSituacion } from "@/app/componentes/situacion-hoy";
+import { iaDisponible } from "@/lib/ai/groq";
 import type { Ocurrencia } from "@/lib/planner/agenda";
 import type { Ajustes } from "@/lib/planner/ajustes";
-import { tareasParaHoy } from "@/lib/planner/bandeja";
-import { calcularCarga, textoDuracion } from "@/lib/planner/carga";
-import { horaEn } from "@/lib/planner/fechas";
+import { textoDuracion } from "@/lib/planner/carga";
 import {
-  proponerRecortes,
   textoRecorte,
   type PropuestaRecortes,
   type Recorte,
 } from "@/lib/planner/recortes";
 import type { RutinaDelDia } from "@/lib/planner/rutinas";
-import { factoresPorTipo, textoFactor } from "@/lib/planner/tiempos";
+import { textoFactor } from "@/lib/planner/tiempos";
 
 // Tarjeta de Hoy que te dice si lo que te queda por hacer cabe en el tiempo
 // que te queda hasta acostarte. El cálculo está en lib/planner/carga.ts.
@@ -29,19 +27,11 @@ export async function AvisoSobrecarga({
   agenda: Ocurrencia[];
   rutinas: RutinaDelDia[];
 }) {
-  const tareas = await listarTareas(false);
-  const { atrasadas, deHoy } = tareasParaHoy(tareas, hoy);
-  // Lo que sueles tardar de verdad, aprendido de tus tareas hechas.
-  const factores = factoresPorTipo(tareas);
-  const ahora = horaEn(ajustes.timezone);
-  const carga = calcularCarga({
-    ahora,
-    horaLevantarse: ajustes.wake_time,
-    horaAcostarse: ajustes.sleep_time,
-    tareas: [...atrasadas, ...deHoy],
+  const { carga, factores, propuesta } = await calcularSituacion({
+    hoy,
+    ajustes,
     agenda,
     rutinas,
-    factores,
   });
 
   if (carga.estado === "falta-hora-acostarse") {
@@ -60,14 +50,6 @@ export async function AvisoSobrecarga({
 
   const { estado, apuntado, libre, diferencia, sinDuracion, ajuste } = carga;
   const tePasas = estado === "te-pasas";
-  const propuesta = tePasas
-    ? proponerRecortes(
-        await recortables([...atrasadas, ...deHoy]),
-        -diferencia,
-        hoy,
-        factores,
-      )
-    : null;
 
   return (
     <section
@@ -104,26 +86,9 @@ export async function AvisoSobrecarga({
         </p>
       )}
       {propuesta && <Recortes propuesta={propuesta} />}
+      {iaDisponible() && <ExplicarConIA />}
     </section>
   );
-}
-
-// Las tareas de hoy con lo que hace falta para decidir qué recortar:
-// si su proyecto es de un área de tiempo personal (un hobby).
-async function recortables(tareas: Tarea[]) {
-  const { areas, proyectos } = await cargarOpcionesProyecto();
-  const personales = new Set(
-    areas.filter((a) => a.personal_time).map((a) => a.id),
-  );
-  const proyectosPersonales = new Set(
-    proyectos.filter((p) => personales.has(p.area_id)).map((p) => p.id),
-  );
-  return tareas.map((t) => ({
-    ...t,
-    tiempoPersonal: Boolean(
-      t.project_id && proyectosPersonales.has(t.project_id),
-    ),
-  }));
 }
 
 // Texto que viaja en el botón: "id|aplazar|2026-10-31" o "id|acortar|45".
