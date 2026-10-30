@@ -5,14 +5,17 @@ import { BarraInferior } from "@/app/componentes/barra-inferior";
 import {
   cambiarEstado,
   eliminarCandidatura,
+  quitarDelHistorial,
   seguimientoHecho,
 } from "@/app/empleo/actions";
 import { FormCandidatura } from "@/app/empleo/form-candidatura";
+import { FormNotaHistorial } from "@/app/empleo/historial";
 import { leerAjustes } from "@/lib/data/ajustes";
-import { leerCandidatura } from "@/lib/data/candidaturas";
+import { leerCandidatura, listarHistorial } from "@/lib/data/candidaturas";
 import {
   ESTADOS,
   NOMBRE_ESTADO,
+  textoEntrada,
   textoSeguimiento,
 } from "@/lib/planner/candidaturas";
 import { fechaCorta, hoyEn } from "@/lib/planner/fechas";
@@ -24,8 +27,9 @@ export default async function CandidaturaPage({
   params,
 }: PageProps<"/empleo/[id]">) {
   const { id } = await params;
-  const [candidatura, { timezone }] = await Promise.all([
+  const [candidatura, historial, { timezone }] = await Promise.all([
     leerCandidatura(id),
+    listarHistorial(id),
     leerAjustes(),
   ]);
   if (!candidatura) notFound();
@@ -106,6 +110,40 @@ export default async function CandidaturaPage({
           </section>
         )}
 
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Historial</h2>
+          <FormNotaHistorial id={c.id} hoy={hoy} />
+          {historial.length === 0 ? (
+            <p className="text-sm text-muted">
+              Aún no hay nada. Los cambios de estado y los seguimientos hechos
+              se apuntan solos.
+            </p>
+          ) : (
+            <ol className="flex flex-col gap-2 border-l-2 border-border pl-4">
+              {historial.map((e) => (
+                <li key={e.id} className="flex items-start gap-3 text-sm">
+                  <span className="w-16 shrink-0 text-muted">
+                    {fechaCorta(e.on_date)}
+                  </span>
+                  <span className="flex-1 whitespace-pre-wrap break-words">
+                    {textoEntrada(e)}
+                  </span>
+                  <form action={quitarDelHistorial}>
+                    <input type="hidden" name="entrada" value={e.id} />
+                    <button
+                      type="submit"
+                      aria-label="Quitar del historial"
+                      className="px-1 text-muted"
+                    >
+                      ×
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+
         <details className="card">
           <summary className="cursor-pointer font-semibold">
             Cambiar datos
@@ -123,8 +161,8 @@ export default async function CandidaturaPage({
                 Borrar esta candidatura
               </summary>
               <p className="mt-2 text-muted">
-                Se borra para siempre. Si solo ya no sigue adelante, mejor
-                márcala como rechazada o descartada.
+                Se borra para siempre, con su historial. Si solo ya no sigue
+                adelante, mejor márcala como rechazada o descartada.
               </p>
               <button type="submit" className="mt-2 text-danger underline">
                 Sí, borrarla

@@ -2,14 +2,20 @@ import { describe, expect, it } from "vitest";
 import {
   cambiosAlCambiarEstado,
   contarPorEstado,
+  entradaCambioEstado,
+  entradaSeguimientoHecho,
   esEstado,
   estaActiva,
   ordenarCandidaturas,
+  ordenarHistorial,
   prepararCandidatura,
+  prepararNotaHistorial,
   seguimientosPendientes,
   separarCandidaturas,
+  textoEntrada,
   textoSeguimiento,
   type Candidatura,
+  type EntradaHistorial,
 } from "./candidaturas";
 
 // Datos de ejemplo para las pruebas (empresas inventadas, no son de nadie).
@@ -230,5 +236,87 @@ describe("esEstado", () => {
     expect(esEstado("oferta")).toBe(true);
     expect(esEstado("ganada")).toBe(false);
     expect(esEstado(3)).toBe(false);
+  });
+});
+
+describe("historial", () => {
+  const hoy = "2026-10-30";
+  function entrada(cambios: Partial<EntradaHistorial>): EntradaHistorial {
+    return {
+      id: "e",
+      application_id: "c",
+      on_date: hoy,
+      kind: "nota",
+      status: null,
+      note: "Algo",
+      created_at: "2026-10-30T10:00:00Z",
+      ...cambios,
+    };
+  }
+
+  it("ordena lo más reciente arriba", () => {
+    const r = ordenarHistorial([
+      entrada({ id: "vieja", on_date: "2026-10-01" }),
+      entrada({ id: "hoy-1", created_at: "2026-10-30T09:00:00Z" }),
+      entrada({ id: "hoy-2", created_at: "2026-10-30T11:00:00Z" }),
+    ]);
+    expect(r.map((e) => e.id)).toEqual(["hoy-2", "hoy-1", "vieja"]);
+  });
+
+  it("escribe cada entrada de forma clara", () => {
+    expect(
+      textoEntrada({ kind: "estado", status: "entrevista", note: null }),
+    ).toBe("Pasa a «Entrevista»");
+    expect(
+      textoEntrada({ kind: "seguimiento", status: null, note: "Llamar" }),
+    ).toBe("Seguimiento hecho: Llamar");
+    expect(
+      textoEntrada({ kind: "seguimiento", status: null, note: null }),
+    ).toBe("Seguimiento hecho");
+    expect(
+      textoEntrada({ kind: "nota", status: null, note: "Me llamaron" }),
+    ).toBe("Me llamaron");
+  });
+
+  it("las entradas automáticas usan el día en que lo marcas", () => {
+    expect(entradaCambioEstado("oferta", hoy)).toEqual({
+      on_date: hoy,
+      kind: "estado",
+      status: "oferta",
+      note: null,
+    });
+    expect(entradaSeguimientoHecho({ next_step: "Escribir" }, hoy)).toEqual({
+      on_date: hoy,
+      kind: "seguimiento",
+      status: null,
+      note: "Escribir",
+    });
+  });
+
+  it("una nota necesita texto y un día que no sea futuro", () => {
+    expect(prepararNotaHistorial({ on_date: hoy, note: "  " }, hoy)).toEqual({
+      ok: false,
+      error: "Escribe qué ha pasado.",
+    });
+    expect(
+      prepararNotaHistorial({ on_date: "2026-10-31", note: "Hola" }, hoy).ok,
+    ).toBe(false);
+    expect(
+      prepararNotaHistorial({ on_date: "ayer", note: "Hola" }, hoy).ok,
+    ).toBe(false);
+    expect(
+      prepararNotaHistorial(
+        { on_date: "2026-10-28", note: " Me llamaron " },
+        hoy,
+      ),
+    ).toEqual({
+      ok: true,
+      valor: {
+        on_date: "2026-10-28",
+        kind: "nota",
+        status: null,
+        note: "Me llamaron",
+      },
+    });
   });
 });

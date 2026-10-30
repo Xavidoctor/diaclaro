@@ -185,3 +185,98 @@ export function esEstado(valor: unknown): valor is Estado {
     typeof valor === "string" && (ESTADOS as readonly string[]).includes(valor)
   );
 }
+
+// ---- Historial ----
+
+// Lo que va pasando con una candidatura, cada cosa con su día.
+export const TIPOS_ENTRADA = ["estado", "seguimiento", "nota"] as const;
+export type TipoEntrada = (typeof TIPOS_ENTRADA)[number];
+
+export type EntradaHistorial = {
+  id: string;
+  application_id: string;
+  on_date: string;
+  kind: TipoEntrada;
+  status: Estado | null;
+  note: string | null;
+  created_at: string;
+};
+
+export type DatosEntrada = Pick<
+  EntradaHistorial,
+  "on_date" | "kind" | "status" | "note"
+>;
+
+// Lo más reciente arriba. El mismo día, la última que apuntaste primero.
+export function ordenarHistorial<T extends EntradaHistorial>(lista: T[]): T[] {
+  return [...lista].sort(
+    (a, b) =>
+      b.on_date.localeCompare(a.on_date) ||
+      b.created_at.localeCompare(a.created_at),
+  );
+}
+
+// Cómo se lee cada entrada en la pantalla.
+export function textoEntrada(
+  e: Pick<EntradaHistorial, "kind" | "status" | "note">,
+): string {
+  if (e.kind === "estado" && e.status) {
+    const base = `Pasa a «${NOMBRE_ESTADO[e.status]}»`;
+    return e.note ? `${base}: ${e.note}` : base;
+  }
+  if (e.kind === "seguimiento")
+    return e.note ? `Seguimiento hecho: ${e.note}` : "Seguimiento hecho";
+  return e.note ?? "";
+}
+
+// La entrada que se apunta sola al cambiar de estado con un botón rápido.
+// El día es hoy porque es cuando lo marcas.
+export function entradaCambioEstado(nuevo: Estado, hoy: string): DatosEntrada {
+  return { on_date: hoy, kind: "estado", status: nuevo, note: null };
+}
+
+// La entrada que se apunta sola al pulsar «Hecho» en un seguimiento.
+// Guarda lo que tenías pensado hacer, para que no se pierda.
+export function entradaSeguimientoHecho(
+  c: Pick<Candidatura, "next_step">,
+  hoy: string,
+): DatosEntrada {
+  return { on_date: hoy, kind: "seguimiento", status: null, note: c.next_step };
+}
+
+const esquemaNota = z.object({
+  on_date: z.string().trim().refine(esFecha, { error: "El día no es válido." }),
+  note: z
+    .string()
+    .trim()
+    .min(1, "Escribe qué ha pasado.")
+    .max(2000, "La nota admite 2000 caracteres."),
+});
+
+// Una nota que apuntas tú (por ejemplo, "Me han llamado para una entrevista").
+// No puede ser de un día futuro: el historial es lo que ya ha pasado.
+export function prepararNotaHistorial(
+  datos: { on_date: unknown; note: unknown },
+  hoy: string,
+): Resultado<DatosEntrada> {
+  const r = esquemaNota.safeParse({
+    on_date: datos.on_date ?? "",
+    note: datos.note ?? "",
+  });
+  if (!r.success) return { ok: false, error: r.error.issues[0].message };
+  if (r.data.on_date > hoy)
+    return {
+      ok: false,
+      error:
+        "El historial es lo que ya ha pasado: elige hoy o un día anterior.",
+    };
+  return {
+    ok: true,
+    valor: {
+      on_date: r.data.on_date,
+      kind: "nota",
+      status: null,
+      note: r.data.note,
+    },
+  };
+}
