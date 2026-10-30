@@ -3,7 +3,10 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardarAjustes } from "@/lib/data/ajustes";
+import { borrarConexionGoogle, leerConexionGoogle } from "@/lib/data/google";
 import { borrarRutina, cambiarRutina, crearRutina } from "@/lib/data/rutinas";
+import { revocarPermiso, secretoGoogle } from "@/lib/google/api";
+import { descifrar } from "@/lib/google/cifrado";
 import { prepararAjustes } from "@/lib/planner/ajustes";
 import { prepararRutina } from "@/lib/planner/rutinas";
 import { createClient } from "@/lib/supabase/server";
@@ -126,4 +129,18 @@ export async function eliminarRutina(formData: FormData) {
   await exigirSesion();
   await borrarRutina(leerId(formData));
   redirect("/ajustes");
+}
+
+// ---- Google Calendar ----
+
+// Quita la conexión: le pide a Google que borre el permiso y lo borra aquí.
+export async function desconectarGoogle() {
+  await exigirSesion();
+  const conexion = await leerConexionGoogle();
+  if (conexion) {
+    const permiso = descifrar(conexion.refresh_token_cifrado, secretoGoogle());
+    if (permiso) await revocarPermiso(permiso);
+    await borrarConexionGoogle();
+  }
+  redirect("/ajustes?google=desconectado#google");
 }
