@@ -272,7 +272,7 @@ describe("prepararApunte", () => {
 
 describe("esIdea", () => {
   it("solo las ideas conocidas", () => {
-    expect(esIdea("tabaco")).toBe(true);
+    expect(esIdea("leer")).toBe(true);
     expect(esIdea("toString")).toBe(false);
     expect(esIdea(null)).toBe(false);
   });

@@ -8,7 +8,7 @@ import { tocaRutina, type RegistroRutina } from "./rutinas";
 // Reglas de los Hábitos. Funciones puras, con pruebas en habitos.test.ts.
 //
 // Un hábito es algo que quieres observar: hacerlo más (ejercicio), hacerlo
-// menos (tabaco) o solo verlo (horas de sueño). Cada vez que pasa, lo apuntas.
+// menos (móvil) o solo verlo (horas de sueño). Cada vez que pasa, lo apuntas.
 // La app no juzga: no hay rachas que se rompen, ni colores de "mal", ni
 // sermones. Solo datos para ti. Y estos datos nunca se envían a la IA.
 
@@ -26,7 +26,7 @@ export type Habito = {
   title: string;
   notes: string | null;
   direction: Direccion;
-  unit: string | null; // "cigarrillos", "minutos"... null = veces
+  unit: string | null; // "vasos", "minutos"... null = veces
   daily_target: number | null; // null = sin meta
   repeat_rule: string | null; // qué días toca; null = todos los días
   // Rutina unida: cada «Hecho» de la rutina cuenta como 1. null = sin unir.
@@ -47,11 +47,12 @@ export type RegistroHabito = {
 // Ideas para empezar. Solo rellenan el formulario: no se crea nada
 // hasta que tú lo guardas, y nunca traen metas puestas.
 export const IDEAS = {
-  tabaco: { title: "Tabaco", direction: "menos", unit: "cigarrillos" },
+  agua: { title: "Beber agua", direction: "mas", unit: "vasos" },
+  leer: { title: "Leer", direction: "mas", unit: "páginas" },
+  caminar: { title: "Caminar", direction: "mas", unit: "minutos" },
   ejercicio: { title: "Ejercicio", direction: "mas", unit: "minutos" },
   sueno: { title: "Sueño", direction: "observar", unit: "horas" },
   movil: { title: "Móvil", direction: "menos", unit: "horas" },
-  agua: { title: "Agua", direction: "mas", unit: "vasos" },
 } as const satisfies Record<
   string,
   { title: string; direction: Direccion; unit: string }
@@ -106,13 +107,13 @@ export function numero(n: number): string {
   });
 }
 
-// "3 cigarrillos", "1 vez", "2 veces".
+// "3 vasos", "1 vez", "2 veces".
 export function textoCantidad(n: number, unidad: string | null): string {
   if (unidad) return `${numero(n)} ${unidad}`;
   return n === 1 ? "1 vez" : `${numero(n)} veces`;
 }
 
-// "Meta: como mucho 10 cigarrillos al día", o lo que quieres si no hay meta.
+// "Meta: como mucho 2 horas al día", o lo que quieres si no hay meta.
 export function textoMeta(
   h: Pick<Habito, "direction" | "daily_target" | "unit">,
 ): string {
@@ -362,7 +363,7 @@ const esquemaHabito = z
     title: z
       .string()
       .trim()
-      .min(1, "Ponle un nombre (por ejemplo, Tabaco o Ejercicio).")
+      .min(1, "Ponle un nombre (por ejemplo, Leer o Ejercicio).")
       .max(100, "Como mucho 100 caracteres."),
     notes: textoOpcional.pipe(
       z.string().max(2000, "Las notas admiten 2000 caracteres.").nullable(),
