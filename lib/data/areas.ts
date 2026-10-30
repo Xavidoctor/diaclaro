@@ -126,6 +126,26 @@ export async function listarProyectos(areaId: string) {
   return ordenarProyectos((data ?? []) as Proyecto[]);
 }
 
+// Todos tus proyectos (de todas las áreas), para el selector de las tareas.
+export async function listarTodosLosProyectos() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .select(CAMPOS_PROYECTO)
+    .limit(500);
+  comprobar(error, "cargar los proyectos");
+  return (data ?? []) as Proyecto[];
+}
+
+// Las opciones del selector «Proyecto» de las tareas, agrupadas por área.
+export async function cargarOpcionesProyecto() {
+  const [areas, proyectos] = await Promise.all([
+    listarAreas(),
+    listarTodosLosProyectos(),
+  ]);
+  return { areas, proyectos };
+}
+
 export async function leerProyecto(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase

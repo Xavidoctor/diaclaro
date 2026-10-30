@@ -3,29 +3,102 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archivarProyecto, eliminarProyecto } from "@/app/areas/actions";
 import { FormProyecto } from "@/app/areas/form-proyecto";
-import { leerArea, leerProyecto } from "@/lib/data/areas";
+import { NuevaTarea } from "@/app/areas/nueva-tarea";
+import { TareaItem } from "@/app/bandeja/tarea-item";
+import {
+  cargarOpcionesProyecto,
+  leerArea,
+  leerProyecto,
+} from "@/lib/data/areas";
+import { listarTareasDeProyecto } from "@/lib/data/bandeja";
+import { opcionesProyecto } from "@/lib/planner/areas";
+import { agruparTareas } from "@/lib/planner/bandeja";
 
 export const metadata: Metadata = { title: "Proyecto" };
 
+// Un proyecto (o asignatura) por dentro: sus tareas y sus datos.
 export default async function ProyectoPage({
   params,
 }: PageProps<"/areas/[id]/proyectos/[proyectoId]">) {
   const { id, proyectoId } = await params;
-  const [area, proyecto] = await Promise.all([
+  const [area, proyecto, tareas, { areas, proyectos }] = await Promise.all([
     leerArea(id),
     leerProyecto(proyectoId),
+    listarTareasDeProyecto(proyectoId),
+    cargarOpcionesProyecto(),
   ]);
   if (!area || !proyecto || proyecto.area_id !== area.id) notFound();
+  const opciones = opcionesProyecto(areas, proyectos);
+  const { sinPlanificar, conFecha, hechas } = agruparTareas(tareas);
+  const pendientes = [...conFecha, ...sinPlanificar];
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
       <Link href={`/areas/${area.id}`} className="text-sm underline">
         ← {area.name}
       </Link>
-      <h1 className="break-words text-3xl font-semibold tracking-tight">
-        {proyecto.name}
-      </h1>
-      <FormProyecto areaId={area.id} proyecto={proyecto} />
+      <header className="flex flex-col gap-1">
+        <h1 className="break-words text-3xl font-semibold tracking-tight">
+          {proyecto.name}
+        </h1>
+        <p className="text-sm text-muted">
+          {proyecto.kind === "asignatura" ? "Asignatura" : "Proyecto"}
+          {proyecto.archived_at && " · Archivado"}
+          {proyecto.url && (
+            <>
+              {" · "}
+              <a
+                href={proyecto.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Abrir enlace
+              </a>
+            </>
+          )}
+        </p>
+        {proyecto.notes && (
+          <p className="whitespace-pre-wrap break-words text-sm">
+            {proyecto.notes}
+          </p>
+        )}
+      </header>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Tareas</h2>
+        <NuevaTarea proyectoId={proyecto.id} />
+        {pendientes.length === 0 ? (
+          <p className="text-sm text-muted">No hay tareas pendientes aquí.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {pendientes.map((t) => (
+              <TareaItem key={t.id} tarea={t} grupos={opciones} />
+            ))}
+          </ul>
+        )}
+        {hechas.length > 0 && (
+          <details>
+            <summary className="cursor-pointer text-sm text-muted">
+              Hechas ({hechas.length})
+            </summary>
+            <ul className="mt-2 flex flex-col gap-2">
+              {hechas.map((t) => (
+                <TareaItem key={t.id} tarea={t} grupos={opciones} />
+              ))}
+            </ul>
+          </details>
+        )}
+      </section>
+
+      <details className="card">
+        <summary className="cursor-pointer font-semibold">
+          Cambiar nombre, tipo, enlace o notas
+        </summary>
+        <div className="mt-4">
+          <FormProyecto areaId={area.id} proyecto={proyecto} />
+        </div>
+      </details>
 
       <section className="flex flex-col gap-3 border-t border-border pt-4 text-sm">
         <form action={archivarProyecto}>
@@ -46,6 +119,9 @@ export default async function ProyectoPage({
           <input type="hidden" name="area_id" value={area.id} />
           <details>
             <summary className="cursor-pointer text-danger">Borrar</summary>
+            <p className="mt-2 text-muted">
+              Sus tareas no se borran: se quedan en la Bandeja, sin proyecto.
+            </p>
             <button type="submit" className="mt-2 text-danger underline">
               Sí, borrarlo
             </button>

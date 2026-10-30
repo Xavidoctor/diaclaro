@@ -3,14 +3,22 @@
 import { useActionState } from "react";
 import { editarTarea, type EditarTareaState } from "@/app/bandeja/actions";
 import type { Tarea } from "@/lib/data/bandeja";
+import { opcionesVisibles, type GrupoOpciones } from "@/lib/planner/areas";
 
-// Formulario para cambiar el título, la fecha y los minutos de una tarea.
-// Fecha y minutos son opcionales: si los dejas vacíos, se quedan vacíos.
-export function FichaTarea({ tarea }: { tarea: Tarea }) {
+// Formulario para cambiar el título, la fecha, los minutos y el proyecto de una tarea.
+// Fecha, minutos y proyecto son opcionales: si los dejas vacíos, se quedan vacíos.
+export function FichaTarea({
+  tarea,
+  grupos,
+}: {
+  tarea: Tarea;
+  grupos?: GrupoOpciones[];
+}) {
   const [estado, formAction, guardando] = useActionState<
     EditarTareaState,
     FormData
   >(editarTarea, {});
+  const opciones = grupos ? opcionesVisibles(grupos, tarea.project_id) : [];
 
   return (
     <form action={formAction} className="mt-2 flex flex-col gap-3">
@@ -47,6 +55,27 @@ export function FichaTarea({ tarea }: { tarea: Tarea }) {
           />
         </label>
       </div>
+      {opciones.length > 0 && (
+        <label className="flex flex-col gap-1 text-sm">
+          Proyecto (opcional)
+          <select
+            name="project_id"
+            defaultValue={tarea.project_id ?? ""}
+            className="input py-2"
+          >
+            <option value="">Sin proyecto</option>
+            {opciones.map((g) => (
+              <optgroup key={g.area} label={g.area}>
+                {g.proyectos.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+      )}
       {estado.error && (
         <p role="alert" className="text-sm text-danger">
           {estado.error}
