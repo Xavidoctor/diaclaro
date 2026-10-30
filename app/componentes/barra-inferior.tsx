@@ -1,10 +1,11 @@
 import Link from "next/link";
 
-// Menú de abajo. De momento, Hoy, Agenda y Bandeja; Áreas llegará en otra etapa.
+// Menú de abajo: Hoy, Agenda, Bandeja y Áreas.
 const SECCIONES = [
   { href: "/", nombre: "Hoy" },
   { href: "/agenda", nombre: "Agenda" },
   { href: "/bandeja", nombre: "Bandeja" },
+  { href: "/areas", nombre: "Áreas" },
 ] as const;
 
 // "actual" marca la sección en la que estás (en Ajustes no se marca ninguna).
