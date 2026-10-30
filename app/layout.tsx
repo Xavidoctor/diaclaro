@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import { RecorridoGuiado } from "@/app/componentes/recorrido-guiado";
 import "./globals.css";
+import { RegistrarSW } from "@/app/componentes/registrar-sw";
 
 // Letra de la app (estilo "Calma"): Nunito, redondeada y fácil de leer.
 const nunito = Nunito({
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         {/* El recorrido de bienvenida: se abre solo la primera vez. */}
         <RecorridoGuiado />
+        <RegistrarSW />
       </body>
     </html>
   );

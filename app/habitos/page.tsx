@@ -14,10 +14,12 @@ import {
 import { hoyEn, sumarDias } from "@/lib/planner/fechas";
 import {
   IDEAS,
+  fraseDelDia,
   numero,
   resumenSemana,
   textoCantidad,
   textoMeta,
+  textoRecordatorio,
   textoTendencia,
   totalDelDia,
   type Habito,
@@ -52,6 +54,10 @@ export default async function HabitosPage() {
             Añadir
           </Link>
         </header>
+
+        <Link href="/habitos/avisos" className="enlace -mt-4 text-sm">
+          Avisos con la app cerrada
+        </Link>
 
         <p className="text-sm text-muted">
           Apunta lo que quieras observar, a tu ritmo. Aquí no hay rachas que se
@@ -130,6 +136,7 @@ function FichaHabito({
   hoy: string;
 }) {
   const totalHoy = totalDelDia(registros, habito.id, hoy);
+  const frase = fraseDelDia(habito.phrases, hoy);
   const resumen = resumenSemana(habito, registros, hoy);
   const tendencia = textoTendencia(resumen, habito.direction);
   const dias = habito.repeat_rule
@@ -137,7 +144,11 @@ function FichaHabito({
     : null;
 
   return (
-    <li className="card flex flex-col gap-4 p-4">
+    // id: al tocar un aviso de este hábito, la app abre /habitos#habito-<id>.
+    <li
+      id={`habito-${habito.id}`}
+      className="card flex scroll-mt-6 flex-col gap-4 p-4 target:border-primary"
+    >
       <div className="flex items-start gap-3">
         <Link
           href={`/habitos/${habito.id}`}
@@ -145,11 +156,15 @@ function FichaHabito({
         >
           <span className="break-words font-medium">{habito.title}</span>
           <span className="text-sm text-muted">
-            {[textoMeta(habito), dias].filter(Boolean).join(" · ")}
+            {[textoMeta(habito), dias, textoRecordatorio(habito)]
+              .filter(Boolean)
+              .join(" · ")}
           </span>
         </Link>
         <BotonPausa habito={habito} />
       </div>
+
+      {frase && <p className="text-sm italic">{frase}</p>}
 
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1 text-sm">

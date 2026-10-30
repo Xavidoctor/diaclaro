@@ -17,6 +17,7 @@ import { EmpiezoElDia } from "@/app/componentes/empiezo-el-dia";
 import { FocoDeHoy } from "@/app/componentes/foco-de-hoy";
 import { HabitosDeHoy } from "@/app/componentes/habitos-de-hoy";
 import { PlanDeHoy } from "@/app/componentes/plan-de-hoy";
+import { RecordatoriosHabitos } from "@/app/componentes/recordatorios-habitos";
 import { SeguimientosEmpleo } from "@/app/componentes/seguimientos-empleo";
 import { TareasDeHoy } from "@/app/componentes/tareas-de-hoy";
 import { SaludoLocal } from "@/app/saludo-local";
@@ -101,6 +102,8 @@ export default async function HoyPage() {
           agenda={agenda}
           rutinas={deHoy}
         />
+
+        <RecordatoriosHabitos hoy={hoy} zona={timezone} />
 
         <div data-guia="plan">
           <PlanDeHoy hoy={hoy} />

@@ -11,10 +11,11 @@ import type { RegistroRutina } from "@/lib/planner/rutinas";
 
 // Única parte de los Hábitos que habla con Supabase.
 // Las reglas RLS ya hacen que cada persona solo vea lo suyo.
-// Importante: nada de aquí se pasa nunca a lib/ai (la IA no ve tus hábitos).
+// Importante: lo que apuntas nunca se pasa a lib/ai. Solo si pides ideas de
+// frases, la IA recibe el nombre del hábito y lo que quieres (más/menos/verlo).
 
 const CAMPOS_HABITO =
-  "id, title, notes, direction, unit, daily_target, repeat_rule, routine_id, active";
+  "id, title, notes, direction, unit, daily_target, repeat_rule, routine_id, remind_at, phrases, active";
 
 function comprobar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`No se ha podido ${que}: ${error.message}`);
@@ -50,7 +51,7 @@ export async function crearHabito(datos: DatosHabito) {
 
 export async function cambiarHabito(
   id: string,
-  cambios: Partial<DatosHabito & { active: boolean }>,
+  cambios: Partial<DatosHabito & { active: boolean; phrases: string[] }>,
 ) {
   const supabase = await createClient();
   const { error } = await supabase.from("habits").update(cambios).eq("id", id);

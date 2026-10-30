@@ -5,8 +5,15 @@ import {
   leerSemanas,
   lunesDe,
   resumenPorSemanas,
+  anadirFrase,
+  conRecordatorio,
   esIdea,
+  fraseDelDia,
+  quitarFrase,
   habitosDelDia,
+  horaCorta,
+  pendientesALaHora,
+  textoRecordatorio,
   numero,
   prepararApunte,
   prepararHabito,
@@ -29,6 +36,8 @@ const tabaco: Habito = {
   daily_target: 10,
   repeat_rule: null,
   routine_id: null,
+  remind_at: null,
+  phrases: [],
   active: true,
 };
 
@@ -41,6 +50,8 @@ const gimnasio: Habito = {
   daily_target: null,
   repeat_rule: "FREQ=WEEKLY;BYDAY=MO,WE,FR",
   routine_id: null,
+  remind_at: null,
+  phrases: [],
   active: true,
 };
 
@@ -195,6 +206,7 @@ describe("prepararHabito", () => {
         daily_target: null,
         repeat_rule: null,
         routine_id: null,
+        remind_at: null,
       },
     });
   });
@@ -328,5 +340,122 @@ describe("leerSemanas", () => {
     expect(leerSemanas("13")).toBe(13);
     expect(leerSemanas("99")).toBe(4);
     expect(leerSemanas(undefined)).toBe(4);
+  });
+});
+
+describe("recordatorios", () => {
+  const conHora = (h: Habito, remind_at: string): Habito => ({
+    ...h,
+    remind_at,
+  });
+
+  it("horaCorta quita los segundos que devuelve la base de datos", () => {
+    expect(horaCorta("21:00:00")).toBe("21:00");
+    expect(horaCorta("08:30")).toBe("08:30");
+  });
+
+  it("solo recuerda lo que tiene hora y aún no tiene nada apuntado", () => {
+    const fumar = conHora(tabaco, "21:00:00");
+    const agua = {
+      ...conHora(gimnasio, "10:00:00"),
+      id: "h3",
+      repeat_rule: null,
+    };
+    const deHoy = habitosDelDia(
+      [fumar, agua, gimnasio],
+      [apunte("h3", "2026-10-30", 2)],
+      "2026-10-30",
+    );
+    // gimnasio no tiene hora; agua ya tiene algo apuntado.
+    expect(conRecordatorio(deHoy).map((h) => h.id)).toEqual(["h1"]);
+  });
+
+  it("«Hoy, ninguno» (0) también cuenta como apuntado", () => {
+    const deHoy = habitosDelDia(
+      [conHora(tabaco, "21:00:00")],
+      [apunte("h1", "2026-10-30", 0)],
+      "2026-10-30",
+    );
+    expect(conRecordatorio(deHoy)).toEqual([]);
+  });
+
+  it("no recuerda un hábito pausado ni uno que hoy no toca", () => {
+    const pausado = { ...conHora(tabaco, "09:00"), active: false };
+    // 2026-10-31 es sábado y el gimnasio toca lunes, miércoles y viernes.
+    const deSabado = habitosDelDia(
+      [pausado, conHora(gimnasio, "09:00")],
+      [],
+      "2026-10-31",
+    );
+    expect(conRecordatorio(deSabado)).toEqual([]);
+  });
+
+  it("sale desde su hora, no antes, y en orden de hora", () => {
+    const noche = conHora(tabaco, "21:00:00");
+    const manana = { ...conHora(gimnasio, "08:00:00"), id: "h3" };
+    expect(pendientesALaHora([noche, manana], "07:59")).toEqual([]);
+    expect(pendientesALaHora([noche, manana], "08:00")).toEqual([manana]);
+    expect(pendientesALaHora([noche, manana], "23:10")).toEqual([
+      manana,
+      noche,
+    ]);
+  });
+
+  it("textoRecordatorio", () => {
+    expect(textoRecordatorio(conHora(tabaco, "21:00:00"))).toBe(
+      "Recordatorio a las 21:00",
+    );
+    expect(textoRecordatorio(tabaco)).toBeNull();
+  });
+
+  it("prepararHabito guarda la hora sin segundos y la deja vacía si no hay", () => {
+    const base = {
+      title: "Tabaco",
+      notes: "",
+      direction: "menos",
+      unit: "",
+      daily_target: "",
+      cuando: "todos",
+      dias: [],
+    };
+    const r1 = prepararHabito({ ...base, remind_at: "21:30" });
+    expect(r1.ok && r1.valor.remind_at).toBe("21:30");
+    const r2 = prepararHabito({ ...base, remind_at: "07:05:00" });
+    expect(r2.ok && r2.valor.remind_at).toBe("07:05");
+    const r3 = prepararHabito({ ...base, remind_at: "" });
+    expect(r3.ok && r3.valor.remind_at).toBeNull();
+    expect(prepararHabito({ ...base, remind_at: "25:00" })).toEqual({
+      ok: false,
+      error: "La hora del recordatorio no es válida.",
+    });
+  });
+});
+
+describe("frases", () => {
+  it("fraseDelDia cambia cada día y es la misma todo el día", () => {
+    const frases = ["a", "b", "c"];
+    const hoy = fraseDelDia(frases, "2026-10-30");
+    expect(fraseDelDia(frases, "2026-10-30")).toBe(hoy);
+    expect(fraseDelDia(frases, "2026-10-31")).not.toBe(hoy);
+    expect(fraseDelDia([], "2026-10-30")).toBeNull();
+  });
+
+  it("anadirFrase limpia espacios y no repite", () => {
+    expect(anadirFrase(["Hola"], "  Poco a  poco ")).toEqual({
+      ok: true,
+      valor: ["Hola", "Poco a poco"],
+    });
+    expect(anadirFrase(["Poco a poco"], "poco a POCO").ok).toBe(false);
+    expect(anadirFrase([], "   ").ok).toBe(false);
+    expect(anadirFrase([], "x".repeat(201)).ok).toBe(false);
+  });
+
+  it("como mucho 20 frases", () => {
+    const veinte = Array.from({ length: 20 }, (_, i) => `f${i}`);
+    expect(anadirFrase(veinte, "otra").ok).toBe(false);
+  });
+
+  it("quitarFrase", () => {
+    expect(quitarFrase(["a", "b"], "a")).toEqual(["b"]);
   });
 });

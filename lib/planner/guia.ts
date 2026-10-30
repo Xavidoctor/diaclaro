@@ -58,9 +58,10 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
   {
     id: "agenda",
     titulo: "Agenda",
-    resumen: "Tus citas y compromisos de los próximos 14 días.",
+    resumen: "Tus citas de los próximos días y un calendario del mes.",
     pasos: [
       "Pulsa «Añadir» para apuntar una cita. Puede ser de una vez o repetirse cada día o algunos días de la semana.",
+      "Debajo tienes el calendario del mes: toca un día para ver lo que tienes. Un puntito marca los días con algo apuntado.",
       "Toca una cita para cambiarla, o para cambiar solo un día concreto si se repite.",
       "Si algo se mueve (una cita cancelada, una entrega que cambia), pulsa «¿Algo ha cambiado?» y cuéntalo con tus palabras.",
       "Si conectas Google Calendar en Ajustes, sus eventos también salen aquí. DíaClaro solo los lee, nunca los cambia.",
@@ -125,8 +126,19 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
     pasos: [
       "En Ajustes, abre Hábitos y añade lo que quieras seguir (agua, lectura, ejercicio…).",
       "Cada día lo apuntas desde Hoy y ves un resumen de la semana. No hay rachas que se rompan.",
+      "Si le pones una hora de recordatorio, a partir de esa hora te lo recuerda en Hoy si aún no has apuntado nada.",
     ],
     enlace: { href: "/habitos", texto: "Ir a Hábitos" },
+  },
+  {
+    id: "documentos",
+    titulo: "Documentos importantes",
+    resumen: "DNI, billetes, entradas… a mano sin buscar en la galería.",
+    pasos: [
+      "En Ajustes, abre Documentos. Se guardan en una carpeta de tu Google Drive.",
+      "Búscalos por nombre o por tipo cuando los necesites.",
+    ],
+    enlace: { href: "/documentos", texto: "Ir a Documentos" },
   },
   {
     id: "ajustes",

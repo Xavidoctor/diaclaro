@@ -110,6 +110,22 @@ export default async function AjustesPage({
           </Link>
         </section>
 
+        <section className="card flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-semibold">Documentos importantes</h2>
+            <p className="text-sm text-muted">
+              DNI, billetes, entradas… guardados en tu Google Drive para
+              tenerlos a mano.
+            </p>
+          </div>
+          <Link
+            href="/documentos"
+            className="button-primary shrink-0 py-2 text-sm"
+          >
+            Abrir
+          </Link>
+        </section>
+
         <section className="card flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Guía de uso</h2>
           <p className="text-sm text-muted">

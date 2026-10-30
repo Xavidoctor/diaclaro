@@ -1,4 +1,12 @@
 import "server-only";
+import {
+  MARCA,
+  MARCA_CARPETA,
+  MARCA_DOCUMENTO,
+  NOMBRE_CARPETA,
+  URL_SUBIDA_DRIVE,
+  type TipoImportante,
+} from "@/lib/planner/documentos-importantes";
 import type { EventoGoogle } from "@/lib/planner/google-calendar";
 
 // Única parte de la app que habla con Google.
@@ -287,4 +295,125 @@ export async function revocarPermiso(permiso: string): Promise<void> {
     // Si falla no pasa nada grave: la conexión se borra igual en DíaClaro.
     console.error("No se ha podido avisar a Google", error);
   }
+}
+
+// ---- Documentos importantes en tu Drive ----
+// Todo con el pase de "drive.file": DíaClaro solo ve la carpeta y los
+// archivos que ha creado él. El resto de tu Drive sigue sin verse.
+
+const URL_DRIVE = "https://www.googleapis.com/drive/v3/files";
+
+function conMarca(valor: string) {
+  return `appProperties has { key='${MARCA}' and value='${valor}' } and trashed = false`;
+}
+
+async function pedirDrive(
+  token: string,
+  url: string | URL,
+  opciones: RequestInit = {},
+) {
+  return fetch(url, {
+    ...opciones,
+    headers: { Authorization: `Bearer ${token}`, ...opciones.headers },
+    signal: AbortSignal.timeout(15_000),
+  });
+}
+
+// Busca la carpeta «DíaClaro · Documentos importantes». Si no existe y
+// se pide, la crea. Devuelve su id, o null si no está (o si Google falla).
+export async function carpetaImportantes(
+  token: string,
+  crear: boolean,
+): Promise<string | null> {
+  const url = new URL(URL_DRIVE);
+  url.search = new URLSearchParams({
+    q: `mimeType = 'application/vnd.google-apps.folder' and ${conMarca(MARCA_CARPETA)}`,
+    fields: "files(id)",
+    pageSize: "1",
+  }).toString();
+  const respuesta = await pedirDrive(token, url);
+  if (!respuesta.ok) throw new Error(`Drive ha fallado (${respuesta.status})`);
+  const datos = (await respuesta.json()) as { files?: { id: string }[] };
+  if (datos.files?.[0]) return datos.files[0].id;
+  if (!crear) return null;
+  const nueva = await pedirDrive(token, `${URL_DRIVE}?fields=id`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: NOMBRE_CARPETA,
+      mimeType: "application/vnd.google-apps.folder",
+      appProperties: { [MARCA]: MARCA_CARPETA },
+    }),
+  });
+  if (!nueva.ok) throw new Error(`Drive ha fallado (${nueva.status})`);
+  return ((await nueva.json()) as { id: string }).id;
+}
+
+// Los documentos importantes que guardaste, del más nuevo al más viejo.
+export async function listarImportantes(token: string): Promise<unknown[]> {
+  const url = new URL(URL_DRIVE);
+  url.search = new URLSearchParams({
+    q: conMarca(MARCA_DOCUMENTO),
+    fields:
+      "files(id,name,mimeType,webViewLink,thumbnailLink,createdTime,appProperties)",
+    orderBy: "createdTime desc",
+    pageSize: "200",
+  }).toString();
+  const respuesta = await pedirDrive(token, url);
+  if (!respuesta.ok) throw new Error(`Drive ha fallado (${respuesta.status})`);
+  return ((await respuesta.json()) as { files?: unknown[] }).files ?? [];
+}
+
+// Sube un archivo desde el servidor (lo que compartes desde la galería).
+export async function subirAImportantes(
+  token: string,
+  cuerpo: { cuerpo: Blob; tipoContenido: string },
+): Promise<boolean> {
+  const respuesta = await pedirDrive(token, URL_SUBIDA_DRIVE, {
+    method: "POST",
+    headers: { "Content-Type": cuerpo.tipoContenido },
+    body: cuerpo.cuerpo,
+  });
+  if (!respuesta.ok) console.error("Drive no ha guardado", respuesta.status);
+  return respuesta.ok;
+}
+
+// Antes de cambiar o borrar, se comprueba que el archivo es un documento
+// importante de DíaClaro (y no, por ejemplo, unos apuntes de un proyecto).
+async function esImportante(token: string, id: string): Promise<boolean> {
+  if (!/^[\w-]{1,200}$/.test(id)) return false;
+  const respuesta = await pedirDrive(
+    token,
+    `${URL_DRIVE}/${id}?fields=appProperties,trashed`,
+  );
+  if (!respuesta.ok) return false;
+  const datos = (await respuesta.json()) as {
+    trashed?: boolean;
+    appProperties?: Record<string, string>;
+  };
+  return !datos.trashed && datos.appProperties?.[MARCA] === MARCA_DOCUMENTO;
+}
+
+async function cambiarArchivo(token: string, id: string, cambios: object) {
+  if (!(await esImportante(token, id)))
+    throw new Error("Ese documento no es de DíaClaro.");
+  const respuesta = await pedirDrive(token, `${URL_DRIVE}/${id}?fields=id`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cambios),
+  });
+  if (!respuesta.ok) throw new Error(`Drive ha fallado (${respuesta.status})`);
+}
+
+export async function cambiarTipoImportante(
+  token: string,
+  id: string,
+  tipo: TipoImportante,
+) {
+  await cambiarArchivo(token, id, { appProperties: { tipo } });
+}
+
+// Lo manda a la papelera de Drive: ahí puedes recuperarlo durante 30 días.
+export async function papeleraImportante(token: string, id: string) {
+  await cambiarArchivo(token, id, { trashed: true });
 }
