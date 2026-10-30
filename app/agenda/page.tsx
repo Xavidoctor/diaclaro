@@ -4,6 +4,7 @@ import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { CalendarioMes } from "@/app/agenda/calendario-mes";
 import { ListaDelDia } from "@/app/agenda/lista-del-dia";
 import { AvisoGoogle } from "@/app/componentes/aviso-google";
+import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
@@ -119,12 +120,15 @@ export default async function AgendaPage({
           <h1 className="text-3xl font-semibold tracking-tight">Agenda</h1>
           <Link
             href="/agenda/nuevo"
+            data-guia="agenda-anadir"
             className="button-primary gap-1 py-2 text-sm"
           >
             <Plus aria-hidden className="size-4" />
             Añadir
           </Link>
         </header>
+
+        <AyudaPantalla seccion="agenda" />
 
         <nav aria-label="Cambiar de días" className="flex gap-4 text-sm">
           <Link
