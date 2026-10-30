@@ -44,3 +44,55 @@ export async function borrarConexionGoogle() {
     .eq("user_id", userId);
   comprobar(error, "borrar tu conexión con Google");
 }
+
+// ---- Tareas que salieron de un evento de Google ----
+
+// Crea la tarea y devuelve su id. Si ya la habías creado desde ese mismo
+// evento (y día), no la repite: devuelve la que ya tenías.
+export async function crearTareaDesdeGoogle(tarea: {
+  title: string;
+  due_date: string;
+  estimated_minutes: number | null;
+  google_event: string;
+}): Promise<string> {
+  const supabase = await createClient();
+  const { data: ya, error: errorBuscar } = await supabase
+    .from("tasks")
+    .select("id")
+    .eq("google_event", tarea.google_event)
+    .is("deleted_at", null)
+    .maybeSingle();
+  comprobar(errorBuscar, "buscar la tarea");
+  if (ya) return (ya as { id: string }).id;
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert(tarea)
+    .select("id")
+    .single();
+  comprobar(error, "guardar la tarea");
+  return (data as { id: string }).id;
+}
+
+// Las tareas que creaste desde eventos de Google entre dos días
+// (sin las de la papelera): para cada evento, el id de su tarea.
+export async function tareasDesdeGoogle(
+  desde: string,
+  hasta: string,
+): Promise<Map<string, string>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("id, google_event")
+    .not("google_event", "is", null)
+    .is("deleted_at", null)
+    .gte("due_date", desde)
+    .lte("due_date", hasta)
+    .limit(500);
+  comprobar(error, "buscar tus tareas de Google");
+  return new Map(
+    ((data ?? []) as { id: string; google_event: string }[]).map((t) => [
+      t.google_event,
+      t.id,
+    ]),
+  );
+}

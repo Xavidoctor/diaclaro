@@ -1,5 +1,5 @@
 import { compararOcurrencias, type Ocurrencia } from "./agenda";
-import { diasDesde, horaEn, hoyEn, sumarDias } from "./fechas";
+import { diasDesde, esFecha, horaEn, hoyEn, sumarDias } from "./fechas";
 
 // Reglas para enseñar tu Google Calendar en DíaClaro. Funciones puras, con
 // pruebas en google-calendar.test.ts. No hablan con Google: eso lo hace
@@ -106,4 +106,62 @@ export function juntarAgendas(
   deGoogle: Ocurrencia[],
 ): Ocurrencia[] {
   return [...propias, ...deGoogle].sort(compararOcurrencias);
+}
+
+// ---- Pasar un evento de Google a tus tareas ----
+
+// Lo que identifica un evento de Google en un día concreto
+// (un evento de varios días puede pasarse a tarea cada día por separado).
+export function claveGoogle(o: Pick<Ocurrencia, "eventoId" | "fecha">): string {
+  return `${o.eventoId}|${o.fecha}`;
+}
+
+const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+// Prepara la tarea a partir del evento. La fecha y los minutos salen del
+// propio evento de Google; si no tiene horas, la tarea queda sin minutos.
+export function tareaDesdeGoogle(datos: {
+  clave: unknown;
+  titulo: unknown;
+  fecha: unknown;
+  inicio: unknown;
+  fin: unknown;
+}):
+  | {
+      ok: true;
+      tarea: {
+        title: string;
+        due_date: string;
+        estimated_minutes: number | null;
+        google_event: string;
+      };
+    }
+  | { ok: false; error: string } {
+  const { clave, titulo, fecha, inicio, fin } = datos;
+  if (typeof clave !== "string" || !clave.startsWith("google:"))
+    return { ok: false, error: "Ese evento no es de Google." };
+  if (clave.length > 1100) return { ok: false, error: "Evento no válido." };
+  if (typeof fecha !== "string" || !esFecha(fecha))
+    return { ok: false, error: "Fecha no válida." };
+  const title = (typeof titulo === "string" ? titulo.trim() : "").slice(0, 500);
+  if (!title) return { ok: false, error: "Falta el título." };
+
+  let estimated_minutes: number | null = null;
+  if (typeof inicio === "string" && typeof fin === "string") {
+    if (HORA.test(inicio) && HORA.test(fin)) {
+      const minutos = minutosDelDia(fin) - minutosDelDia(inicio);
+      // 23:59 es «hasta medianoche» (ver ocurrenciasDeGoogle).
+      const total = fin === "23:59" ? minutos + 1 : minutos;
+      if (total >= 1 && total <= 1440) estimated_minutes = total;
+    }
+  }
+  return {
+    ok: true,
+    tarea: { title, due_date: fecha, estimated_minutes, google_event: clave },
+  };
+}
+
+function minutosDelDia(hora: string): number {
+  const [h, m] = hora.split(":").map(Number);
+  return h * 60 + m;
 }
