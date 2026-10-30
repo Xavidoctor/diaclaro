@@ -14,6 +14,8 @@ Tu centro de organización personal: captura rápida, plan del día realista, á
 | [Supabase](https://supabase.com) | Base de datos Postgres y login |
 | [Vercel](https://vercel.com) | Publicación de la web |
 | Vitest | Pruebas automáticas |
+| [rrule](https://github.com/jkbrzt/rrule) (BSD-3) | Calcula los días de los eventos que se repiten, con el formato estándar de los calendarios |
+| [date-fns](https://date-fns.org) (MIT) | Sumar días y escribir fechas en español |
 | Zod | Comprobar los datos que llegan de los formularios |
 | [shadcn/ui](https://ui.shadcn.com) | Componentes ya hechos (se copian a `components/ui/` y son nuestros) |
 
@@ -23,6 +25,7 @@ Tu centro de organización personal: captura rápida, plan del día realista, á
 app/                 Pantallas (cada carpeta es una dirección: app/login → /login)
   page.tsx           Pantalla Hoy (saludo y cuadro de captura)
   bandeja/           Bandeja: pestañas Notas y Tareas, archivo y papelera
+  agenda/            Agenda: compromisos de los próximos 14 días, con repeticiones y cambios de un día
   componentes/       Piezas que usan varias pantallas (captura, menú de abajo)
   login/             Acceso con enlace por email
   auth/confirm/      Adonde vuelve el enlace del email: abre la sesión
@@ -81,6 +84,7 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | --- | --- |
 | `20261030000000_bandeja_notas_y_tareas.sql` | Tablas `notes` y `tasks`, con sus reglas RLS y la búsqueda en español |
 | `20261030010000_bandeja_tipos_y_etiquetas.sql` | Tipo de nota y etiquetas en `notes` |
+| `20261030020000_agenda_eventos.sql` | Tablas `events` (compromisos, que pueden repetirse) y `event_exceptions` (cambios de un solo día), con sus reglas RLS |
 
 ## Publicar en Vercel (una vez)
 
