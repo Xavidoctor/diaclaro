@@ -103,6 +103,7 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | `20261030170000_google_calendar.sql` | Tabla `google_connections` (el permiso de Google de cada persona, cifrado, para leer su Google Calendar), con sus reglas RLS |
 | `20261030200000_habitos.sql` | Tablas `habits` (tus hábitos, todos opcionales) y `habit_logs` (cada vez que apuntas algo), con sus reglas RLS |
 | `20261030210000_despierto_y_levantado.sql` | Columna `awake_time` en `day_starts` (a qué hora pulsaste «Despierto»); la hora de levantarte puede quedar vacía hasta que pulses «Levantado» |
+| `20261030230000_habitos_con_rutinas.sql` | Columna `routine_id` en `habits`: un hábito puede ir unido a una rutina y cada «Hecho» suma 1 |
 
 ## Publicar en Vercel (una vez)
 

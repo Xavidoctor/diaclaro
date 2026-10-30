@@ -14,10 +14,19 @@ import {
   type Habito,
   type Idea,
 } from "@/lib/planner/habitos";
+import type { Rutina } from "@/lib/planner/rutinas";
 
 // Formulario para crear o cambiar un hábito.
 // Solo el nombre es obligatorio. La meta, si la quieres, la pones tú.
-export function FormHabito({ habito, idea }: { habito?: Habito; idea?: Idea }) {
+export function FormHabito({
+  habito,
+  idea,
+  rutinas,
+}: {
+  habito?: Habito;
+  idea?: Idea;
+  rutinas: Pick<Rutina, "id" | "title">[];
+}) {
   const [estado, formAction, guardando] = useActionState<
     FormHabitoState,
     FormData
@@ -27,7 +36,7 @@ export function FormHabito({ habito, idea }: { habito?: Habito; idea?: Idea }) {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       {habito && <input type="hidden" name="id" value={habito.id} />}
-      <Campos key={estado.envios} valores={valores} />
+      <Campos key={estado.envios} valores={valores} rutinas={rutinas} />
       {estado.error && (
         <p role="alert" className="text-sm text-danger">
           {estado.error}
@@ -56,10 +65,17 @@ function valoresIniciales(habito?: Habito, idea?: Idea): ValoresFormHabito {
       habito?.daily_target != null ? String(habito.daily_target) : "",
     cuando: regla.tipo === "semanal" ? "algunos" : "todos",
     dias: regla.tipo === "semanal" ? regla.dias : [],
+    routine_id: habito?.routine_id ?? "",
   };
 }
 
-function Campos({ valores }: { valores: ValoresFormHabito }) {
+function Campos({
+  valores,
+  rutinas,
+}: {
+  valores: ValoresFormHabito;
+  rutinas: Pick<Rutina, "id" | "title">[];
+}) {
   const [cuando, setCuando] = useState(valores.cuando);
   const [direccion, setDireccion] = useState(valores.direction);
 
@@ -162,6 +178,27 @@ function Campos({ valores }: { valores: ValoresFormHabito }) {
           </div>
         )}
       </fieldset>
+
+      {rutinas.length > 0 && (
+        <label className="flex flex-col gap-1 text-sm">
+          Unir con una rutina (opcional)
+          <select
+            name="routine_id"
+            defaultValue={valores.routine_id}
+            className="input py-2"
+          >
+            <option value="">Sin unir</option>
+            {rutinas.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.title}
+              </option>
+            ))}
+          </select>
+          <span className="text-muted">
+            Cada vez que marques esa rutina como hecha, aquí se suma 1 solo.
+          </span>
+        </label>
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         Notas (opcional)
