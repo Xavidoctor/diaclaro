@@ -11,13 +11,16 @@ import {
 import { FormCandidatura } from "@/app/empleo/form-candidatura";
 import { FormNotaHistorial } from "@/app/empleo/historial";
 import { leerAjustes } from "@/lib/data/ajustes";
+import { listarAreas } from "@/lib/data/areas";
 import { leerCandidatura, listarHistorial } from "@/lib/data/candidaturas";
 import {
   ESTADOS,
   NOMBRE_ESTADO,
+  minutosTotales,
   textoEntrada,
   textoSeguimiento,
 } from "@/lib/planner/candidaturas";
+import { textoHoras } from "@/lib/planner/areas";
 import { fechaCorta, hoyEn } from "@/lib/planner/fechas";
 
 export const metadata: Metadata = { title: "Candidatura" };
@@ -27,14 +30,21 @@ export default async function CandidaturaPage({
   params,
 }: PageProps<"/empleo/[id]">) {
   const { id } = await params;
-  const [candidatura, historial, { timezone }] = await Promise.all([
+  const [candidatura, historial, areas, { timezone }] = await Promise.all([
     leerCandidatura(id),
     listarHistorial(id),
+    listarAreas(),
     leerAjustes(),
   ]);
   if (!candidatura) notFound();
   const hoy = hoyEn(timezone);
   const c = candidatura;
+  const area = areas.find((a) => a.id === c.area_id);
+  // En el selector: las áreas activas y, si está en una archivada, también esa.
+  const areasElegibles = areas.filter(
+    (a) => !a.archived_at || a.id === c.area_id,
+  );
+  const dedicado = minutosTotales(historial);
 
   return (
     <>
@@ -50,6 +60,14 @@ export default async function CandidaturaPage({
           <p className="text-sm text-muted">
             {NOMBRE_ESTADO[c.status]}
             {c.applied_on && ` · enviada el ${fechaCorta(c.applied_on)}`}
+            {area && (
+              <>
+                {" · "}
+                <Link href={`/areas/${area.id}`} className="underline">
+                  {area.name}
+                </Link>
+              </>
+            )}
           </p>
           {c.url && (
             <a
@@ -112,6 +130,11 @@ export default async function CandidaturaPage({
 
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Historial</h2>
+          {dedicado > 0 && (
+            <p className="text-sm text-muted">
+              Le has dedicado {textoHoras(dedicado)} en total.
+            </p>
+          )}
           <FormNotaHistorial id={c.id} hoy={hoy} />
           {historial.length === 0 ? (
             <p className="text-sm text-muted">
@@ -127,6 +150,12 @@ export default async function CandidaturaPage({
                   </span>
                   <span className="flex-1 whitespace-pre-wrap break-words">
                     {textoEntrada(e)}
+                    {e.minutes && (
+                      <span className="text-muted">
+                        {" "}
+                        · {textoHoras(e.minutes)}
+                      </span>
+                    )}
                   </span>
                   <form action={quitarDelHistorial}>
                     <input type="hidden" name="entrada" value={e.id} />
@@ -149,7 +178,11 @@ export default async function CandidaturaPage({
             Cambiar datos
           </summary>
           <div className="mt-4">
-            <FormCandidatura key={JSON.stringify(c)} candidatura={c} />
+            <FormCandidatura
+              key={JSON.stringify(c)}
+              candidatura={c}
+              areas={areasElegibles}
+            />
           </div>
         </details>
 
