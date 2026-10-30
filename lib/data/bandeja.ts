@@ -1,4 +1,5 @@
 import "server-only";
+import type { TipoNota } from "@/lib/planner/etiquetas";
 import { createClient } from "@/lib/supabase/server";
 
 // Única parte de la Bandeja que habla con Supabase.
@@ -9,6 +10,8 @@ export type Nota = {
   id: string;
   body: string;
   url: string | null;
+  kind: TipoNota;
+  tags: string[];
   pinned: boolean;
   archived_at: string | null;
   deleted_at: string | null;
@@ -32,7 +35,7 @@ export type Tarea = {
 export type VistaNotas = "activas" | "archivo" | "papelera";
 
 const CAMPOS_NOTA =
-  "id, body, url, pinned, archived_at, deleted_at, created_at, tasks(id, title, done_at)";
+  "id, body, url, kind, tags, pinned, archived_at, deleted_at, created_at, tasks(id, title, done_at)";
 const CAMPOS_TAREA =
   "id, title, details, due_date, estimated_minutes, note_id, done_at, deleted_at, created_at";
 
@@ -41,7 +44,14 @@ function comprobar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`No se ha podido ${que}: ${error.message}`);
 }
 
-export async function listarNotas(vista: VistaNotas, busqueda: string) {
+export type FiltrosNotas = {
+  busqueda: string;
+  etiqueta: string | null;
+  tipo: TipoNota | null;
+};
+
+export async function listarNotas(vista: VistaNotas, filtros: FiltrosNotas) {
+  const { busqueda, etiqueta, tipo } = filtros;
   const supabase = await createClient();
   let consulta = supabase.from("notes").select(CAMPOS_NOTA);
 
@@ -53,6 +63,8 @@ export async function listarNotas(vista: VistaNotas, busqueda: string) {
         ? consulta.not("archived_at", "is", null)
         : consulta.is("archived_at", null);
   }
+  if (etiqueta) consulta = consulta.contains("tags", [etiqueta]);
+  if (tipo) consulta = consulta.eq("kind", tipo);
   if (busqueda) {
     // Búsqueda de texto de Postgres en español (columna "search").
     consulta = consulta.textSearch("search", busqueda, {
@@ -81,9 +93,26 @@ export async function listarTareas(papelera: boolean) {
   return (data ?? []) as Tarea[];
 }
 
-export async function crearNota(body: string, url: string | null) {
+// Etiquetas de todas las notas que no están en la papelera (para los filtros).
+export async function listarEtiquetasUsadas() {
   const supabase = await createClient();
-  const { error } = await supabase.from("notes").insert({ body, url });
+  const { data, error } = await supabase
+    .from("notes")
+    .select("tags")
+    .is("deleted_at", null)
+    .neq("tags", "{}");
+  comprobar(error, "cargar las etiquetas");
+  return (data ?? []) as { tags: string[] }[];
+}
+
+export async function crearNota(datos: {
+  body: string;
+  url: string | null;
+  kind: TipoNota;
+  tags: string[];
+}) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("notes").insert(datos);
   comprobar(error, "guardar la nota");
 }
 
@@ -102,6 +131,8 @@ export async function cambiarNota(
   cambios: Partial<{
     body: string;
     url: string | null;
+    kind: TipoNota;
+    tags: string[];
     pinned: boolean;
     archived_at: string | null;
     deleted_at: string | null;

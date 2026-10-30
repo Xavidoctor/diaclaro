@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   agruparTareas,
+  enlaceNotas,
   limpiarBusqueda,
   ordenarNotas,
   prepararCambiosTarea,
@@ -193,5 +194,19 @@ describe("agruparTareas", () => {
     expect(grupos.sinPlanificar.map((t) => t.id)).toEqual(["1"]);
     expect(grupos.conFecha.map((t) => t.id)).toEqual(["3", "2"]);
     expect(grupos.hechas.map((t) => t.id)).toEqual(["4"]);
+  });
+});
+
+describe("enlaceNotas", () => {
+  it("sin filtros, es la Bandeja", () => {
+    expect(enlaceNotas({ ver: "activas", q: "", etiqueta: null })).toBe(
+      "/bandeja",
+    );
+  });
+
+  it("añade solo los filtros que tienen valor", () => {
+    expect(enlaceNotas({ ver: "archivo", etiqueta: "año", tipo: "idea" })).toBe(
+      "/bandeja?ver=archivo&etiqueta=a%C3%B1o&tipo=idea",
+    );
   });
 });

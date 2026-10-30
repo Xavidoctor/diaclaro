@@ -1,6 +1,9 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-/* Colores de la app. Cambiar aquí cambia toda la interfaz. */
+/* Colores de la app. Cambiar aquí cambia toda la interfaz.
+   Los nombres siguen los de shadcn/ui, para que sus componentes usen nuestros colores. */
 :root {
   --background: #f8fafc;
   --surface: #ffffff;
@@ -10,6 +13,21 @@
   --primary: #2563eb;
   --primary-foreground: #ffffff;
   --danger: #b91c1c;
+
+  /* Lo que piden los componentes de shadcn/ui. */
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --secondary: #f1f5f9;
+  --secondary-foreground: var(--foreground);
+  --muted-foreground: var(--muted);
+  --accent: #f1f5f9;
+  --accent-foreground: var(--foreground);
+  --destructive: var(--danger);
+  --input: var(--border);
+  --ring: var(--primary);
+  --radius: 0.75rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,6 +40,8 @@
     --primary: #60a5fa;
     --primary-foreground: #0b1120;
     --danger: #f87171;
+    --secondary: #1e293b;
+    --accent: #1e293b;
   }
 }
 
@@ -34,6 +54,22 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-danger: var(--danger);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
   --font-sans: var(--font-geist-sans);
 }
 
@@ -43,7 +79,13 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Piezas reutilizables. shadcn/ui se añadirá cuando haga falta algo más complejo (menús, diálogos). */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+}
+
+/* Piezas reutilizables. Para menús, etiquetas o diálogos, usa components/ui (shadcn/ui). */
 @layer components {
   .input {
     @apply rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none focus:border-primary;

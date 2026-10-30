@@ -17,6 +17,12 @@ import {
   primerEnlace,
   tareaDesdeNota,
 } from "@/lib/planner/bandeja";
+import {
+  esTipoNota,
+  extraerEtiquetas,
+  leerCampoEtiquetas,
+  tipoInicial,
+} from "@/lib/planner/etiquetas";
 import { createClient } from "@/lib/supabase/server";
 
 // Acciones de la Bandeja. Se ejecutan en el servidor cuando pulsas un botón.
@@ -34,9 +40,32 @@ function leerId(formData: FormData): string {
   return id;
 }
 
+// Guarda lo capturado: como nota (con sus #etiquetas) o como tarea.
+async function guardarCaptura(
+  texto: string,
+  url: string | null,
+  destino: unknown,
+) {
+  if (destino === "tarea") {
+    const { title, details } = tareaDesdeNota(texto);
+    await crearTarea({ title, details });
+  } else {
+    await crearNota({
+      body: texto,
+      url,
+      kind: tipoInicial(texto, url),
+      tags: extraerEtiquetas(texto),
+    });
+  }
+}
+
 // "envios" cambia en cada intento: sirve para redibujar el cuadro de texto.
 // Si algo falla, "texto" devuelve lo escrito para no perderlo.
-export type CapturaState = { envios: number; error?: string; texto?: string };
+export type CapturaState = {
+  envios: number;
+  error?: string;
+  texto?: string;
+};
 
 // El cuadro de captura: guarda el texto como nota (o como tarea en la pestaña Tareas).
 export async function capturar(
@@ -50,12 +79,7 @@ export async function capturar(
   if (!r.ok) return { envios, error: r.error, texto: escrito };
 
   try {
-    if (formData.get("destino") === "tarea") {
-      const { title, details } = tareaDesdeNota(r.valor.texto);
-      await crearTarea({ title, details });
-    } else {
-      await crearNota(r.valor.texto, r.valor.url);
-    }
+    await guardarCaptura(r.valor.texto, r.valor.url, formData.get("destino"));
   } catch {
     return {
       envios,
@@ -66,6 +90,24 @@ export async function capturar(
 
   refresh();
   return { envios };
+}
+
+// Envía una captura que se hizo sin conexión y esperaba en el móvil.
+// Devuelve true si se ha guardado (o si no se podrá guardar nunca, para no reintentar siempre).
+export async function enviarPendiente(pendiente: {
+  texto: string;
+  destino: "nota" | "tarea";
+}): Promise<boolean> {
+  await exigirSesion();
+  const r = prepararCaptura(pendiente.texto);
+  if (!r.ok) return true;
+  try {
+    await guardarCaptura(r.valor.texto, r.valor.url, pendiente.destino);
+  } catch {
+    return false;
+  }
+  refresh();
+  return true;
 }
 
 // ---- Notas ----
@@ -107,9 +149,12 @@ export async function editarNota(formData: FormData) {
   const r = prepararCaptura(formData.get("texto"));
   // Si el texto queda vacío, no se guarda: así no se pierde la nota por error.
   if (!r.ok) return;
+  const tipo = formData.get("tipo");
   await cambiarNota(leerId(formData), {
     body: r.valor.texto,
     url: primerEnlace(r.valor.texto),
+    tags: leerCampoEtiquetas(formData.get("etiquetas")),
+    ...(esTipoNota(tipo) ? { kind: tipo } : {}),
   });
   refresh();
 }

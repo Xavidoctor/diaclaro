@@ -7,7 +7,11 @@ import {
   papeleraNota,
 } from "@/app/bandeja/actions";
 import { BotonAccion as Boton } from "@/app/bandeja/boton-accion";
-import type { Nota } from "@/lib/data/bandeja";
+import Link from "next/link";
+import { badgeVariants } from "@/components/ui/badge";
+import type { Nota, VistaNotas } from "@/lib/data/bandeja";
+import { enlaceNotas } from "@/lib/planner/bandeja";
+import { NOMBRE_TIPO, TIPOS_NOTA } from "@/lib/planner/etiquetas";
 
 const fecha = new Intl.DateTimeFormat("es-ES", {
   day: "numeric",
@@ -16,7 +20,7 @@ const fecha = new Intl.DateTimeFormat("es-ES", {
 });
 
 // Una nota de la lista, con sus botones.
-export function NotaItem({ nota }: { nota: Nota }) {
+export function NotaItem({ nota, ver }: { nota: Nota; ver: VistaNotas }) {
   const enPapelera = Boolean(nota.deleted_at);
   const archivada = Boolean(nota.archived_at);
 
@@ -30,6 +34,28 @@ export function NotaItem({ nota }: { nota: Nota }) {
           </span>
         )}
       </div>
+
+      {(nota.kind !== "nota" || nota.tags.length > 0) && (
+        <div className="flex flex-wrap gap-2">
+          {nota.kind !== "nota" && (
+            <Link
+              href={enlaceNotas({ ver, tipo: nota.kind })}
+              className={badgeVariants({ variant: "secondary" })}
+            >
+              {NOMBRE_TIPO[nota.kind]}
+            </Link>
+          )}
+          {nota.tags.map((etiqueta) => (
+            <Link
+              key={etiqueta}
+              href={enlaceNotas({ ver, etiqueta })}
+              className={badgeVariants({ variant: "outline" })}
+            >
+              #{etiqueta}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {nota.url && (
         <a
@@ -111,6 +137,31 @@ export function NotaItem({ nota }: { nota: Nota }) {
               rows={4}
               className="input"
             />
+            <div className="flex gap-2">
+              <label className="flex w-36 flex-col gap-1 text-sm">
+                Tipo
+                <select
+                  name="tipo"
+                  defaultValue={nota.kind}
+                  className="input px-2 py-2"
+                >
+                  {TIPOS_NOTA.map((t) => (
+                    <option key={t} value={t}>
+                      {NOMBRE_TIPO[t]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
+                Etiquetas (separadas por comas)
+                <input
+                  name="etiquetas"
+                  defaultValue={nota.tags.join(", ")}
+                  placeholder="ade, empleo"
+                  className="input py-2"
+                />
+              </label>
+            </div>
             <button type="submit" className="button-primary self-start py-2">
               Guardar cambios
             </button>
