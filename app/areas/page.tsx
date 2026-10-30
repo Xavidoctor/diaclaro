@@ -33,6 +33,19 @@ export default async function AreasPage() {
           </Link>
         </header>
 
+        <Link
+          href="/empleo"
+          className="card flex items-center justify-between gap-3 p-4"
+        >
+          <span className="flex flex-col gap-1">
+            <span className="font-medium">Candidaturas de empleo</span>
+            <span className="text-sm text-muted">
+              Las ofertas a las que te presentas y sus seguimientos
+            </span>
+          </span>
+          <span aria-hidden>→</span>
+        </Link>
+
         {areas.length === 0 ? (
           <section className="card flex flex-col gap-3">
             <p>
