@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { notFound } from "next/navigation";
 import { archivarArea, eliminarArea } from "@/app/areas/actions";
 import { FormArea } from "@/app/areas/form-area";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { leerArea, listarProyectos } from "@/lib/data/areas";
 import { minutosDeCandidaturasPorArea } from "@/lib/data/candidaturas";
@@ -31,9 +33,7 @@ export default async function AreaPage({ params }: PageProps<"/areas/[id]">) {
   return (
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-        <Link href="/areas" className="text-sm underline">
-          ← Áreas
-        </Link>
+        <EnlaceVolver href="/areas">Áreas</EnlaceVolver>
         <header className="flex flex-col gap-1">
           <h1 className="break-words text-3xl font-semibold tracking-tight">
             {area.name}
@@ -45,7 +45,7 @@ export default async function AreaPage({ params }: PageProps<"/areas/[id]">) {
           {semanaCandidaturas && (
             <p className="text-sm">
               {semanaCandidaturas}{" "}
-              <Link href="/empleo" className="underline">
+              <Link href="/empleo" className="enlace">
                 Ver candidaturas
               </Link>
             </p>
@@ -57,8 +57,9 @@ export default async function AreaPage({ params }: PageProps<"/areas/[id]">) {
             <h2 className="text-lg font-semibold">Proyectos</h2>
             <Link
               href={`/areas/${area.id}/proyectos/nuevo`}
-              className="button-primary py-2 text-sm"
+              className="button-primary gap-1 py-2 text-sm"
             >
+              <Plus aria-hidden className="size-4" />
               Añadir
             </Link>
           </header>
@@ -164,7 +165,7 @@ function ListaProyectos({
               href={p.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm underline"
+              className="enlace text-sm"
             >
               Abrir enlace
             </a>
