@@ -12,7 +12,9 @@ import {
   crearProyecto,
   moverArea as moverAreaEnLista,
 } from "@/lib/data/areas";
+import { crearTarea } from "@/lib/data/bandeja";
 import { prepararArea, prepararProyecto } from "@/lib/planner/areas";
+import { prepararCambiosTarea } from "@/lib/planner/bandeja";
 import { createClient } from "@/lib/supabase/server";
 
 // Acciones de Áreas y Proyectos. Cada una comprueba primero que hay sesión.
@@ -153,4 +155,31 @@ export async function eliminarProyecto(formData: FormData) {
   await exigirSesion();
   await borrarProyecto(leerTexto(formData, "id"));
   redirect(`/areas/${leerTexto(formData, "area_id")}`);
+}
+
+// Añade una tarea directamente dentro de un proyecto.
+export async function anadirTareaAProyecto(
+  prev: FormState<{ title: string }>,
+  formData: FormData,
+): Promise<FormState<{ title: string }>> {
+  await exigirSesion();
+  const envios = prev.envios + 1;
+  const title = String(formData.get("title") ?? "");
+  // Mismas reglas que al editar una tarea; fecha y minutos se quedan vacíos.
+  const r = prepararCambiosTarea({
+    title,
+    due_date: "",
+    estimated_minutes: "",
+  });
+  if (!r.ok) return { envios, error: r.error, valores: { title } };
+  try {
+    await crearTarea({
+      title: r.valor.title,
+      project_id: leerTexto(formData, "project_id"),
+    });
+  } catch {
+    return { envios, error: ERROR_CONEXION, valores: { title } };
+  }
+  refresh();
+  return { envios };
 }

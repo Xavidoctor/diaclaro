@@ -2,6 +2,7 @@ import { borrarTarea, marcarTarea, papeleraTarea } from "@/app/bandeja/actions";
 import { BotonAccion } from "@/app/bandeja/boton-accion";
 import { FichaTarea } from "@/app/bandeja/ficha-tarea";
 import type { Tarea } from "@/lib/data/bandeja";
+import { nombreProyecto, type GrupoOpciones } from "@/lib/planner/areas";
 
 const fecha = new Intl.DateTimeFormat("es-ES", {
   weekday: "short",
@@ -16,8 +17,16 @@ function verFecha(dia: string) {
 }
 
 // Una tarea de la lista: casilla para marcarla hecha y ficha para editarla.
-export function TareaItem({ tarea }: { tarea: Tarea }) {
+// "grupos" son tus proyectos: sirven para ver y elegir el proyecto de la tarea.
+export function TareaItem({
+  tarea,
+  grupos,
+}: {
+  tarea: Tarea;
+  grupos?: GrupoOpciones[];
+}) {
   const hecha = Boolean(tarea.done_at);
+  const proyecto = grupos ? nombreProyecto(grupos, tarea.project_id) : null;
   const enPapelera = Boolean(tarea.deleted_at);
 
   return (
@@ -46,11 +55,12 @@ export function TareaItem({ tarea }: { tarea: Tarea }) {
           >
             {tarea.title}
           </p>
-          {(tarea.due_date || tarea.estimated_minutes) && (
+          {(tarea.due_date || tarea.estimated_minutes || proyecto) && (
             <p className="text-sm text-muted">
               {[
                 tarea.due_date && verFecha(tarea.due_date),
                 tarea.estimated_minutes && `${tarea.estimated_minutes} min`,
+                proyecto,
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -82,7 +92,7 @@ export function TareaItem({ tarea }: { tarea: Tarea }) {
           <summary className="cursor-pointer text-sm text-muted">
             Editar
           </summary>
-          <FichaTarea tarea={tarea} />
+          <FichaTarea tarea={tarea} grupos={grupos} />
           <div className="mt-2 text-sm">
             <BotonAccion
               accion={papeleraTarea}

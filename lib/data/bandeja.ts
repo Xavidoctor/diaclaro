@@ -27,6 +27,7 @@ export type Tarea = {
   due_date: string | null;
   estimated_minutes: number | null;
   note_id: string | null;
+  project_id: string | null;
   done_at: string | null;
   deleted_at: string | null;
   created_at: string;
@@ -37,7 +38,7 @@ export type VistaNotas = "activas" | "archivo" | "papelera";
 const CAMPOS_NOTA =
   "id, body, url, kind, tags, pinned, archived_at, deleted_at, created_at, tasks(id, title, done_at)";
 const CAMPOS_TAREA =
-  "id, title, details, due_date, estimated_minutes, note_id, done_at, deleted_at, created_at";
+  "id, title, details, due_date, estimated_minutes, note_id, project_id, done_at, deleted_at, created_at";
 
 // Lanza un error con un mensaje claro si Supabase falla.
 function comprobar(error: { message: string } | null, que: string) {
@@ -93,6 +94,20 @@ export async function listarTareas(papelera: boolean) {
   return (data ?? []) as Tarea[];
 }
 
+// Las tareas de un proyecto (sin las de la papelera).
+export async function listarTareasDeProyecto(proyectoId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(CAMPOS_TAREA)
+    .eq("project_id", proyectoId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(300);
+  comprobar(error, "cargar las tareas del proyecto");
+  return (data ?? []) as Tarea[];
+}
+
 // Etiquetas de todas las notas que no están en la papelera (para los filtros).
 export async function listarEtiquetasUsadas() {
   const supabase = await createClient();
@@ -120,6 +135,7 @@ export async function crearTarea(datos: {
   title: string;
   details?: string | null;
   note_id?: string | null;
+  project_id?: string | null;
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("tasks").insert(datos);
@@ -149,6 +165,7 @@ export async function cambiarTarea(
     title: string;
     due_date: string | null;
     estimated_minutes: number | null;
+    project_id: string | null;
     done_at: string | null;
     deleted_at: string | null;
   }>,
