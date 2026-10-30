@@ -7,11 +7,8 @@ const SECCIONES = [
   { href: "/bandeja", nombre: "Bandeja" },
 ] as const;
 
-export function BarraInferior({
-  actual,
-}: {
-  actual: (typeof SECCIONES)[number]["href"];
-}) {
+// "actual" marca la sección en la que estás (en Ajustes no se marca ninguna).
+export function BarraInferior({ actual }: { actual: string }) {
   return (
     <nav
       aria-label="Secciones"
