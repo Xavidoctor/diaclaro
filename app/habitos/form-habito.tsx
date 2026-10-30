@@ -11,6 +11,7 @@ import {
   DIRECCIONES,
   IDEAS,
   NOMBRE_DIRECCION,
+  horaCorta,
   type Habito,
   type Idea,
 } from "@/lib/planner/habitos";
@@ -66,6 +67,7 @@ function valoresIniciales(habito?: Habito, idea?: Idea): ValoresFormHabito {
     cuando: regla.tipo === "semanal" ? "algunos" : "todos",
     dias: regla.tipo === "semanal" ? regla.dias : [],
     routine_id: habito?.routine_id ?? "",
+    remind_at: habito?.remind_at ? horaCorta(habito.remind_at) : "",
   };
 }
 
@@ -178,6 +180,21 @@ function Campos({
           </div>
         )}
       </fieldset>
+
+      <label className="flex flex-col gap-1 text-sm">
+        Recordármelo a las (opcional)
+        <input
+          name="remind_at"
+          type="time"
+          defaultValue={valores.remind_at}
+          className="input py-2"
+        />
+        <span className="text-muted">
+          Desde esa hora, si ese día aún no has apuntado nada, te lo recuerda
+          arriba en Hoy. Se ve al abrir la app; no suena con la app cerrada.
+          Déjalo vacío si no quieres recordatorio.
+        </span>
+      </label>
 
       {rutinas.length > 0 && (
         <label className="flex flex-col gap-1 text-sm">

@@ -18,6 +18,7 @@ import {
   resumenSemana,
   textoCantidad,
   textoMeta,
+  textoRecordatorio,
   textoTendencia,
   totalDelDia,
   type Habito,
@@ -145,7 +146,9 @@ function FichaHabito({
         >
           <span className="break-words font-medium">{habito.title}</span>
           <span className="text-sm text-muted">
-            {[textoMeta(habito), dias].filter(Boolean).join(" · ")}
+            {[textoMeta(habito), dias, textoRecordatorio(habito)]
+              .filter(Boolean)
+              .join(" · ")}
           </span>
         </Link>
         <BotonPausa habito={habito} />

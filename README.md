@@ -106,6 +106,7 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | `20261030230000_habitos_con_rutinas.sql` | Columna `routine_id` en `habits`: un hábito puede ir unido a una rutina y cada «Hecho» suma 1 |
 | `20261030240000_tareas_desde_google.sql` | Columna `google_event` en `tasks`: de qué evento de Google salió una tarea, para no crearla dos veces |
 | `20261030260000_documentos_de_drive.sql` | Columna `drive` en `google_connections` y tabla `project_documents` (enlaces a archivos de Drive que eliges en cada proyecto), con sus reglas RLS |
+| `20261030270000_recordatorios_habitos.sql` | Columna `remind_at` en `habits`: la hora (opcional) a la que Hoy te recuerda un hábito si aún no has apuntado nada |
 
 ## Publicar en Vercel (una vez)
 
