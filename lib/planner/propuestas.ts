@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { horaOpcional, textoOpcional } from "./agenda";
+import {
+  horaOpcional,
+  prepararCambioDia,
+  textoOpcional,
+  type CambioDia,
+} from "./agenda";
 import { prepararProyectoDeTarea } from "./areas";
 import type { Resultado } from "./bandeja";
 import { esFecha } from "./fechas";
@@ -144,4 +149,37 @@ export function textoGuardado(elementos: ElementoAGuardar[]): string {
       ? `${partes.slice(0, -1).join(", ")} y ${partes.at(-1)}`
       : partes[0];
   return `Guardado: ${lista}.`;
+}
+
+// ---- «Algo ha cambiado» ----
+
+export type CambioAceptado =
+  | { tipo: "cancelar"; eventoId: string; dia: string }
+  | { tipo: "mover"; eventoId: string; dia: string; cambio: CambioDia }
+  | { tipo: "tarea"; id: string; fecha: string };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Lee el cambio que viaja en un botón «Aceptar» y lo comprueba entero.
+// Formatos: "cancelar|id|dia", "mover|id|dia|nuevo-dia|hora|hora-fin",
+// "tarea|id|nueva-fecha". Si algo no cuadra, null.
+export function leerCambioAceptado(valor: unknown): CambioAceptado | null {
+  if (typeof valor !== "string") return null;
+  const [tipo, id, a, b, c, d] = valor.split("|");
+  if (!id || !UUID.test(id)) return null;
+  if (tipo === "cancelar" && esFecha(a ?? ""))
+    return { tipo: "cancelar", eventoId: id, dia: a };
+  if (tipo === "tarea" && esFecha(a ?? ""))
+    return { tipo: "tarea", id, fecha: a };
+  if (tipo === "mover" && esFecha(a ?? "")) {
+    const r = prepararCambioDia({
+      new_date: b,
+      new_start_time: c,
+      new_end_time: d,
+    });
+    return r.ok
+      ? { tipo: "mover", eventoId: id, dia: a, cambio: r.valor }
+      : null;
+  }
+  return null;
 }

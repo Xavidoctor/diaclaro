@@ -83,6 +83,10 @@ export default async function AgendaPage({
           </Link>
         </nav>
 
+        <Link href="/cambio" className="self-start text-sm underline">
+          ¿Algo ha cambiado? Cuéntamelo y lo reorganizo
+        </Link>
+
         <AvisoGoogle estado={google.estado} />
 
         {eventos.length === 0 && google.estado !== "conectado" && (
