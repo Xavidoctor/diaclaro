@@ -96,7 +96,7 @@ export default async function AjustesPage({
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold">Hábitos</h2>
             <p className="text-sm text-muted">
-              Opcional: apunta lo que quieras observar (tabaco, ejercicio,
+              Opcional: apunta lo que quieras observar (agua, lectura,
               sueño…), sin juicios. Solo salen en Hoy si añades alguno.
             </p>
           </div>
