@@ -5,6 +5,7 @@ import {
   deshacerRutinaHecha,
   marcarRutinaHecha,
 } from "@/app/actions";
+import { AvisoSobrecarga } from "@/app/componentes/aviso-sobrecarga";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
 import { TareasDeHoy } from "@/app/componentes/tareas-de-hoy";
@@ -27,7 +28,8 @@ export default async function HoyPage() {
   if (!data?.claims) redirect("/login");
 
   // Hoy: tu agenda, tus tareas y tus rutinas del día.
-  const { timezone } = await leerAjustes();
+  const ajustes = await leerAjustes();
+  const { timezone } = ajustes;
   const hoy = hoyEn(timezone);
   const [eventos, rutinas, registros] = await Promise.all([
     listarEventosHasta(hoy),
@@ -56,6 +58,13 @@ export default async function HoyPage() {
             </form>
           </div>
         </header>
+
+        <AvisoSobrecarga
+          hoy={hoy}
+          ajustes={ajustes}
+          agenda={agenda}
+          rutinas={deHoy}
+        />
 
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Apunta algo</h2>
