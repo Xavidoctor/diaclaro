@@ -95,6 +95,7 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | `20261030050000_tareas_en_proyectos.sql` | Columna `project_id` en `tasks`: cada tarea puede ir en un proyecto o asignatura (opcional) |
 | `20261030090000_temporizador_foco.sql` | Tabla `focus_sessions` (cada rato del temporizador de foco), con sus reglas RLS |
 | `20261030100000_cierre_del_dia.sql` | Tabla `day_reviews` (tu cierre de cada día), con sus reglas RLS |
+| `20261030110000_empiezo_el_dia.sql` | Tabla `day_starts` (a qué hora empiezas cada día), con sus reglas RLS |
 
 ## Publicar en Vercel (una vez)
 
