@@ -153,8 +153,13 @@ export async function editarNota(formData: FormData) {
   // Si el texto queda vacío, no se guarda: así no se pierde la nota por error.
   if (!r.ok) return;
   const tipo = formData.get("tipo");
+  // El proyecto solo se cambia si el formulario trae el selector.
+  const proyecto = formData.has("project_id")
+    ? prepararProyectoDeTarea(formData.get("project_id"))
+    : null;
   await cambiarNota(leerId(formData), {
     body: r.valor.texto,
+    ...(proyecto?.ok ? { project_id: proyecto.valor } : {}),
     url: primerEnlace(r.valor.texto),
     tags: leerCampoEtiquetas(formData.get("etiquetas")),
     ...(esTipoNota(tipo) ? { kind: tipo } : {}),

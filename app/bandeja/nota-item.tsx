@@ -10,6 +10,11 @@ import { BotonAccion as Boton } from "@/app/bandeja/boton-accion";
 import Link from "next/link";
 import { badgeVariants } from "@/components/ui/badge";
 import type { Nota, VistaNotas } from "@/lib/data/bandeja";
+import {
+  nombreProyecto,
+  opcionesVisibles,
+  type GrupoOpciones,
+} from "@/lib/planner/areas";
 import { enlaceNotas } from "@/lib/planner/bandeja";
 import { NOMBRE_TIPO, TIPOS_NOTA } from "@/lib/planner/etiquetas";
 
@@ -19,10 +24,21 @@ const fecha = new Intl.DateTimeFormat("es-ES", {
   timeZone: "Europe/Madrid",
 });
 
-// Una nota de la lista, con sus botones.
-export function NotaItem({ nota, ver }: { nota: Nota; ver: VistaNotas }) {
+// Una nota de la lista, con sus botones. Con "grupos", al editarla se puede
+// elegir su proyecto.
+export function NotaItem({
+  nota,
+  ver,
+  grupos,
+}: {
+  nota: Nota;
+  ver: VistaNotas;
+  grupos?: GrupoOpciones[];
+}) {
   const enPapelera = Boolean(nota.deleted_at);
   const archivada = Boolean(nota.archived_at);
+  const proyecto = grupos ? nombreProyecto(grupos, nota.project_id) : null;
+  const opciones = grupos ? opcionesVisibles(grupos, nota.project_id) : [];
 
   return (
     <li className="card flex flex-col gap-3">
@@ -67,6 +83,8 @@ export function NotaItem({ nota, ver }: { nota: Nota; ver: VistaNotas }) {
           Abrir enlace
         </a>
       )}
+
+      {proyecto && <p className="text-sm text-muted">Proyecto: {proyecto}</p>}
 
       {nota.tasks.length > 0 && (
         <p className="text-sm text-muted">
@@ -162,6 +180,27 @@ export function NotaItem({ nota, ver }: { nota: Nota; ver: VistaNotas }) {
                 />
               </label>
             </div>
+            {opciones.length > 0 && (
+              <label className="flex flex-col gap-1 text-sm">
+                Proyecto (opcional)
+                <select
+                  name="project_id"
+                  defaultValue={nota.project_id ?? ""}
+                  className="input py-2"
+                >
+                  <option value="">Sin proyecto</option>
+                  {opciones.map((g) => (
+                    <optgroup key={g.area} label={g.area}>
+                      {g.proyectos.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+            )}
             <button type="submit" className="button-primary self-start py-2">
               Guardar cambios
             </button>

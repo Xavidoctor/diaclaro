@@ -17,6 +17,7 @@ export type Nota = {
   archived_at: string | null;
   deleted_at: string | null;
   created_at: string;
+  project_id: string | null;
   // Tareas creadas a partir de esta nota.
   tasks: { id: string; title: string; done_at: string | null }[];
 };
@@ -41,7 +42,7 @@ export type Tarea = {
 export type VistaNotas = "activas" | "archivo" | "papelera";
 
 const CAMPOS_NOTA =
-  "id, body, url, kind, tags, pinned, archived_at, deleted_at, created_at, tasks(id, title, done_at)";
+  "id, body, url, kind, tags, pinned, archived_at, deleted_at, created_at, project_id, tasks(id, title, done_at)";
 const CAMPOS_TAREA =
   "id, title, details, kind, due_date, estimated_minutes, actual_minutes, note_id, project_id, importance, hard_deadline, done_at, deleted_at, created_at";
 
@@ -114,6 +115,20 @@ export async function listarTareasDeProyecto(proyectoId: string) {
 }
 
 // Etiquetas de todas las notas que no están en la papelera (para los filtros).
+// Las notas de un proyecto que no están en la papelera, las más nuevas primero.
+export async function listarNotasDeProyecto(proyectoId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("notes")
+    .select(CAMPOS_NOTA)
+    .eq("project_id", proyectoId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  comprobar(error, "cargar las notas del proyecto");
+  return (data ?? []) as Nota[];
+}
+
 export async function listarEtiquetasUsadas() {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -159,6 +174,7 @@ export async function cambiarNota(
     pinned: boolean;
     archived_at: string | null;
     deleted_at: string | null;
+    project_id: string | null;
   }>,
 ) {
   const supabase = await createClient();
