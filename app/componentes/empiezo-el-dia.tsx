@@ -1,16 +1,24 @@
 import {
   deshacerInicioDia,
   empezarDia,
+  marcarDespierto,
 } from "@/app/componentes/acciones-inicio";
 import { marcarRutinaHecha } from "@/app/actions";
 import type { Ajustes } from "@/lib/planner/ajustes";
-import { primeraRutina, type InicioDia } from "@/lib/planner/inicio-dia";
+import {
+  estadoDespertar,
+  minutosEnLaCama,
+  primeraRutina,
+  textoEnLaCama,
+  type InicioDia,
+} from "@/lib/planner/inicio-dia";
 import { textoFranja, type RutinaDelDia } from "@/lib/planner/rutinas";
 
-// Botón "Empiezo el día" arriba de Hoy. Al pulsarlo se guarda la hora y el
-// aviso de sobrecarga calcula tu día desde ese momento hasta que te acuestes.
+// Botones "Despierto" y "Levantado" arriba de Hoy (antes "Empiezo el día").
+// Al pulsar "Levantado" se guarda la hora y el aviso de sobrecarga calcula tu
+// día desde ese momento hasta que te acuestes.
 // "ajustes" son los de hoy (ya con la hora de acostarte del día, si la pusiste).
-// "rutinas" son las de hoy: al empezar, te enseña la primera (como el primer paseo).
+// "rutinas" son las de hoy: al levantarte, te enseña la primera (como el primer paseo).
 export function EmpiezoElDia({
   inicio,
   ajustes,
@@ -20,17 +28,18 @@ export function EmpiezoElDia({
   ajustes: Ajustes;
   rutinas: RutinaDelDia[];
 }) {
-  if (inicio) {
+  if (estadoDespertar(inicio) === "levantado" && inicio?.start_time) {
     const primera = primeraRutina(rutinas);
+    const enLaCama = textoEnLaCama(minutosEnLaCama(inicio));
     return (
       <section className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-4 text-sm text-muted">
           <p>
-            Has empezado el día a las {inicio.start_time}
+            Te has levantado a las {inicio.start_time}
             {ajustes.sleep_time
               ? ` · te acuestas a las ${ajustes.sleep_time}`
               : ""}
-            .
+            .{enLaCama ? ` ${enLaCama}` : ""}
           </p>
           <form action={deshacerInicioDia}>
             <button type="submit" className="underline">
@@ -44,21 +53,68 @@ export function EmpiezoElDia({
   }
 
   return (
-    <form action={empezarDia} className="card flex flex-col gap-3 p-4">
+    <section className="card flex flex-col gap-3 p-4">
+      <BotonesDespertar inicio={inicio} ajustes={ajustes} />
+    </section>
+  );
+}
+
+// Los dos botones, para la tarjeta de Hoy y para la pantalla /despierto.
+// "grande" los hace más altos, para pulsarlos medio dormido.
+// "irAHoy": al pulsar "Levantado", te lleva a Hoy.
+export function BotonesDespertar({
+  inicio,
+  ajustes,
+  grande = false,
+  irAHoy = false,
+}: {
+  inicio: InicioDia | null;
+  ajustes: Ajustes;
+  grande?: boolean;
+  irAHoy?: boolean;
+}) {
+  const estado = estadoDespertar(inicio);
+  const alto = grande ? "min-h-16 text-lg" : "py-2";
+  return (
+    <>
       <p className="text-sm text-muted">
-        Púlsalo al levantarte: calcularé tu día desde ese momento hasta que te
-        acuestes.
+        {estado === "despierto" && inicio?.awake_time
+          ? `Despierto desde las ${inicio.awake_time}. Pulsa «Levantado» cuando salgas de la cama.`
+          : "Pulsa «Despierto» al abrir los ojos y «Levantado» al salir de la cama. Calcularé tu día desde que te levantes hasta que te acuestes."}
       </p>
-      {!ajustes.sleep_time && (
-        <label className="flex flex-col gap-1 text-sm">
-          ¿A qué hora te acostarás hoy? (puedes dejarlo vacío)
-          <input type="time" name="sleep_time" className="input py-2" />
-        </label>
+      {estado === "sin-empezar" && (
+        <form action={marcarDespierto} className="flex flex-col">
+          <button
+            type="submit"
+            className={`inline-flex items-center justify-center rounded-xl border border-border bg-surface px-4 font-medium transition-opacity active:opacity-80 ${alto}`}
+          >
+            Despierto
+          </button>
+        </form>
       )}
-      <button type="submit" className="button-primary self-start py-2">
-        Empiezo el día
-      </button>
-    </form>
+      <form action={empezarDia} className="flex flex-col gap-3">
+        {irAHoy && <input type="hidden" name="ir_a_hoy" value="1" />}
+        {!ajustes.sleep_time && (
+          <label className="flex flex-col gap-1 text-sm">
+            ¿A qué hora te acostarás hoy? (puedes dejarlo vacío)
+            <input type="time" name="sleep_time" className="input py-2" />
+          </label>
+        )}
+        <button type="submit" className={`button-primary ${alto}`}>
+          Levantado
+        </button>
+      </form>
+      {estado === "despierto" && (
+        <form
+          action={deshacerInicioDia}
+          className="self-start text-sm text-muted"
+        >
+          <button type="submit" className="underline">
+            Deshacer
+          </button>
+        </form>
+      )}
+    </>
   );
 }
 
