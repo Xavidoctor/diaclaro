@@ -5,8 +5,11 @@ import {
   leerSemanas,
   lunesDe,
   resumenPorSemanas,
+  anadirFrase,
   conRecordatorio,
   esIdea,
+  fraseDelDia,
+  quitarFrase,
   habitosDelDia,
   horaCorta,
   pendientesALaHora,
@@ -34,6 +37,7 @@ const tabaco: Habito = {
   repeat_rule: null,
   routine_id: null,
   remind_at: null,
+  phrases: [],
   active: true,
 };
 
@@ -47,6 +51,7 @@ const gimnasio: Habito = {
   repeat_rule: "FREQ=WEEKLY;BYDAY=MO,WE,FR",
   routine_id: null,
   remind_at: null,
+  phrases: [],
   active: true,
 };
 
@@ -267,7 +272,7 @@ describe("prepararApunte", () => {
 
 describe("esIdea", () => {
   it("solo las ideas conocidas", () => {
-    expect(esIdea("tabaco")).toBe(true);
+    expect(esIdea("leer")).toBe(true);
     expect(esIdea("toString")).toBe(false);
     expect(esIdea(null)).toBe(false);
   });
@@ -351,7 +356,11 @@ describe("recordatorios", () => {
 
   it("solo recuerda lo que tiene hora y aún no tiene nada apuntado", () => {
     const fumar = conHora(tabaco, "21:00:00");
-    const agua = { ...conHora(gimnasio, "10:00:00"), id: "h3", repeat_rule: null };
+    const agua = {
+      ...conHora(gimnasio, "10:00:00"),
+      id: "h3",
+      repeat_rule: null,
+    };
     const deHoy = habitosDelDia(
       [fumar, agua, gimnasio],
       [apunte("h3", "2026-10-30", 2)],
@@ -419,5 +428,34 @@ describe("recordatorios", () => {
       ok: false,
       error: "La hora del recordatorio no es válida.",
     });
+  });
+});
+
+describe("frases", () => {
+  it("fraseDelDia cambia cada día y es la misma todo el día", () => {
+    const frases = ["a", "b", "c"];
+    const hoy = fraseDelDia(frases, "2026-10-30");
+    expect(fraseDelDia(frases, "2026-10-30")).toBe(hoy);
+    expect(fraseDelDia(frases, "2026-10-31")).not.toBe(hoy);
+    expect(fraseDelDia([], "2026-10-30")).toBeNull();
+  });
+
+  it("anadirFrase limpia espacios y no repite", () => {
+    expect(anadirFrase(["Hola"], "  Poco a  poco ")).toEqual({
+      ok: true,
+      valor: ["Hola", "Poco a poco"],
+    });
+    expect(anadirFrase(["Poco a poco"], "poco a POCO").ok).toBe(false);
+    expect(anadirFrase([], "   ").ok).toBe(false);
+    expect(anadirFrase([], "x".repeat(201)).ok).toBe(false);
+  });
+
+  it("como mucho 20 frases", () => {
+    const veinte = Array.from({ length: 20 }, (_, i) => `f${i}`);
+    expect(anadirFrase(veinte, "otra").ok).toBe(false);
+  });
+
+  it("quitarFrase", () => {
+    expect(quitarFrase(["a", "b"], "a")).toEqual(["b"]);
   });
 });

@@ -6,6 +6,7 @@ import {
   deshacerRutinaHecha,
   marcarRutinaHecha,
 } from "@/app/actions";
+import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { AvisoGoogle, EtiquetaGoogle } from "@/app/componentes/aviso-google";
 import { AvisoSobrecarga } from "@/app/componentes/aviso-sobrecarga";
@@ -72,6 +73,7 @@ export default async function HoyPage() {
             <Link
               href="/ajustes"
               aria-label="Ajustes"
+              data-guia="ajustes"
               className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
             >
               <Settings aria-hidden className="size-5" />
@@ -88,7 +90,11 @@ export default async function HoyPage() {
           </div>
         </header>
 
-        <EmpiezoElDia inicio={inicio} ajustes={ajustesHoy} rutinas={deHoy} />
+        <AyudaPantalla seccion="hoy" />
+
+        <div data-guia="despertar">
+          <EmpiezoElDia inicio={inicio} ajustes={ajustesHoy} rutinas={deHoy} />
+        </div>
 
         <AvisoSobrecarga
           hoy={hoy}
@@ -99,9 +105,11 @@ export default async function HoyPage() {
 
         <RecordatoriosHabitos hoy={hoy} zona={timezone} />
 
-        <PlanDeHoy hoy={hoy} />
+        <div data-guia="plan">
+          <PlanDeHoy hoy={hoy} />
+        </div>
 
-        <section className="flex flex-col gap-3">
+        <section data-guia="captura" className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Apunta algo</h2>
           <CapturaRapida />
         </section>

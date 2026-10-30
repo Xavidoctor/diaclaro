@@ -1,5 +1,9 @@
 import { listarHabitos, listarRegistrosEntre } from "@/lib/data/habitos";
-import { conRecordatorio, habitosDelDia } from "@/lib/planner/habitos";
+import {
+  conRecordatorio,
+  fraseDelDia,
+  habitosDelDia,
+} from "@/lib/planner/habitos";
 import { ListaRecordatorios } from "@/app/componentes/lista-recordatorios";
 
 // Recordatorios de hábitos, arriba en Hoy. Aquí se buscan los hábitos de hoy
@@ -32,6 +36,7 @@ export async function RecordatoriosHabitos({
         unit: h.unit,
         direction: h.direction,
         remind_at: h.remind_at,
+        frase: fraseDelDia(h.phrases, hoy),
       }))}
     />
   );

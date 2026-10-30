@@ -4,6 +4,7 @@ import {
   juntarRangos,
   leerMesParam,
   mesDe,
+  mesInicial,
   nombreMes,
   semanasDelMes,
   sumarMeses,
@@ -90,5 +91,19 @@ describe("juntarRangos", () => {
       { desde: "2026-10-30", hasta: "2026-11-01" },
       { desde: "2027-03-01", hasta: "2027-04-05" },
     ]);
+  });
+});
+
+describe("mesInicial", () => {
+  it("enseña el mes de hoy si no estás en la última semana", () => {
+    expect(mesInicial("2026-10-24")).toBe("2026-10");
+    expect(mesInicial("2026-02-01")).toBe("2026-02");
+  });
+
+  it("salta al mes siguiente en los últimos 7 días del mes", () => {
+    expect(mesInicial("2026-10-25")).toBe("2026-11");
+    expect(mesInicial("2026-10-31")).toBe("2026-11");
+    expect(mesInicial("2026-12-28")).toBe("2027-01");
+    expect(mesInicial("2026-02-22")).toBe("2026-03");
   });
 });

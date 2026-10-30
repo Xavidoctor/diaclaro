@@ -4,6 +4,7 @@ import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { CalendarioMes } from "@/app/agenda/calendario-mes";
 import { ListaDelDia } from "@/app/agenda/lista-del-dia";
 import { AvisoGoogle } from "@/app/componentes/aviso-google";
+import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
@@ -17,6 +18,7 @@ import {
   juntarRangos,
   leerMesParam,
   mesDe,
+  mesInicial,
   semanasDelMes,
 } from "@/lib/planner/calendario";
 import {
@@ -38,7 +40,8 @@ const DIAS_VISTA = 3;
 // para elegir cualquier día y ver lo que tienes.
 // /agenda?desde=2026-11-09 enseña los días seguidos desde esa fecha.
 // /agenda?dia=2026-12-03 elige ese día en el calendario (y abre su mes).
-// /agenda?mes=2027-01 enseña ese mes en el calendario.
+// /agenda?mes=2027-01 enseña ese mes en el calendario. Sin nada, se abre
+// el mes de hoy (o el siguiente si estás en la última semana del mes).
 export default async function AgendaPage({
   searchParams,
 }: PageProps<"/agenda">) {
@@ -49,7 +52,10 @@ export default async function AgendaPage({
   const dias = diasDesde(desde, DIAS_VISTA);
   const elegido =
     typeof params.dia === "string" && esFecha(params.dia) ? params.dia : null;
-  const mes = leerMesParam(params.mes, mesDe(elegido ?? hoy));
+  const mes = leerMesParam(
+    params.mes,
+    elegido ? mesDe(elegido) : mesInicial(hoy),
+  );
   const diasDelMes = semanasDelMes(mes).flat();
 
   // Se cargan solo los días que se ven: los de arriba, el mes y el elegido.
@@ -114,12 +120,15 @@ export default async function AgendaPage({
           <h1 className="text-3xl font-semibold tracking-tight">Agenda</h1>
           <Link
             href="/agenda/nuevo"
+            data-guia="agenda-anadir"
             className="button-primary gap-1 py-2 text-sm"
           >
             <Plus aria-hidden className="size-4" />
             Añadir
           </Link>
         </header>
+
+        <AyudaPantalla seccion="agenda" />
 
         <nav aria-label="Cambiar de días" className="flex gap-4 text-sm">
           <Link

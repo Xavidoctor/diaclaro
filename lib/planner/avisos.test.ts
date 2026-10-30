@@ -56,8 +56,20 @@ describe("contenidoAviso", () => {
       title: "Tabaco",
       body: "Recordatorio de las 21:00. Hoy aún no has apuntado nada. ¿Lo apuntas?",
       tag: `habito-${peticion.habito}`,
-      url: "/",
+      url: `/habitos#habito-${peticion.habito}`,
     });
+  });
+
+  it("si trae una de tus frases, la pone primero", () => {
+    const c = contenidoAviso({ ...peticion, frase: "Un vaso más y listo" });
+    expect(c.body).toBe("Un vaso más y listo\nRecordatorio de las 21:00.");
+  });
+
+  it("acepta la frase vacía (null) que manda Supabase si no tienes", () => {
+    expect(leerPeticionAviso({ ...peticion, frase: null }).ok).toBe(true);
+    expect(leerPeticionAviso({ ...peticion, frase: "x".repeat(201) }).ok).toBe(
+      false,
+    );
   });
 });
 

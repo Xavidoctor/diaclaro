@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
+import { RecorridoGuiado } from "@/app/componentes/recorrido-guiado";
 import "./globals.css";
 import { RegistrarSW } from "@/app/componentes/registrar-sw";
 
@@ -27,6 +28,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="es" className={`${nunito.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         {children}
+        {/* El recorrido de bienvenida: se abre solo la primera vez. */}
+        <RecorridoGuiado />
         <RegistrarSW />
       </body>
     </html>

@@ -27,6 +27,14 @@ export function sumarMeses(mes: string, cuantos: number): string {
   return format(addMonths(parseISO(`${mes}-01`), cuantos), "yyyy-MM");
 }
 
+// El mes que se abre al entrar en la Agenda. Si hoy está en la última
+// semana del mes (los últimos 7 días), ya se enseña el mes siguiente,
+// que es el que te interesa mirar.
+export function mesInicial(hoy: string): string {
+  const mes = mesDe(hoy);
+  return mesDe(sumarDias(hoy, 7)) === mes ? mes : sumarMeses(mes, 1);
+}
+
 // "noviembre de 2026"
 export function nombreMes(mes: string): string {
   return format(parseISO(`${mes}-01`), "MMMM 'de' yyyy", { locale: es });

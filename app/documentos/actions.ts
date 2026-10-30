@@ -69,3 +69,11 @@ export async function mandarAPapelera(formData: FormData) {
   await papeleraImportante(await pase(), id);
   refresh();
 }
+
+// Pase de una hora (solo Drive) para que el móvil baje una copia de tus
+// documentos y puedas verlos sin internet.
+export async function paseParaCopias(): Promise<string | null> {
+  await exigirSesion();
+  const p = await paseDrive();
+  return p.ok ? p.token : null;
+}

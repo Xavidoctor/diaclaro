@@ -9,6 +9,8 @@ import { fechaCorta, hoyEn, sumarDias } from "@/lib/planner/fechas";
 import { textoCantidad } from "@/lib/planner/habitos";
 import { listarRutinas } from "@/lib/data/rutinas";
 import { EnlaceHistorial } from "@/app/habitos/enlace-historial";
+import { Frases } from "@/app/habitos/frases";
+import { iaDisponible } from "@/lib/ai/groq";
 
 export const metadata: Metadata = { title: "Hábito" };
 
@@ -32,6 +34,8 @@ export default async function HabitoPage({
         {habito.title}
       </h1>
       <FormHabito habito={habito} rutinas={rutinas} />
+
+      <Frases id={habito.id} frases={habito.phrases} conIA={iaDisponible()} />
 
       <section className="flex flex-col gap-3 border-t border-border pt-4">
         <h2 className="text-lg font-semibold">Lo apuntado en 14 días</h2>
