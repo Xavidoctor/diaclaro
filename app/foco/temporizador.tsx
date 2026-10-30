@@ -1,6 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useState, useSyncExternalStore } from "react";
+import {
+  useActionState,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { guardarSesionFoco, type GuardarFocoState } from "@/app/foco/actions";
 import {
   MAX_OBJETIVO,
