@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { CircleHelp, X } from "lucide-react";
+import { BotonRecorrido } from "@/app/componentes/recorrido-guiado";
 import { SECCIONES_GUIA } from "@/lib/planner/guia";
 
 // ---- Si la ayuda pequeña está oculta, se guarda en este navegador ----
@@ -60,8 +61,9 @@ export function AyudaPantalla({ seccion }: { seccion: string }) {
       <CircleHelp aria-hidden className="size-4 shrink-0 text-primary" />
       <p className="flex-1">
         ¿Algo no se entiende?{" "}
+        <BotonRecorrido className="enlace" texto="Recorrido" /> ·{" "}
         <Link href={`/guia#${parte.id}`} className="enlace">
-          Cómo se usa
+          Guía
         </Link>
       </p>
       <button

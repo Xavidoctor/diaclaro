@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { InterruptorAyuda } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { EnlaceVolver } from "@/app/componentes/enlace-volver";
+import { BotonRecorrido } from "@/app/componentes/recorrido-guiado";
 import { AbrirApartado } from "@/app/guia/abrir-apartado";
 import { SECCIONES_GUIA } from "@/lib/planner/guia";
 
@@ -26,6 +27,9 @@ export default function GuiaPage() {
             Toca un apartado para ver cómo funciona. No hace falta leerlo todo:
             vuelve aquí cuando algo no se entienda.
           </p>
+          <div>
+            <BotonRecorrido />
+          </div>
         </header>
 
         <ul className="flex flex-col gap-2">
@@ -67,9 +71,10 @@ export default function GuiaPage() {
         <section className="card flex flex-col gap-3">
           <h2 className="text-lg font-semibold">La ayuda de cada pantalla</h2>
           <p className="text-sm text-muted">
-            Arriba de Hoy, Agenda, Bandeja y Áreas hay un recuadro pequeño que
-            trae aquí. Si ya lo tienes claro, puedes quitarlo. Esta guía sigue
-            en Ajustes para cuando la necesites.
+            Arriba de Hoy, Agenda, Bandeja y Áreas hay un recuadro pequeño para
+            hacer el recorrido o venir aquí. Si ya lo tienes claro, puedes
+            quitarlo. La guía y el recorrido siguen en Ajustes para cuando los
+            necesites.
           </p>
           <div>
             <InterruptorAyuda />

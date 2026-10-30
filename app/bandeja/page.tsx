@@ -59,6 +59,7 @@ export default async function BandejaPage({
 
         <nav
           aria-label="Pestañas"
+          data-guia="pestanas"
           className="flex gap-1 rounded-2xl bg-secondary p-1"
         >
           <Pestana href="/bandeja" activa={pestana === "notas"}>

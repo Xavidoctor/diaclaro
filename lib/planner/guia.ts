@@ -136,7 +136,7 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
       "Cambia tus horas de levantarte, comer, cenar y acostarte, y tu zona horaria.",
       "Añade rutinas: cosas que haces a menudo sin hora fija, como pasear al perro.",
       "Descarga una copia de seguridad de tus datos una vez a la semana.",
-      "Aquí también puedes volver a mostrar la ayuda pequeña de cada pantalla si la ocultaste.",
+      "En «Guía de uso» puedes repetir el recorrido de bienvenida, abrir esta guía y volver a mostrar la ayuda pequeña de cada pantalla.",
     ],
     enlace: { href: "/ajustes", texto: "Ir a Ajustes" },
   },

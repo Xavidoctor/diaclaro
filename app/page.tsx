@@ -72,6 +72,7 @@ export default async function HoyPage() {
             <Link
               href="/ajustes"
               aria-label="Ajustes"
+              data-guia="ajustes"
               className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
             >
               <Settings aria-hidden className="size-5" />
@@ -90,7 +91,9 @@ export default async function HoyPage() {
 
         <AyudaPantalla seccion="hoy" />
 
-        <EmpiezoElDia inicio={inicio} ajustes={ajustesHoy} rutinas={deHoy} />
+        <div data-guia="despertar">
+          <EmpiezoElDia inicio={inicio} ajustes={ajustesHoy} rutinas={deHoy} />
+        </div>
 
         <AvisoSobrecarga
           hoy={hoy}
@@ -99,9 +102,11 @@ export default async function HoyPage() {
           rutinas={deHoy}
         />
 
-        <PlanDeHoy hoy={hoy} />
+        <div data-guia="plan">
+          <PlanDeHoy hoy={hoy} />
+        </div>
 
-        <section className="flex flex-col gap-3">
+        <section data-guia="captura" className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Apunta algo</h2>
           <CapturaRapida />
         </section>

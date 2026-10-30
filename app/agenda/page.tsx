@@ -63,6 +63,7 @@ export default async function AgendaPage({
           <h1 className="text-3xl font-semibold tracking-tight">Agenda</h1>
           <Link
             href="/agenda/nuevo"
+            data-guia="agenda-anadir"
             className="button-primary gap-1 py-2 text-sm"
           >
             <Plus aria-hidden className="size-4" />
