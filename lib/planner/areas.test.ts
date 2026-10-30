@@ -3,6 +3,10 @@ import {
   horasAMinutos,
   minutosAHorasTexto,
   moverEnLista,
+  nombreProyecto,
+  opcionesProyecto,
+  opcionesVisibles,
+  prepararProyectoDeTarea,
   ordenarAreas,
   ordenarProyectos,
   prepararArea,
@@ -193,5 +197,66 @@ describe("prepararProyecto", () => {
     expect(
       prepararProyecto({ name: "A", kind: "otro", notes: "", url: "" }).ok,
     ).toBe(false);
+  });
+});
+
+describe("proyectos de las tareas", () => {
+  const areas = [
+    area({ id: "e", name: "Estudios", position: 0 }),
+    area({
+      id: "v",
+      name: "Viejo",
+      position: 1,
+      archived_at: "2026-10-01T00:00:00Z",
+    }),
+    area({ id: "x", name: "Vacía", position: 2 }),
+  ];
+  const proyectos = [
+    proyecto({ id: "p1", area_id: "e", name: "Web" }),
+    proyecto({ id: "p2", area_id: "e", name: "Asig", kind: "asignatura" }),
+    proyecto({
+      id: "p3",
+      area_id: "e",
+      name: "Antigua",
+      archived_at: "2026-10-01T00:00:00Z",
+    }),
+    proyecto({ id: "p4", area_id: "v", name: "De área archivada" }),
+  ];
+  const grupos = opcionesProyecto(areas, proyectos);
+
+  it("agrupa por área, en orden, y marca los archivados", () => {
+    expect(grupos.map((g) => g.area)).toEqual(["Estudios", "Viejo"]);
+    expect(grupos[0].proyectos.map((p) => [p.id, p.archivado])).toEqual([
+      ["p2", false],
+      ["p1", false],
+      ["p3", true],
+    ]);
+    expect(grupos[1].proyectos[0].archivado).toBe(true);
+  });
+
+  it("el selector oculta los archivados, salvo el que ya tiene la tarea", () => {
+    expect(
+      opcionesVisibles(grupos, null).flatMap((g) =>
+        g.proyectos.map((p) => p.id),
+      ),
+    ).toEqual(["p2", "p1"]);
+    expect(
+      opcionesVisibles(grupos, "p4").flatMap((g) =>
+        g.proyectos.map((p) => p.id),
+      ),
+    ).toEqual(["p2", "p1", "p4"]);
+  });
+
+  it("nombreProyecto encuentra también los archivados", () => {
+    expect(nombreProyecto(grupos, "p3")).toBe("Antigua");
+    expect(nombreProyecto(grupos, null)).toBeNull();
+    expect(nombreProyecto(grupos, "no-existe")).toBeNull();
+  });
+
+  it("prepararProyectoDeTarea: vacío es sin proyecto; solo acepta ids válidos", () => {
+    expect(prepararProyectoDeTarea("")).toEqual({ ok: true, valor: null });
+    const id = "0b5f2a9e-1c2d-4e3f-8a9b-0c1d2e3f4a5b";
+    expect(prepararProyectoDeTarea(id)).toEqual({ ok: true, valor: id });
+    expect(prepararProyectoDeTarea("hola").ok).toBe(false);
   });
 });

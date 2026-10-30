@@ -130,6 +130,72 @@ export function moverEnLista(
   return nueva;
 }
 
+// ---- Tareas y proyectos ----
+
+export type GrupoOpciones = {
+  area: string;
+  proyectos: { id: string; name: string; archivado: boolean }[];
+};
+
+// Tus proyectos agrupados por área, para el selector «Proyecto» de una tarea.
+// Los archivados (o de un área archivada) van marcados: el selector solo los
+// enseña si la tarea ya está en uno, para no perderlo al guardar.
+export function opcionesProyecto(
+  areas: Area[],
+  proyectos: Proyecto[],
+): GrupoOpciones[] {
+  return ordenarAreas(areas)
+    .map((area) => ({
+      area: area.name,
+      proyectos: ordenarProyectos(
+        proyectos.filter((p) => p.area_id === area.id),
+      ).map((p) => ({
+        id: p.id,
+        name: p.name,
+        archivado: Boolean(p.archived_at || area.archived_at),
+      })),
+    }))
+    .filter((g) => g.proyectos.length > 0);
+}
+
+// Las opciones que se ven en el selector de una tarea concreta.
+export function opcionesVisibles(
+  grupos: GrupoOpciones[],
+  actual: string | null,
+): GrupoOpciones[] {
+  return grupos
+    .map((g) => ({
+      ...g,
+      proyectos: g.proyectos.filter((p) => !p.archivado || p.id === actual),
+    }))
+    .filter((g) => g.proyectos.length > 0);
+}
+
+// Nombre del proyecto de una tarea, para mostrarlo en la lista.
+export function nombreProyecto(
+  grupos: GrupoOpciones[],
+  id: string | null,
+): string | null {
+  if (!id) return null;
+  for (const g of grupos) {
+    const p = g.proyectos.find((p) => p.id === id);
+    if (p) return p.name;
+  }
+  return null;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// El valor del selector: vacío = sin proyecto.
+export function prepararProyectoDeTarea(
+  valor: unknown,
+): Resultado<string | null> {
+  if (valor === null || valor === undefined || valor === "")
+    return { ok: true, valor: null };
+  if (typeof valor === "string" && UUID.test(valor)) return { ok: true, valor };
+  return { ok: false, error: "El proyecto elegido no es válido." };
+}
+
 // ---- Formularios ----
 
 const horasSemana = z

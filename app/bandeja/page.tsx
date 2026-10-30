@@ -5,6 +5,7 @@ import { CapturaRapida } from "@/app/componentes/captura-rapida";
 import { NotaItem } from "@/app/bandeja/nota-item";
 import { TareaItem } from "@/app/bandeja/tarea-item";
 import { badgeVariants } from "@/components/ui/badge";
+import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import {
   listarEtiquetasUsadas,
   listarNotas,
@@ -12,6 +13,7 @@ import {
   type FiltrosNotas,
   type VistaNotas,
 } from "@/lib/data/bandeja";
+import { opcionesProyecto, type GrupoOpciones } from "@/lib/planner/areas";
 import {
   agruparTareas,
   enlaceNotas,
@@ -200,8 +202,12 @@ function mensajeVacio(ver: VistaNotas, hayFiltros: boolean) {
 }
 
 async function PestanaTareas({ papelera }: { papelera: boolean }) {
-  const tareas = await listarTareas(papelera);
+  const [tareas, { areas, proyectos }] = await Promise.all([
+    listarTareas(papelera),
+    cargarOpcionesProyecto(),
+  ]);
   const grupos = agruparTareas(tareas);
+  const opciones = opcionesProyecto(areas, proyectos);
 
   return (
     <section className="flex flex-col gap-4">
@@ -220,6 +226,7 @@ async function PestanaTareas({ papelera }: { papelera: boolean }) {
         <Grupo
           titulo="En la papelera"
           tareas={tareas}
+          opciones={opciones}
           vacio="La papelera está vacía."
         />
       ) : (
@@ -227,16 +234,19 @@ async function PestanaTareas({ papelera }: { papelera: boolean }) {
           <Grupo
             titulo="Sin planificar"
             tareas={grupos.sinPlanificar}
+            opciones={opciones}
             vacio="Ninguna tarea sin fecha."
           />
           <Grupo
             titulo="Con fecha"
             tareas={grupos.conFecha}
+            opciones={opciones}
             vacio="Ninguna tarea con fecha."
           />
           <Grupo
             titulo="Hechas"
             tareas={grupos.hechas}
+            opciones={opciones}
             vacio="Aún no has marcado ninguna."
           />
         </>
@@ -248,10 +258,12 @@ async function PestanaTareas({ papelera }: { papelera: boolean }) {
 function Grupo({
   titulo,
   tareas,
+  opciones,
   vacio,
 }: {
   titulo: string;
   tareas: Awaited<ReturnType<typeof listarTareas>>;
+  opciones: GrupoOpciones[];
   vacio: string;
 }) {
   return (
@@ -264,7 +276,7 @@ function Grupo({
       ) : (
         <ul className="flex flex-col gap-2">
           {tareas.map((tarea) => (
-            <TareaItem key={tarea.id} tarea={tarea} />
+            <TareaItem key={tarea.id} tarea={tarea} grupos={opciones} />
           ))}
         </ul>
       )}
