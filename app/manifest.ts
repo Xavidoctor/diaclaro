@@ -32,13 +32,19 @@ export default function manifest(): MetadataRoute.Manifest {
         files: [{ name: "archivos", accept: ["image/*", "application/pdf"] }],
       },
     },
-    // Atajo: mantén pulsado el icono de DíaClaro y sale «Estoy despierto».
-    // Abre una pantalla con los botones Despierto y Levantado.
+    // Atajos: mantén pulsado el icono de DíaClaro y salen «Estoy despierto»
+    // (botones Despierto y Levantado) y «Me voy a dormir».
     shortcuts: [
       {
         name: "Estoy despierto",
         short_name: "Despierto",
         url: "/despierto",
+        icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Me voy a dormir",
+        short_name: "A dormir",
+        url: "/dormir",
         icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
       },
     ],
