@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   agruparTareas,
   tareasParaHoy,
+  diasConTareas,
+  leerDiaParaMover,
+  leerIds,
+  tareasDelDia,
+  textoPendienteDesde,
   enlaceNotas,
   limpiarBusqueda,
   ordenarNotas,
@@ -246,5 +251,74 @@ describe("tareasParaHoy", () => {
   it("cruza bien el cambio de mes", () => {
     const r = tareasParaHoy([t("dia1", "2026-12-01")], "2026-11-29");
     expect(r.proximas.map((x) => x.id)).toEqual(["dia1"]);
+  });
+});
+
+describe("textoPendienteDesde", () => {
+  it("dice de ayer, de hace unos días o la fecha", () => {
+    expect(textoPendienteDesde("2026-10-29", "2026-10-30")).toBe("de ayer");
+    expect(textoPendienteDesde("2026-10-27", "2026-10-30")).toBe(
+      "de hace 3 días",
+    );
+    expect(textoPendienteDesde("2026-10-23", "2026-10-30")).toBe(
+      "de hace 7 días",
+    );
+    expect(textoPendienteDesde("2026-10-12", "2026-10-30")).toBe(
+      "del 12 oct",
+    );
+  });
+
+  it("cruza bien el cambio de mes", () => {
+    expect(textoPendienteDesde("2026-10-31", "2026-11-01")).toBe("de ayer");
+  });
+});
+
+describe("tareasDelDia y diasConTareas", () => {
+  const t = (id: string, due_date: string | null, done_at: string | null = null) => ({
+    id,
+    due_date,
+    done_at,
+    created_at: "2026-10-01T00:00:00Z",
+  });
+  const tareas = [
+    t("hecha", "2026-11-03", "2026-11-03T10:00:00Z"),
+    t("pendiente", "2026-11-03"),
+    t("otra", "2026-11-04"),
+    t("sin", null),
+  ];
+
+  it("da las tareas de un día, con las hechas al final", () => {
+    expect(tareasDelDia(tareas, "2026-11-03").map((x) => x.id)).toEqual([
+      "pendiente",
+      "hecha",
+    ]);
+  });
+
+  it("marca solo los días con tareas sin hacer", () => {
+    expect(diasConTareas(tareas).sort()).toEqual(["2026-11-03", "2026-11-04"]);
+    expect(diasConTareas([t("h", "2026-11-05", "x")])).toEqual([]);
+  });
+});
+
+describe("leerDiaParaMover", () => {
+  it("acepta hoy y días futuros", () => {
+    expect(leerDiaParaMover("2026-10-30", "2026-10-30")).toEqual({
+      ok: true,
+      valor: "2026-10-30",
+    });
+    expect(leerDiaParaMover("2026-11-15", "2026-10-30").ok).toBe(true);
+  });
+
+  it("rechaza días pasados y fechas raras", () => {
+    expect(leerDiaParaMover("2026-10-29", "2026-10-30").ok).toBe(false);
+    expect(leerDiaParaMover("2026-02-30", "2026-10-30").ok).toBe(false);
+    expect(leerDiaParaMover(null, "2026-10-30").ok).toBe(false);
+  });
+});
+
+describe("leerIds", () => {
+  it("separa por comas y quita vacíos y repetidos", () => {
+    expect(leerIds("a, b,,a")).toEqual(["a", "b"]);
+    expect(leerIds(null)).toEqual([]);
   });
 });

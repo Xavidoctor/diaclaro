@@ -3,17 +3,24 @@ import Link from "next/link";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { CalendarioMes } from "@/app/agenda/calendario-mes";
 import { ListaDelDia } from "@/app/agenda/lista-del-dia";
+import { NuevaTareaDia } from "@/app/agenda/nueva-tarea-dia";
+import { TareaItem } from "@/app/bandeja/tarea-item";
+import { MoverTareas } from "@/app/componentes/mover-tareas";
 import { AvisoGoogle } from "@/app/componentes/aviso-google";
 import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
+import { cargarOpcionesProyecto } from "@/lib/data/areas";
+import { listarTareas } from "@/lib/data/bandeja";
 import { tareasDesdeGoogle } from "@/lib/data/google";
 import {
   agruparPorDia,
   leerFechaParam,
   ocurrenciasEntre,
 } from "@/lib/planner/agenda";
+import { opcionesProyecto } from "@/lib/planner/areas";
+import { diasConTareas, tareasDelDia } from "@/lib/planner/bandeja";
 import {
   juntarRangos,
   leerMesParam,
@@ -66,11 +73,13 @@ export default async function AgendaPage({
   ]);
   const hasta = rangos.at(-1)!.hasta;
 
-  const [eventos, googles] = await Promise.all([
+  const [eventos, googles, tareas, { areas, proyectos }] = await Promise.all([
     listarEventosHasta(hasta),
     Promise.all(
       rangos.map((r) => cargarAgendaGoogle(r.desde, r.hasta, timezone)),
     ),
+    listarTareas(false),
+    cargarOpcionesProyecto(),
   ]);
   const google = {
     estado: googles[0].estado,
@@ -97,8 +106,14 @@ export default async function AgendaPage({
     google.ocurrencias,
   );
   const porDia = agruparPorDia(todas, dias);
-  const diasConAlgo = new Set(todas.map((o) => o.fecha));
+  // Un puntito en el calendario si ese día hay algo apuntado o tareas sin hacer.
+  const diasConAlgo = new Set([
+    ...todas.map((o) => o.fecha),
+    ...diasConTareas(tareas),
+  ]);
   const delElegido = elegido ? todas.filter((o) => o.fecha === elegido) : [];
+  const tareasElegido = elegido ? tareasDelDia(tareas, elegido) : [];
+  const grupos = opcionesProyecto(areas, proyectos);
 
   // Dirección para cambiar de mes o elegir un día sin perder lo demás.
   function enlace(cambio: { mes?: string; dia?: string }) {
@@ -201,10 +216,30 @@ export default async function AgendaPage({
               <Plus aria-hidden className="size-4" />
               Añadir algo este día
             </Link>
+
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
+              Tareas de este día
+            </h3>
+            {tareasElegido.length === 0 ? (
+              <p className="text-sm text-muted">Ninguna tarea este día.</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {tareasElegido.map((tarea) => (
+                  <TareaItem key={tarea.id} tarea={tarea} grupos={grupos}>
+                    {/* Si ese día ya pasó y no la hiciste, puedes traerla a hoy. */}
+                    {elegido < hoy && !tarea.done_at && (
+                      <MoverTareas ids={[tarea.id]} hoy={hoy} />
+                    )}
+                  </TareaItem>
+                ))}
+              </ul>
+            )}
+            {elegido >= hoy && <NuevaTareaDia dia={elegido} />}
           </section>
         ) : (
           <p className="text-sm text-muted">
-            Toca un día del calendario para ver lo que tienes ese día.
+            Toca un día del calendario para ver lo que tienes ese día y
+            apuntarle tareas.
           </p>
         )}
       </main>

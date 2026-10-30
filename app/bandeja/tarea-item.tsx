@@ -19,12 +19,18 @@ function verFecha(dia: string) {
 
 // Una tarea de la lista: casilla para marcarla hecha y ficha para editarla.
 // "grupos" son tus proyectos: sirven para ver y elegir el proyecto de la tarea.
+// "etiqueta" es un aviso corto encima del título (por ejemplo, «De ayer»)
+// y "children", botones extra debajo (por ejemplo, «Pasar a hoy»).
 export function TareaItem({
   tarea,
   grupos,
+  etiqueta,
+  children,
 }: {
   tarea: Tarea;
   grupos?: GrupoOpciones[];
+  etiqueta?: string;
+  children?: React.ReactNode;
 }) {
   const hecha = Boolean(tarea.done_at);
   const proyecto = grupos ? nombreProyecto(grupos, tarea.project_id) : null;
@@ -54,6 +60,11 @@ export function TareaItem({
           </form>
         )}
         <div className="flex flex-1 flex-col gap-1">
+          {etiqueta && (
+            <span className="self-start rounded-full bg-secondary px-2 py-0.5 text-xs font-medium first-letter:uppercase">
+              {etiqueta}
+            </span>
+          )}
           <p
             className={`break-words ${hecha ? "text-muted line-through" : ""}`}
           >
@@ -81,6 +92,8 @@ export function TareaItem({
           )}
         </div>
       </div>
+
+      {children}
 
       {enPapelera ? (
         <div className="flex gap-4 text-sm">

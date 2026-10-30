@@ -2,6 +2,7 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
+import { leerAjustes } from "@/lib/data/ajustes";
 import {
   borrarNotaDefinitiva,
   borrarTareaDefinitiva,
@@ -10,9 +11,13 @@ import {
   crearNota,
   crearTarea,
   leerNota,
+  moverTareas,
 } from "@/lib/data/bandeja";
 import { prepararProyectoDeTarea } from "@/lib/planner/areas";
+import { hoyEn } from "@/lib/planner/fechas";
 import {
+  leerDiaParaMover,
+  leerIds,
   prepararCambiosTarea,
   prepararCaptura,
   primerEnlace,
@@ -239,4 +244,52 @@ export async function borrarTarea(formData: FormData) {
   await exigirSesion();
   await borrarTareaDefinitiva(leerId(formData));
   refresh();
+}
+
+// Lleva una o varias tareas a otro día: a hoy o al que elijas en el calendario.
+// En el formulario van "ids" (separados por comas) y "dia".
+export type MoverTareasState = { error?: string };
+
+export async function moverTareasA(
+  _prev: MoverTareasState,
+  formData: FormData,
+): Promise<MoverTareasState> {
+  await exigirSesion();
+  const ids = leerIds(formData.get("ids"));
+  if (ids.length === 0) return { error: "No hay ninguna tarea que mover." };
+  const { timezone } = await leerAjustes();
+  const dia = leerDiaParaMover(formData.get("dia"), hoyEn(timezone));
+  if (!dia.ok) return { error: dia.error };
+  try {
+    await moverTareas(ids, dia.valor);
+  } catch {
+    return { error: "No se ha podido mover. Vuelve a probar." };
+  }
+  refresh();
+  return {};
+}
+
+// Crea una tarea ya apuntada para un día (desde el calendario de la Agenda).
+// Los minutos son opcionales: si no los pones, se quedan vacíos.
+export type TareaParaDiaState = { envios: number; error?: string };
+
+export async function crearTareaParaDia(
+  prev: TareaParaDiaState,
+  formData: FormData,
+): Promise<TareaParaDiaState> {
+  await exigirSesion();
+  const envios = prev.envios + 1;
+  const r = prepararCambiosTarea({
+    title: formData.get("title"),
+    due_date: formData.get("due_date"),
+    estimated_minutes: formData.get("estimated_minutes"),
+  });
+  if (!r.ok) return { envios, error: r.error };
+  try {
+    await crearTarea(r.valor);
+  } catch {
+    return { envios, error: "No se ha podido guardar. Vuelve a probar." };
+  }
+  refresh();
+  return { envios };
 }
