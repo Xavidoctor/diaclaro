@@ -1,5 +1,6 @@
 import type { Ajustes } from "./ajustes";
 import { horaOpcional } from "./agenda";
+import type { RutinaDelDia } from "./rutinas";
 
 // "Empiezo el día". Funciones puras, con pruebas en inicio-dia.test.ts.
 //
@@ -35,4 +36,13 @@ export function leerHoraAcostarse(
   const r = horaOpcional.safeParse(valor ?? "");
   if (!r.success) return { ok: false, error: "La hora no es válida." };
   return { ok: true, valor: r.data };
+}
+
+// Lo primero al empezar el día: tu primera rutina pendiente (por ejemplo, el
+// primer paseo del perro), según su franja. Solo mientras no hayas marcado
+// ninguna rutina hoy; después ya la ves en la lista de Rutinas.
+// "rutinas" llega ya ordenada por franja (ver rutinasDelDia).
+export function primeraRutina(rutinas: RutinaDelDia[]): RutinaDelDia | null {
+  if (rutinas.some((r) => r.hechas > 0)) return null;
+  return rutinas.find((r) => !r.completa) ?? null;
 }

@@ -69,7 +69,7 @@ export default async function HoyPage() {
           </div>
         </header>
 
-        <EmpiezoElDia inicio={inicio} ajustes={ajustesHoy} />
+        <EmpiezoElDia inicio={inicio} ajustes={ajustesHoy} rutinas={deHoy} />
 
         <AvisoSobrecarga
           hoy={hoy}
