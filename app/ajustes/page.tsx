@@ -4,6 +4,8 @@ import { Plus } from "lucide-react";
 import { pausarRutina } from "@/app/ajustes/actions";
 import { FormAjustes } from "@/app/ajustes/form-ajustes";
 import { SeccionGoogle } from "@/app/ajustes/seccion-google";
+import { InterruptorAyuda } from "@/app/componentes/ayuda-guia";
+import { BotonRecorrido } from "@/app/componentes/recorrido-guiado";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarRutinas } from "@/lib/data/rutinas";
@@ -96,7 +98,7 @@ export default async function AjustesPage({
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold">Hábitos</h2>
             <p className="text-sm text-muted">
-              Opcional: apunta lo que quieras observar (tabaco, ejercicio,
+              Opcional: apunta lo que quieras observar (agua, lectura,
               sueño…), sin juicios. Solo salen en Hoy si añades alguno.
             </p>
           </div>
@@ -122,6 +124,23 @@ export default async function AjustesPage({
           >
             Abrir
           </Link>
+        </section>
+
+        <section className="card flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Guía de uso</h2>
+          <p className="text-sm text-muted">
+            El recorrido te enseña dónde tocar, paso a paso, como la primera
+            vez. La guía explica cada pantalla con más calma. Arriba de Hoy,
+            Agenda, Bandeja y Áreas hay un recuadro pequeño de ayuda: puedes
+            ocultarlo si ya lo tienes claro y volver a mostrarlo aquí.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <BotonRecorrido />
+            <Link href="/guia" className="button-secondary">
+              Leer la guía
+            </Link>
+            <InterruptorAyuda />
+          </div>
         </section>
 
         <section className="card flex flex-col gap-3">

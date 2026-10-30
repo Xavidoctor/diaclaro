@@ -90,7 +90,7 @@ function Campos({
           defaultValue={valores.title}
           required
           maxLength={100}
-          placeholder="Por ejemplo, Tabaco o Leer"
+          placeholder="Por ejemplo, Leer o Caminar"
           className="input py-2"
         />
       </label>
@@ -118,7 +118,7 @@ function Campos({
             name="unit"
             defaultValue={valores.unit}
             maxLength={30}
-            placeholder="cigarrillos, minutos…"
+            placeholder="vasos, minutos…"
             className="input py-2"
           />
         </label>

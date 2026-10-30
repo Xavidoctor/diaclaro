@@ -109,6 +109,7 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | `20261030270000_recordatorios_habitos.sql` | Columna `remind_at` en `habits`: la hora (opcional) a la que Hoy te recuerda un hábito si aún no has apuntado nada |
 | `20261030300000_avisos_push.sql` | Tablas `push_subscriptions` (dónde mandar los avisos), `habit_reminder_sends` (avisos ya enviados) y `push_deliveries`, con sus reglas RLS, y la tarea de cada 5 minutos (pg_cron + pg_net) |
 | `20261030330000_hora_de_dormir.sql` | Tabla `bedtimes` (a qué hora pulsaste «Me voy a dormir» cada noche), con sus reglas RLS. Sirve para las horas de sueño reales en Áreas → Progreso |
+| `20261030350000_frases_habitos.sql` | Columna `phrases` en `habits` (tus frases para motivarte, hasta 20) y la tarea de avisos, que ahora manda una de ellas al azar |
 
 ## Publicar en Vercel (una vez)
 
@@ -144,6 +145,8 @@ Sirve para enlazar archivos de tu Drive a un proyecto o asignatura. Usa el permi
 En **Ajustes → Documentos importantes** (`/documentos`) puedes guardar fotos y PDF (DNI, billetes, entradas…) con un tipo y buscarlos después. Se guardan en tu Drive, en la carpeta «DíaClaro · Documentos importantes», con el mismo permiso `drive.file`. No hay que configurar nada más ni hace falta migración: DíaClaro no copia los archivos en Supabase.
 
 En Android, con la app instalada en la pantalla de inicio, sale **DíaClaro** en el menú **Compartir** de la galería y de las capturas. Si no sale, desinstala la app de la pantalla de inicio y vuelve a instalarla desde Chrome, para que el móvil lea los cambios. Por este camino el límite es de 4 MB por archivo; desde la pantalla, de 20 MB.
+
+**Sin internet:** cada vez que abres «Documentos importantes» con conexión, el móvil guarda una copia de tus documentos en el propio navegador. Si luego abres DíaClaro sin internet, sale la pantalla «Sin conexión» (`public/sin-conexion.html`, servida por `public/sw.js`) con esa copia. La copia se puede borrar desde la misma pantalla, y si entra otra cuenta en ese móvil se borra sola.
 
 Si algún día cambias el secreto del cliente, cada persona tendrá que volver a pulsar **Conectar con Google**.
 

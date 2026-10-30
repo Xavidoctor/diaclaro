@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
 import { NotaItem } from "@/app/bandeja/nota-item";
@@ -54,8 +55,11 @@ export default async function BandejaPage({
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
         <h1 className="text-3xl font-semibold tracking-tight">Bandeja</h1>
 
+        <AyudaPantalla seccion="bandeja" />
+
         <nav
           aria-label="Pestañas"
+          data-guia="pestanas"
           className="flex gap-1 rounded-2xl bg-secondary p-1"
         >
           <Pestana href="/bandeja" activa={pestana === "notas"}>

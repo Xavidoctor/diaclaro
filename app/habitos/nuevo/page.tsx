@@ -6,7 +6,7 @@ import { listarRutinas } from "@/lib/data/rutinas";
 
 export const metadata: Metadata = { title: "Añadir hábito" };
 
-// "?idea=tabaco" rellena el formulario con una idea; no guarda nada sola.
+// "?idea=agua" rellena el formulario con una idea; no guarda nada sola.
 export default async function NuevoHabitoPage({
   searchParams,
 }: PageProps<"/habitos/nuevo">) {

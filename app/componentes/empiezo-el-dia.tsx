@@ -4,6 +4,7 @@ import {
   marcarDespierto,
 } from "@/app/componentes/acciones-inicio";
 import { marcarRutinaHecha } from "@/app/actions";
+import { CorregirHoras } from "@/app/componentes/corregir-horas";
 import type { Ajustes } from "@/lib/planner/ajustes";
 import {
   estadoDespertar,
@@ -47,6 +48,7 @@ export function EmpiezoElDia({
             </button>
           </form>
         </div>
+        <CorregirHoras inicio={inicio} />
         {primera && <LoPrimero item={primera} />}
       </section>
     );
@@ -111,6 +113,14 @@ export function BotonesDespertar({
           </button>
         </form>
       )}
+      <CorregirHoras
+        inicio={inicio}
+        texto={
+          estado === "despierto"
+            ? "Cambiar horas"
+            : "¿Se te olvidó pulsar? Pon la hora a mano"
+        }
+      />
     </>
   );
 }
