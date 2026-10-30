@@ -1,5 +1,6 @@
 import "server-only";
 import type { TipoNota } from "@/lib/planner/etiquetas";
+import type { Importancia } from "@/lib/planner/recortes";
 import { createClient } from "@/lib/supabase/server";
 
 // Única parte de la Bandeja que habla con Supabase.
@@ -30,6 +31,8 @@ export type Tarea = {
   actual_minutes: number | null;
   note_id: string | null;
   project_id: string | null;
+  importance: Importancia | null;
+  hard_deadline: boolean;
   done_at: string | null;
   deleted_at: string | null;
   created_at: string;
@@ -40,7 +43,7 @@ export type VistaNotas = "activas" | "archivo" | "papelera";
 const CAMPOS_NOTA =
   "id, body, url, kind, tags, pinned, archived_at, deleted_at, created_at, tasks(id, title, done_at)";
 const CAMPOS_TAREA =
-  "id, title, details, kind, due_date, estimated_minutes, actual_minutes, note_id, project_id, done_at, deleted_at, created_at";
+  "id, title, details, kind, due_date, estimated_minutes, actual_minutes, note_id, project_id, importance, hard_deadline, done_at, deleted_at, created_at";
 
 // Lanza un error con un mensaje claro si Supabase falla.
 function comprobar(error: { message: string } | null, que: string) {
@@ -169,6 +172,8 @@ export async function cambiarTarea(
     estimated_minutes: number | null;
     actual_minutes: number | null;
     project_id: string | null;
+    importance: Importancia | null;
+    hard_deadline: boolean;
     done_at: string | null;
     deleted_at: string | null;
   }>,

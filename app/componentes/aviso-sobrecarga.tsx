@@ -1,10 +1,18 @@
 import Link from "next/link";
-import { listarTareas } from "@/lib/data/bandeja";
+import { aplicarRecortes } from "@/app/componentes/acciones-recortes";
+import { cargarOpcionesProyecto } from "@/lib/data/areas";
+import { listarTareas, type Tarea } from "@/lib/data/bandeja";
 import type { Ocurrencia } from "@/lib/planner/agenda";
 import type { Ajustes } from "@/lib/planner/ajustes";
 import { tareasParaHoy } from "@/lib/planner/bandeja";
 import { calcularCarga, textoDuracion } from "@/lib/planner/carga";
 import { horaEn } from "@/lib/planner/fechas";
+import {
+  proponerRecortes,
+  textoRecorte,
+  type PropuestaRecortes,
+  type Recorte,
+} from "@/lib/planner/recortes";
 import type { RutinaDelDia } from "@/lib/planner/rutinas";
 import { factoresPorTipo, textoFactor } from "@/lib/planner/tiempos";
 
@@ -52,6 +60,14 @@ export async function AvisoSobrecarga({
 
   const { estado, apuntado, libre, diferencia, sinDuracion, ajuste } = carga;
   const tePasas = estado === "te-pasas";
+  const propuesta = tePasas
+    ? proponerRecortes(
+        await recortables([...atrasadas, ...deHoy]),
+        -diferencia,
+        hoy,
+        factores,
+      )
+    : null;
 
   return (
     <section
@@ -87,11 +103,93 @@ export async function AvisoSobrecarga({
             : `${sinDuracion.length} cosas no tienen minutos, así que puede ser más.`}
         </p>
       )}
-      {tePasas && (
+      {propuesta && <Recortes propuesta={propuesta} />}
+    </section>
+  );
+}
+
+// Las tareas de hoy con lo que hace falta para decidir qué recortar:
+// si su proyecto es de un área de tiempo personal (un hobby).
+async function recortables(tareas: Tarea[]) {
+  const { areas, proyectos } = await cargarOpcionesProyecto();
+  const personales = new Set(
+    areas.filter((a) => a.personal_time).map((a) => a.id),
+  );
+  const proyectosPersonales = new Set(
+    proyectos.filter((p) => personales.has(p.area_id)).map((p) => p.id),
+  );
+  return tareas.map((t) => ({
+    ...t,
+    tiempoPersonal: Boolean(
+      t.project_id && proyectosPersonales.has(t.project_id),
+    ),
+  }));
+}
+
+// Texto que viaja en el botón: "id|aplazar|2026-10-31" o "id|acortar|45".
+function valorRecorte(r: Recorte) {
+  return r.tipo === "aplazar"
+    ? `${r.tareaId}|aplazar|${r.nuevaFecha}`
+    : `${r.tareaId}|acortar|${r.nuevosMinutos}`;
+}
+
+// Lo que la app propone recortar. Nada cambia hasta que pulsas "Aceptar".
+function Recortes({ propuesta }: { propuesta: PropuestaRecortes }) {
+  const { recortes, faltan } = propuesta;
+  if (recortes.length === 0) {
+    return (
+      <p className="text-muted">
+        No veo nada que recortar sin tocar lo importante. Marca la importancia
+        de tus tareas en su ficha para que pueda proponerte recortes.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-2 flex flex-col gap-2">
+      <p className="font-semibold">Para que salga lo importante, podrías:</p>
+      <ul className="flex flex-col gap-2">
+        {recortes.map((r) => (
+          <li
+            key={r.tareaId}
+            className="flex items-center gap-3 rounded-xl border border-border p-3"
+          >
+            <div className="flex flex-1 flex-col">
+              <span className="break-words">{r.titulo}</span>
+              <span className="text-muted">
+                {textoRecorte(r, textoDuracion)} · {r.motivo}
+              </span>
+            </div>
+            <form action={aplicarRecortes}>
+              <input type="hidden" name="recorte" value={valorRecorte(r)} />
+              <button type="submit" className="underline">
+                Aceptar
+              </button>
+            </form>
+          </li>
+        ))}
+      </ul>
+      {faltan > 0 && (
         <p className="text-muted">
-          Puedes pasar alguna tarea a otro día desde su ficha.
+          Aun así te faltarían {textoDuracion(faltan)}: lo que queda es
+          importante o tiene fecha que no se puede mover.
         </p>
       )}
-    </section>
+      {recortes.length > 1 && (
+        <form action={aplicarRecortes}>
+          {recortes.map((r) => (
+            <input
+              key={r.tareaId}
+              type="hidden"
+              name="recorte"
+              value={valorRecorte(r)}
+            />
+          ))}
+          <button type="submit" className="button-primary py-2 text-sm">
+            Aceptar todos
+          </button>
+        </form>
+      )}
+    </div>
   );
 }

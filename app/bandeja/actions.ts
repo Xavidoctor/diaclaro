@@ -24,6 +24,7 @@ import {
   leerCampoEtiquetas,
   tipoInicial,
 } from "@/lib/planner/etiquetas";
+import { leerImportancia } from "@/lib/planner/recortes";
 import { leerMinutosReales } from "@/lib/planner/tiempos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -209,6 +210,11 @@ export async function editarTarea(
     const p = prepararProyectoDeTarea(formData.get("project_id"));
     if (!p.ok) return { error: p.error };
     cambios.project_id = p.valor;
+  }
+  // Importancia y fecha dura sirven para saber qué se puede recortar.
+  if (formData.has("importance")) {
+    cambios.importance = leerImportancia(formData.get("importance"));
+    cambios.hard_deadline = formData.get("hard_deadline") === "si";
   }
   await cambiarTarea(leerId(formData), cambios);
   refresh();
