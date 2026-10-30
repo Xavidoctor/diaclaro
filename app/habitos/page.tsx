@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { deshacerApunte, pausarHabito } from "@/app/habitos/actions";
 import { Apuntar } from "@/app/habitos/apuntar";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarHabitos, listarRegistrosEntre } from "@/lib/data/habitos";
-import { DIAS_SEMANA, describirRepeticion, leerRegla } from "@/lib/planner/agenda";
+import {
+  DIAS_SEMANA,
+  describirRepeticion,
+  leerRegla,
+} from "@/lib/planner/agenda";
 import { hoyEn, sumarDias } from "@/lib/planner/fechas";
 import {
   IDEAS,
@@ -39,7 +44,11 @@ export default async function HabitosPage() {
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-6 py-8">
         <header className="flex items-center justify-between gap-4">
           <h1 className="text-3xl font-semibold tracking-tight">Hábitos</h1>
-          <Link href="/habitos/nuevo" className="button-primary py-2 text-sm">
+          <Link
+            href="/habitos/nuevo"
+            className="button-primary gap-1 py-2 text-sm"
+          >
+            <Plus aria-hidden className="size-4" />
             Añadir
           </Link>
         </header>
@@ -93,7 +102,10 @@ export default async function HabitosPage() {
                   key={h.id}
                   className="card flex items-center gap-3 p-4 opacity-60"
                 >
-                  <Link href={`/habitos/${h.id}`} className="flex-1 break-words">
+                  <Link
+                    href={`/habitos/${h.id}`}
+                    className="flex-1 break-words"
+                  >
                     {h.title}
                   </Link>
                   <BotonPausa habito={h} />

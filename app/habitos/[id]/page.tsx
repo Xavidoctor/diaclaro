@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { eliminarHabito } from "@/app/habitos/actions";
 import { FormHabito } from "@/app/habitos/form-habito";
 import { leerAjustes } from "@/lib/data/ajustes";
@@ -24,9 +24,7 @@ export default async function HabitoPage({
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-      <Link href="/habitos" className="text-sm underline">
-        ← Hábitos
-      </Link>
+      <EnlaceVolver href="/habitos">Hábitos</EnlaceVolver>
       <h1 className="break-words text-3xl font-semibold tracking-tight">
         {habito.title}
       </h1>

@@ -21,7 +21,7 @@ export async function HabitosDeHoy({ hoy }: { hoy: string }) {
     <section className="flex flex-col gap-3">
       <header className="flex items-baseline justify-between gap-4">
         <h2 className="text-lg font-semibold">Hábitos</h2>
-        <Link href="/habitos" className="text-sm underline">
+        <Link href="/habitos" className="enlace text-sm">
           Ver semana
         </Link>
       </header>
