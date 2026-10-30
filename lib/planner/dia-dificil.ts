@@ -118,3 +118,33 @@ export function proponerDiaDificil<T extends TareaParaPlan>(
 
   return propuesta;
 }
+
+// ---- Para el cierre del día ----
+
+export type DiaDificil = {
+  on_date: string;
+  reason: Motivo;
+  kept_task_ids: string[];
+};
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Las tareas conservadas que llegan del formulario: solo ids válidos y sin repetir.
+export function leerConservadas(valores: unknown[]): string[] {
+  const ids = valores.filter(
+    (v): v is string => typeof v === "string" && UUID.test(v),
+  );
+  return [...new Set(ids)].slice(0, 100);
+}
+
+// Lo conservado en un día difícil, separado en lo que hiciste y lo que sigue.
+// Lo aplazado no aparece: ya está en otro día y no cuenta como pendiente.
+export function resumenConservado<
+  T extends { id: string; done_at: string | null },
+>(conservadas: string[], tareas: T[]): { hechas: T[]; sigue: T[] } {
+  const elegidas = tareas.filter((t) => conservadas.includes(t.id));
+  return {
+    hechas: elegidas.filter((t) => t.done_at),
+    sigue: elegidas.filter((t) => !t.done_at),
+  };
+}

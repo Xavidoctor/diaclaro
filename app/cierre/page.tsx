@@ -5,10 +5,12 @@ import { FormCierre } from "@/app/cierre/form-cierre";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { leerCierre, listarTareasHechasDesde } from "@/lib/data/cierre";
+import { leerDiaDificil, listarTareasPorIds } from "@/lib/data/dia-dificil";
 import { listarSesionesDelDia } from "@/lib/data/foco";
 import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
 import { textoHoras } from "@/lib/planner/areas";
 import { diaACerrar, hechasEnDia, horaLocal } from "@/lib/planner/cierre";
+import { MOTIVOS, resumenConservado } from "@/lib/planner/dia-dificil";
 import { esFecha, hoyEn, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import { totalMinutos } from "@/lib/planner/foco";
 import { createClient } from "@/lib/supabase/server";
@@ -34,13 +36,22 @@ export default async function CierrePage({
       : diaACerrar(hoy, sumarDias(hoy, -1), horaLocal(timezone));
 
   // Desde el día anterior a medianoche (UTC) para no perder ninguna por la zona horaria.
-  const [cierre, tareas, sesiones, registros, rutinas] = await Promise.all([
-    leerCierre(dia),
-    listarTareasHechasDesde(new Date(`${sumarDias(dia, -1)}T00:00:00Z`)),
-    listarSesionesDelDia(dia),
-    listarRegistrosDelDia(dia),
-    listarRutinas(),
-  ]);
+  const [cierre, tareas, sesiones, registros, rutinas, diaDificil] =
+    await Promise.all([
+      leerCierre(dia),
+      listarTareasHechasDesde(new Date(`${sumarDias(dia, -1)}T00:00:00Z`)),
+      listarSesionesDelDia(dia),
+      listarRegistrosDelDia(dia),
+      listarRutinas(),
+      leerDiaDificil(dia),
+    ]);
+  // Si ese día fue difícil: lo que decidiste conservar.
+  const conservado = diaDificil
+    ? resumenConservado(
+        diaDificil.kept_task_ids,
+        await listarTareasPorIds(diaDificil.kept_task_ids),
+      )
+    : null;
   const hechas = hechasEnDia(tareas, dia, timezone);
   const minutosFoco = totalMinutos(sesiones);
   const vecesPorRutina = new Map<string, number>();
@@ -79,6 +90,34 @@ export default async function CierrePage({
             )}
           </nav>
         </header>
+
+        {diaDificil && conservado && (
+          <section className="card flex flex-col gap-2 border-primary p-4 text-sm">
+            <h2 className="text-lg font-semibold">Era un día difícil</h2>
+            <p className="text-muted">
+              {MOTIVOS[diaDificil.reason]}. Aun así, decidiste quedarte con lo
+              importante, y eso ya cuenta. Lo que aplazaste está en otro día:
+              hoy no cuenta como pendiente.
+            </p>
+            {conservado.hechas.length > 0 && (
+              <ul className="flex flex-col gap-1">
+                {conservado.hechas.map((t) => (
+                  <li key={t.id} className="break-words">
+                    ✓ {t.title}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {conservado.sigue.length > 0 && (
+              <p className="text-muted">
+                {conservado.hechas.length > 0
+                  ? "Y siguen en marcha: "
+                  : "Siguen en marcha: "}
+                {conservado.sigue.map((t) => t.title).join(", ")}.
+              </p>
+            )}
+          </section>
+        )}
 
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Lo que has hecho</h2>
