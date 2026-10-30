@@ -79,7 +79,10 @@ export default async function FocoPage({ searchParams }: PageProps<"/foco">) {
                   </div>
                   <form action={borrarSesionFoco}>
                     <input type="hidden" name="id" value={s.id} />
-                    <button type="submit" className="text-sm text-muted underline">
+                    <button
+                      type="submit"
+                      className="text-sm text-muted underline"
+                    >
                       Borrar
                     </button>
                   </form>
