@@ -74,6 +74,18 @@ export default async function AreasPage() {
                 `, más hasta ${textoHoras(semana.personal)} de tiempo personal`}
               .
             </p>
+            <Link
+              href="/areas/semana"
+              className="card flex items-center justify-between gap-3 p-4"
+            >
+              <span className="flex flex-col gap-1">
+                <span className="font-medium">Tu semana</span>
+                <span className="text-sm text-muted">
+                  Cuánto llevas en cada área frente a sus horas
+                </span>
+              </span>
+              <span aria-hidden>→</span>
+            </Link>
             <ListaAreas areas={activas} proyectos={proyectos} ordenable />
             {archivadas.length > 0 && (
               <details>
