@@ -1,4 +1,5 @@
 import "server-only";
+import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { leerInicio } from "@/lib/data/inicio-dia";
@@ -11,6 +12,7 @@ import { tareasParaHoy } from "@/lib/planner/bandeja";
 import { calcularCarga } from "@/lib/planner/carga";
 import { hoyEn, horaEn } from "@/lib/planner/fechas";
 import { ajustesDelDia } from "@/lib/planner/inicio-dia";
+import { juntarAgendas } from "@/lib/planner/google-calendar";
 import { proponerRecortes } from "@/lib/planner/recortes";
 import { rutinasDelDia, type RutinaDelDia } from "@/lib/planner/rutinas";
 import { factoresPorTipo } from "@/lib/planner/tiempos";
@@ -59,11 +61,12 @@ export async function calcularSituacion({
 export async function cargarSituacion() {
   const ajustesGuardados = await leerAjustes();
   const hoy = hoyEn(ajustesGuardados.timezone);
-  const [eventos, rutinas, registros, inicio] = await Promise.all([
+  const [eventos, rutinas, registros, inicio, google] = await Promise.all([
     listarEventosHasta(hoy),
     listarRutinas(),
     listarRegistrosDelDia(hoy),
     leerInicio(hoy),
+    cargarAgendaGoogle(hoy, hoy, ajustesGuardados.timezone),
   ]);
   // Si has pulsado "Empiezo el día", el día cuenta desde esa hora (como en Hoy).
   const ajustes = ajustesDelDia(ajustesGuardados, inicio);
@@ -71,7 +74,11 @@ export async function cargarSituacion() {
   const situacion = await calcularSituacion({
     hoy,
     ajustes,
-    agenda: ocurrenciasEntre(eventos, excepciones, hoy, hoy),
+    // Con Google Calendar, para que el botón de la IA vea lo mismo que la tarjeta.
+    agenda: juntarAgendas(
+      ocurrenciasEntre(eventos, excepciones, hoy, hoy),
+      google.ocurrencias,
+    ),
     rutinas: rutinasDelDia(rutinas, registros, hoy),
   });
   return { ...situacion, ajustes, hoy };

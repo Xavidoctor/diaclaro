@@ -10,10 +10,16 @@ import {
 
 // Formulario para apuntar o cambiar una candidatura.
 // Solo la empresa y el puesto son obligatorios; las fechas se pueden dejar vacías.
+// "areas" son las áreas que se pueden elegir; "areaInicial" la que sale marcada
+// al apuntar una nueva (normalmente Empleo).
 export function FormCandidatura({
   candidatura,
+  areas,
+  areaInicial = null,
 }: {
   candidatura?: Candidatura;
+  areas: { id: string; name: string }[];
+  areaInicial?: string | null;
 }) {
   const [estado, formAction, guardando] = useActionState<FormState, FormData>(
     guardarCandidatura,
@@ -28,6 +34,7 @@ export function FormCandidatura({
     next_follow_up: candidatura?.next_follow_up ?? "",
     next_step: candidatura?.next_step ?? "",
     notes: candidatura?.notes ?? "",
+    area_id: (candidatura ? candidatura.area_id : areaInicial) ?? "",
   };
 
   return (
@@ -81,6 +88,25 @@ export function FormCandidatura({
             </option>
           ))}
         </select>
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        Área
+        <select
+          name="area_id"
+          defaultValue={valores.area_id}
+          className="input py-2"
+        >
+          <option value="">Sin área</option>
+          {areas.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
+        <span className="text-muted">
+          Los minutos que apuntes en el historial cuentan en la semana de esta
+          área.
+        </span>
       </label>
       <label className="flex flex-col gap-1 text-sm">
         Día que la enviaste (opcional)

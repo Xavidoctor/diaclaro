@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import {
+  minutosPorArea,
   ordenarHistorial,
   type Candidatura,
   type DatosCandidatura,
@@ -12,7 +13,7 @@ import {
 // Las reglas RLS ya hacen que cada persona solo vea lo suyo.
 
 const CAMPOS =
-  "id, company, role, url, status, applied_on, next_follow_up, next_step, notes, created_at";
+  "id, company, role, url, status, applied_on, next_follow_up, next_step, notes, area_id, created_at";
 
 function comprobar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`No se ha podido ${que}: ${error.message}`);
@@ -92,7 +93,9 @@ export async function listarHistorial(applicationId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("job_application_events")
-    .select("id, application_id, on_date, kind, status, note, created_at")
+    .select(
+      "id, application_id, on_date, kind, status, note, minutes, created_at",
+    )
     .eq("application_id", applicationId)
     .limit(300);
   comprobar(error, "cargar el historial");
@@ -117,4 +120,37 @@ export async function borrarDelHistorial(id: string) {
     .delete()
     .eq("id", id);
   comprobar(error, "borrar del historial");
+}
+
+// Minutos dedicados a candidaturas en cada área entre dos días (los dos incluidos).
+// Devuelve un Map: id del área → minutos. Sirve para la semana de cada área.
+export async function minutosDeCandidaturasPorArea(
+  desde: string,
+  hasta: string,
+) {
+  const supabase = await createClient();
+  const { data: entradas, error } = await supabase
+    .from("job_application_events")
+    .select("application_id, on_date, minutes")
+    .not("minutes", "is", null)
+    .gte("on_date", desde)
+    .lte("on_date", hasta)
+    .limit(1000);
+  comprobar(error, "cargar el tiempo de las candidaturas");
+  if (!entradas || entradas.length === 0) return new Map<string, number>();
+  const ids = [...new Set(entradas.map((e) => e.application_id as string))];
+  const { data: candidaturas, error: error2 } = await supabase
+    .from("job_applications")
+    .select("id, area_id")
+    .in("id", ids);
+  comprobar(error2, "cargar el tiempo de las candidaturas");
+  return minutosPorArea(
+    (candidaturas ?? []) as Pick<Candidatura, "id" | "area_id">[],
+    entradas as Pick<
+      EntradaHistorial,
+      "application_id" | "on_date" | "minutes"
+    >[],
+    desde,
+    hasta,
+  );
 }

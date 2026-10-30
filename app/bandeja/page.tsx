@@ -53,7 +53,10 @@ export default async function BandejaPage({
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
         <h1 className="text-3xl font-semibold tracking-tight">Bandeja</h1>
 
-        <nav aria-label="Pestañas" className="flex gap-2">
+        <nav
+          aria-label="Pestañas"
+          className="flex gap-1 rounded-2xl bg-secondary p-1"
+        >
           <Pestana href="/bandeja" activa={pestana === "notas"}>
             Notas
           </Pestana>
@@ -94,7 +97,14 @@ async function PestanaNotas({
 
   return (
     <section className="flex flex-col gap-4">
-      {ver === "activas" && <CapturaRapida />}
+      {ver === "activas" && (
+        <>
+          <CapturaRapida />
+          <Link href="/ordenar" className="enlace self-start text-sm">
+            ¿Mucho en la cabeza? Ordénalo con IA
+          </Link>
+        </>
+      )}
 
       <form role="search" action="/bandeja" className="flex flex-col gap-2">
         {ver !== "activas" && <input type="hidden" name="ver" value={ver} />}
@@ -161,7 +171,10 @@ async function PestanaNotas({
         </nav>
       )}
 
-      <nav aria-label="Qué notas ver" className="flex gap-4 text-sm">
+      <nav
+        aria-label="Qué notas ver"
+        className="flex items-center gap-1 text-sm"
+      >
         <Filtro href="/bandeja" activo={ver === "activas"}>
           Bandeja
         </Filtro>
@@ -213,7 +226,10 @@ async function PestanaTareas({ papelera }: { papelera: boolean }) {
     <section className="flex flex-col gap-4">
       {!papelera && <CapturaRapida destino="tarea" />}
 
-      <nav aria-label="Qué tareas ver" className="flex gap-4 text-sm">
+      <nav
+        aria-label="Qué tareas ver"
+        className="flex items-center gap-1 text-sm"
+      >
         <Filtro href="/bandeja?pestana=tareas" activo={!papelera}>
           Tareas
         </Filtro>
@@ -297,8 +313,8 @@ function Pestana({
     <Link
       href={href}
       aria-current={activa ? "page" : undefined}
-      className={`flex-1 rounded-xl px-4 py-2 text-center font-medium ${
-        activa ? "bg-primary text-primary-foreground" : "border border-border"
+      className={`flex min-h-10 flex-1 items-center justify-center rounded-xl px-4 font-semibold ${
+        activa ? "bg-surface text-primary shadow-sm" : "text-muted"
       }`}
     >
       {children}
@@ -319,9 +335,9 @@ function Filtro({
     <Link
       href={href}
       aria-current={activo ? "page" : undefined}
-      className={
-        activo ? "font-semibold text-foreground" : "text-muted underline"
-      }
+      className={`rounded-full px-3 py-1.5 ${
+        activo ? "bg-secondary font-semibold text-primary" : "text-muted"
+      }`}
     >
       {children}
     </Link>

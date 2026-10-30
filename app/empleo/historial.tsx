@@ -5,12 +5,13 @@ import { apuntarEnHistorial, type FormStateNota } from "@/app/empleo/actions";
 
 // Formulario pequeño para apuntar algo en el historial de una candidatura.
 // El día empieza en hoy, pero lo puedes cambiar (solo hoy o antes).
+// Los minutos son opcionales: lo que le dedicaste (preparar el CV, la entrevista...).
 export function FormNotaHistorial({ id, hoy }: { id: string; hoy: string }) {
   const [estado, formAction, guardando] = useActionState<
     FormStateNota,
     FormData
   >(apuntarEnHistorial, { envios: 0 });
-  const valores = estado.valores ?? { on_date: hoy, note: "" };
+  const valores = estado.valores ?? { on_date: hoy, note: "", minutos: "" };
 
   return (
     <form
@@ -40,6 +41,17 @@ export function FormNotaHistorial({ id, hoy }: { id: string; hoy: string }) {
             max={hoy}
             required
             defaultValue={valores.on_date}
+            className="input py-2"
+          />
+        </label>
+        <label className="flex w-24 flex-col gap-1 text-sm">
+          Minutos
+          <input
+            name="minutos"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            defaultValue={valores.minutos}
+            placeholder="Opcional"
             className="input py-2"
           />
         </label>

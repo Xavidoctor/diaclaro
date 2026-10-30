@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { LogOut, Settings } from "lucide-react";
 import { redirect } from "next/navigation";
 import {
   cerrarSesion,
   deshacerRutinaHecha,
   marcarRutinaHecha,
 } from "@/app/actions";
+import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
+import { AvisoGoogle, EtiquetaGoogle } from "@/app/componentes/aviso-google";
 import { AvisoSobrecarga } from "@/app/componentes/aviso-sobrecarga";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
@@ -23,6 +26,7 @@ import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
 import { ocurrenciasEntre, textoHora } from "@/lib/planner/agenda";
 import { hoyEn } from "@/lib/planner/fechas";
 import { ajustesDelDia } from "@/lib/planner/inicio-dia";
+import { juntarAgendas } from "@/lib/planner/google-calendar";
 import {
   rutinasDelDia,
   textoFranja,
@@ -39,16 +43,21 @@ export default async function HoyPage() {
   const ajustes = await leerAjustes();
   const { timezone } = ajustes;
   const hoy = hoyEn(timezone);
-  const [eventos, rutinas, registros, inicio] = await Promise.all([
+  const [eventos, rutinas, registros, inicio, google] = await Promise.all([
     listarEventosHasta(hoy),
     listarRutinas(),
     listarRegistrosDelDia(hoy),
     leerInicio(hoy),
+    cargarAgendaGoogle(hoy, hoy, timezone),
   ]);
   // Si has pulsado "Empiezo el día", el día cuenta desde esa hora.
   const ajustesHoy = ajustesDelDia(ajustes, inicio);
   const excepciones = await listarExcepciones(eventos.map((e) => e.id));
-  const agenda = ocurrenciasEntre(eventos, excepciones, hoy, hoy);
+  // Tu agenda de DíaClaro y la de Google Calendar (si la conectaste), juntas.
+  const agenda = juntarAgendas(
+    ocurrenciasEntre(eventos, excepciones, hoy, hoy),
+    google.ocurrencias,
+  );
   const deHoy = rutinasDelDia(rutinas, registros, hoy);
 
   return (
@@ -58,19 +67,27 @@ export default async function HoyPage() {
           <h1 className="text-3xl font-semibold tracking-tight">
             <SaludoLocal />
           </h1>
-          <div className="flex gap-4 text-sm text-muted">
-            <Link href="/ajustes" className="underline">
-              Ajustes
+          <div className="flex text-muted">
+            <Link
+              href="/ajustes"
+              aria-label="Ajustes"
+              className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
+            >
+              <Settings aria-hidden className="size-5" />
             </Link>
             <form action={cerrarSesion}>
-              <button type="submit" className="underline">
-                Salir
+              <button
+                type="submit"
+                aria-label="Salir"
+                className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
+              >
+                <LogOut aria-hidden className="size-5" />
               </button>
             </form>
           </div>
         </header>
 
-        <EmpiezoElDia inicio={inicio} ajustes={ajustesHoy} />
+        <EmpiezoElDia inicio={inicio} ajustes={ajustesHoy} rutinas={deHoy} />
 
         <AvisoSobrecarga
           hoy={hoy}
@@ -93,21 +110,33 @@ export default async function HoyPage() {
               Ver 14 días
             </Link>
           </header>
+          <AvisoGoogle estado={google.estado} />
           {agenda.length === 0 ? (
             <p className="text-sm text-muted">Hoy no tienes nada apuntado.</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {agenda.map((o) => (
                 <li key={`${o.eventoId}|${o.fechaOriginal}`}>
-                  <Link
-                    href={`/agenda/${o.eventoId}?dia=${o.fechaOriginal}`}
-                    className="card flex items-baseline gap-3 p-4"
-                  >
-                    <span className="w-28 shrink-0 text-sm text-muted">
-                      {textoHora(o)}
-                    </span>
-                    <span className="flex-1 break-words">{o.titulo}</span>
-                  </Link>
+                  {o.google ? (
+                    // Lo de Google solo se ve: se cambia en Google Calendar.
+                    <div className="card flex items-baseline gap-3 p-4">
+                      <span className="w-28 shrink-0 text-sm text-muted">
+                        {textoHora(o)}
+                      </span>
+                      <span className="flex-1 break-words">{o.titulo}</span>
+                      <EtiquetaGoogle libre={o.google.libre} />
+                    </div>
+                  ) : (
+                    <Link
+                      href={`/agenda/${o.eventoId}?dia=${o.fechaOriginal}`}
+                      className="card flex items-baseline gap-3 p-4"
+                    >
+                      <span className="w-28 shrink-0 text-sm text-muted">
+                        {textoHora(o)}
+                      </span>
+                      <span className="flex-1 break-words">{o.titulo}</span>
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

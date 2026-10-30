@@ -2,33 +2,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { aplicarRecortes } from "@/app/componentes/acciones-recortes";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
-import { aceptarDiaDificil } from "@/app/dia-dificil/actions";
-import { leerAjustes } from "@/lib/data/ajustes";
-import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
-import { cargarOpcionesProyecto } from "@/lib/data/areas";
-import { listarTareas } from "@/lib/data/bandeja";
-import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
-import { ocurrenciasEntre, textoHora } from "@/lib/planner/agenda";
-import { tareasParaHoy } from "@/lib/planner/bandeja";
+import { aceptarDiaDificil, aceptarUnCambio } from "@/app/dia-dificil/actions";
+import { ContarConIA, ExplicarDiaConIA } from "@/app/dia-dificil/ayuda-ia";
+import { cargarDiaDificil } from "@/app/dia-dificil/situacion";
+import { iaDisponible } from "@/lib/ai/groq";
+import { textoHora } from "@/lib/planner/agenda";
 import { textoDuracion } from "@/lib/planner/carga";
-import {
-  leerMotivo,
-  MOTIVOS,
-  proponerDiaDificil,
-  type Motivo,
-} from "@/lib/planner/dia-dificil";
-import { fechaCorta, hoyEn } from "@/lib/planner/fechas";
-import { marcarTiempoPersonal } from "@/lib/planner/plan";
-import { rutinasDelDia } from "@/lib/planner/rutinas";
-import { factoresPorTipo } from "@/lib/planner/tiempos";
+import { leerMotivo, MOTIVOS, type Motivo } from "@/lib/planner/dia-dificil";
+import { fechaCorta } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Día difícil" };
 
 // Día difícil: eliges el motivo y la app te propone qué conservar, qué
-// reducir y qué aplazar. Nada cambia hasta que pulsas "Aceptar".
+// reducir y qué aplazar. Nada cambia hasta que pulsas "Aceptar". Al aceptar,
+// se apunta que hoy es un día difícil y lo que conservas, para el cierre del día.
 // La lógica está en lib/planner/dia-dificil.ts.
 export default async function DiaDificilPage({
   searchParams,
@@ -71,39 +60,34 @@ function ElegirMotivo() {
           </li>
         ))}
       </ul>
+      {iaDisponible() && <ContarConIA />}
     </section>
   );
 }
 
 async function Propuesta({ motivo }: { motivo: Motivo }) {
-  const ajustes = await leerAjustes();
-  const hoy = hoyEn(ajustes.timezone);
-  const [tareas, { areas, proyectos }, eventos, rutinas, registros] =
-    await Promise.all([
-      listarTareas(false),
-      cargarOpcionesProyecto(),
-      listarEventosHasta(hoy),
-      listarRutinas(),
-      listarRegistrosDelDia(hoy),
-    ]);
-  const excepciones = await listarExcepciones(eventos.map((e) => e.id));
-  const agenda = ocurrenciasEntre(eventos, excepciones, hoy, hoy);
-  const pendientes = rutinasDelDia(rutinas, registros, hoy).filter(
-    (r) => !r.completa,
-  );
-  const { atrasadas, deHoy } = tareasParaHoy(tareas, hoy);
-  const { conservar, reducir, aplazar, ahorro } = proponerDiaDificil(
-    marcarTiempoPersonal([...atrasadas, ...deHoy], areas, proyectos),
-    hoy,
-    motivo,
-    factoresPorTipo(tareas),
-  );
+  const { agenda, pendientes, propuesta } = await cargarDiaDificil(motivo);
+  const { conservar, reducir, aplazar, ahorro } = propuesta;
 
   // Texto que viaja en cada botón, en el formato de aplicarRecortes.
   const cambios = [
     ...reducir.map((r) => `${r.tarea.id}|acortar|${r.nuevosMinutos}`),
     ...aplazar.map((a) => `${a.tarea.id}|aplazar|${a.nuevaFecha}`),
   ];
+  // Viaja con cada botón para apuntar que hoy es un día difícil y qué conservas.
+  const ocultos = (
+    <>
+      <input type="hidden" name="motivo" value={motivo} />
+      {conservar.map((c) => (
+        <input
+          key={c.tarea.id}
+          type="hidden"
+          name="conservar"
+          value={c.tarea.id}
+        />
+      ))}
+    </>
+  );
   const nadaQueTocar =
     conservar.length === 0 && agenda.length === 0 && pendientes.length === 0;
 
@@ -115,6 +99,7 @@ async function Propuesta({ motivo }: { motivo: Motivo }) {
           Cambiar
         </Link>
       </p>
+      {iaDisponible() && <ExplicarDiaConIA motivo={motivo} />}
 
       <Columna titulo="Conservar" vacia={nadaQueTocar}>
         {agenda.map((o) => (
@@ -145,6 +130,7 @@ async function Propuesta({ motivo }: { motivo: Motivo }) {
               r.ahorro > 0 ? ` (libera ${textoDuracion(r.ahorro)})` : ""
             }`}
             cambio={`${r.tarea.id}|acortar|${r.nuevosMinutos}`}
+            ocultos={ocultos}
           />
         ))}
       </Columna>
@@ -158,6 +144,7 @@ async function Propuesta({ motivo }: { motivo: Motivo }) {
               a.ahorro > 0 ? ` (libera ${textoDuracion(a.ahorro)})` : ""
             }`}
             cambio={`${a.tarea.id}|aplazar|${a.nuevaFecha}`}
+            ocultos={ocultos}
           />
         ))}
       </Columna>
@@ -170,6 +157,7 @@ async function Propuesta({ motivo }: { motivo: Motivo }) {
             </p>
           )}
           <form action={aceptarDiaDificil}>
+            {ocultos}
             {cambios.map((c) => (
               <input key={c} type="hidden" name="recorte" value={c} />
             ))}
@@ -217,10 +205,12 @@ function Fila({
   titulo,
   detalle,
   cambio,
+  ocultos,
 }: {
   titulo: string;
   detalle: string;
   cambio?: string;
+  ocultos?: ReactNode;
 }) {
   return (
     <li className="card flex items-center gap-3 p-3 text-sm">
@@ -229,8 +219,9 @@ function Fila({
         <span className="text-muted">{detalle}</span>
       </div>
       {cambio && (
-        <form action={aplicarRecortes}>
+        <form action={aceptarUnCambio}>
           <input type="hidden" name="recorte" value={cambio} />
+          {ocultos}
           <button type="submit" className="underline">
             Aceptar
           </button>

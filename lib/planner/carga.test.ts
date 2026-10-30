@@ -160,6 +160,22 @@ describe("calcularCarga", () => {
     expect(carga).toMatchObject({ apuntado: 60 + 90, sinDuracion: [] });
   });
 
+  it("de Google cuenta lo ocupado, no lo «Disponible» ni lo de todo el día", () => {
+    const deGoogle = (o: Ocurrencia, libre: boolean): Ocurrencia => ({
+      ...o,
+      google: { libre },
+    });
+    const carga = calcularCarga({
+      ...base,
+      agenda: [
+        deGoogle(evento("Reunión", "17:00", "18:00"), false),
+        deGoogle(evento("Comer con Ana", "18:00", "19:00"), true),
+        deGoogle(evento("Festivo", null, null), false),
+      ],
+    });
+    expect(carga).toMatchObject({ apuntado: 60, sinDuracion: [] });
+  });
+
   it("de las rutinas solo cuenta las veces que faltan", () => {
     const carga = calcularCarga({
       ...base,

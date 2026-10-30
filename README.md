@@ -96,9 +96,13 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | `20261030090000_temporizador_foco.sql` | Tabla `focus_sessions` (cada rato del temporizador de foco), con sus reglas RLS |
 | `20261030100000_cierre_del_dia.sql` | Tabla `day_reviews` (tu cierre de cada día), con sus reglas RLS |
 | `20261030110000_empiezo_el_dia.sql` | Tabla `day_starts` (a qué hora empiezas cada día), con sus reglas RLS |
+| `20261030120000_dias_dificiles.sql` | Tabla `hard_days` (tus días difíciles y lo que conservaste), con sus reglas RLS |
 | `20261030140000_candidaturas_empleo.sql` | Tabla `job_applications` (tus candidaturas de empleo: empresa, puesto, estado y seguimiento), con sus reglas RLS |
 | `20261030150000_historial_candidaturas.sql` | Tabla `job_application_events` (el historial de cada candidatura: cambios de estado, seguimientos y notas), con sus reglas RLS |
+| `20261030160000_candidaturas_en_areas.sql` | Columna `area_id` en `job_applications` (el área donde cuenta su tiempo) y `minutes` en `job_application_events` (minutos dedicados) |
+| `20261030170000_google_calendar.sql` | Tabla `google_connections` (el permiso de Google de cada persona, cifrado, para leer su Google Calendar), con sus reglas RLS |
 | `20261030200000_habitos.sql` | Tablas `habits` (tus hábitos, todos opcionales) y `habit_logs` (cada vez que apuntas algo), con sus reglas RLS |
+| `20261030210000_despierto_y_levantado.sql` | Columna `awake_time` en `day_starts` (a qué hora pulsaste «Despierto»); la hora de levantarte puede quedar vacía hasta que pulses «Levantado» |
 
 ## Publicar en Vercel (una vez)
 
@@ -106,6 +110,21 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 2. **Add New → Project** e importa este repositorio.
 3. En **Environment Variables**, añade `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 4. **Deploy**. A partir de ahí, cada cambio en `main` se publica solo.
+
+## Conectar Google Calendar (opcional, una vez)
+
+Con esto, cada persona puede pulsar **Ajustes → Conectar con Google** y ver sus eventos de Google Calendar en la Agenda. DíaClaro **solo lee**: nunca crea, cambia ni borra nada en Google. Todo es gratis.
+
+1. Entra en [console.cloud.google.com](https://console.cloud.google.com) con tu cuenta de Google y crea un proyecto nuevo llamado `DiaClaro`.
+2. En el buscador de arriba escribe **Google Calendar API**, ábrela y pulsa **Habilitar**.
+3. Ve a **Google Auth Platform** (o **Pantalla de consentimiento de OAuth**) → **Comenzar**. Nombre de la app: `DíaClaro`; correo de asistencia: el tuyo; público: **Externo**; correo de contacto: el tuyo. Acepta y pulsa **Crear**.
+4. En **Acceso a datos** → **Añadir o quitar permisos**, marca `.../auth/calendar.readonly` (ver tus calendarios), `openid` y `.../auth/userinfo.email`. Guarda.
+5. En **Clientes** → **Crear cliente**: tipo **Aplicación web**, nombre `DíaClaro web`. En **URIs de redirección autorizados** añade `https://diaclaro.vercel.app/api/google/vuelta`. Pulsa **Crear**.
+6. Te enseña el **ID de cliente** y el **Secreto del cliente**. No hagas captura del secreto. Cópialos directamente a Vercel → **Settings → Environment Variables** como `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` (entorno Production) y vuelve a desplegar.
+7. En **Público**, pulsa **Publicar app** para pasarla a **En producción**. Si se queda en «Prueba», Google corta el permiso cada 7 días.
+8. Al conectar, Google enseña «Google no ha verificado esta aplicación» porque no hemos pasado su revisión. Es normal en una app personal: pulsa **Configuración avanzada → Ir a DíaClaro**. Sin esa revisión pueden conectarse hasta 100 personas.
+
+Si algún día cambias el secreto del cliente, cada persona tendrá que volver a pulsar **Conectar con Google**.
 
 ## Seguridad
 

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  leerConservadas,
   leerMotivo,
   minutosReducidos,
   proponerDiaDificil,
+  resumenConservado,
 } from "./dia-dificil";
 import type { TareaParaPlan } from "./plan";
 
@@ -132,5 +134,27 @@ describe("proponerDiaDificil", () => {
     );
     // 100 min previstos son 150 de verdad; reducida a 50, son 75. Libera 75.
     expect(p.reducir[0]).toMatchObject({ nuevosMinutos: 50, ahorro: 75 });
+  });
+});
+
+describe("leerConservadas", () => {
+  it("se queda con los ids válidos y sin repetir", () => {
+    const id = "123e4567-e89b-12d3-a456-426614174000";
+    expect(leerConservadas([id, id, "hola", null])).toEqual([id]);
+  });
+});
+
+describe("resumenConservado", () => {
+  it("separa lo conservado en hecho y pendiente, sin lo demás", () => {
+    const r = resumenConservado(
+      ["a", "b"],
+      [
+        { id: "a", done_at: "2026-10-30T12:00:00Z" },
+        { id: "b", done_at: null },
+        { id: "c", done_at: "2026-10-30T12:00:00Z" },
+      ],
+    );
+    expect(r.hechas.map((t) => t.id)).toEqual(["a"]);
+    expect(r.sigue.map((t) => t.id)).toEqual(["b"]);
   });
 });

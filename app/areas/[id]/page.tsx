@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { notFound } from "next/navigation";
 import { archivarArea, eliminarArea } from "@/app/areas/actions";
 import { FormArea } from "@/app/areas/form-area";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
+import { leerAjustes } from "@/lib/data/ajustes";
 import { leerArea, listarProyectos } from "@/lib/data/areas";
+import { minutosDeCandidaturasPorArea } from "@/lib/data/candidaturas";
 import { textoPresupuesto } from "@/lib/planner/areas";
+import { lunesDe, textoSemanaCandidaturas } from "@/lib/planner/candidaturas";
+import { hoyEn } from "@/lib/planner/fechas";
 
 export const metadata: Metadata = { title: "Área" };
 
@@ -17,15 +23,17 @@ export default async function AreaPage({ params }: PageProps<"/areas/[id]">) {
     listarProyectos(id),
   ]);
   if (!area) notFound();
+  const semanaCandidaturas = textoSemanaCandidaturas(
+    await minutosDeLaSemana(area.id),
+    area.personal_time ? null : area.weekly_minutes,
+  );
   const activos = proyectos.filter((p) => !p.archived_at);
   const archivados = proyectos.filter((p) => p.archived_at);
 
   return (
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-        <Link href="/areas" className="text-sm underline">
-          ← Áreas
-        </Link>
+        <EnlaceVolver href="/areas">Áreas</EnlaceVolver>
         <header className="flex flex-col gap-1">
           <h1 className="break-words text-3xl font-semibold tracking-tight">
             {area.name}
@@ -34,6 +42,14 @@ export default async function AreaPage({ params }: PageProps<"/areas/[id]">) {
             {textoPresupuesto(area)}
             {area.archived_at && " · Archivada"}
           </p>
+          {semanaCandidaturas && (
+            <p className="text-sm">
+              {semanaCandidaturas}{" "}
+              <Link href="/empleo" className="enlace">
+                Ver candidaturas
+              </Link>
+            </p>
+          )}
         </header>
 
         <section className="flex flex-col gap-3">
@@ -41,8 +57,9 @@ export default async function AreaPage({ params }: PageProps<"/areas/[id]">) {
             <h2 className="text-lg font-semibold">Proyectos</h2>
             <Link
               href={`/areas/${area.id}/proyectos/nuevo`}
-              className="button-primary py-2 text-sm"
+              className="button-primary gap-1 py-2 text-sm"
             >
+              <Plus aria-hidden className="size-4" />
               Añadir
             </Link>
           </header>
@@ -110,6 +127,19 @@ export default async function AreaPage({ params }: PageProps<"/areas/[id]">) {
   );
 }
 
+// Minutos dedicados a candidaturas de esta área desde el lunes.
+// Si la tabla aún no está lista, cuenta 0 para no romper la pantalla.
+async function minutosDeLaSemana(areaId: string) {
+  try {
+    const { timezone } = await leerAjustes();
+    const hoy = hoyEn(timezone);
+    const porArea = await minutosDeCandidaturasPorArea(lunesDe(hoy), hoy);
+    return porArea.get(areaId) ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 function ListaProyectos({
   areaId,
   proyectos,
@@ -135,7 +165,7 @@ function ListaProyectos({
               href={p.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm underline"
+              className="enlace text-sm"
             >
               Abrir enlace
             </a>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronDown, ChevronRight, ChevronUp, Plus } from "lucide-react";
 import { crearSugeridas, moverArea } from "@/app/areas/actions";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { contarProyectosPorArea, listarAreas } from "@/lib/data/areas";
@@ -28,7 +29,11 @@ export default async function AreasPage() {
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
         <header className="flex items-center justify-between gap-4">
           <h1 className="text-3xl font-semibold tracking-tight">Áreas</h1>
-          <Link href="/areas/nueva" className="button-primary py-2 text-sm">
+          <Link
+            href="/areas/nueva"
+            className="button-primary gap-1 py-2 text-sm"
+          >
+            <Plus aria-hidden className="size-4" />
             Añadir
           </Link>
         </header>
@@ -43,7 +48,7 @@ export default async function AreasPage() {
               Las ofertas a las que te presentas y sus seguimientos
             </span>
           </span>
-          <span aria-hidden>→</span>
+          <ChevronRight aria-hidden className="size-5 shrink-0 text-muted" />
         </Link>
 
         {areas.length === 0 ? (
@@ -74,6 +79,21 @@ export default async function AreasPage() {
                 `, más hasta ${textoHoras(semana.personal)} de tiempo personal`}
               .
             </p>
+            <Link
+              href="/areas/semana"
+              className="card flex items-center justify-between gap-3 p-4"
+            >
+              <span className="flex flex-col gap-1">
+                <span className="font-medium">Tu semana</span>
+                <span className="text-sm text-muted">
+                  Cuánto llevas en cada área frente a sus horas
+                </span>
+              </span>
+              <ChevronRight
+                aria-hidden
+                className="size-5 shrink-0 text-muted"
+              />
+            </Link>
             <ListaAreas areas={activas} proyectos={proyectos} ordenable />
             {archivadas.length > 0 && (
               <details>
@@ -122,19 +142,9 @@ function ListaAreas({
               </span>
             </Link>
             {ordenable && (
-              <div className="flex flex-col text-sm">
-                <BotonMover
-                  area={a}
-                  vecina={areas[i - 1]}
-                  etiqueta="Subir"
-                  texto="↑"
-                />
-                <BotonMover
-                  area={a}
-                  vecina={areas[i + 1]}
-                  etiqueta="Bajar"
-                  texto="↓"
-                />
+              <div className="flex flex-col">
+                <BotonMover area={a} vecina={areas[i - 1]} etiqueta="Subir" />
+                <BotonMover area={a} vecina={areas[i + 1]} etiqueta="Bajar" />
               </div>
             )}
           </li>
@@ -149,14 +159,14 @@ function BotonMover({
   area,
   vecina,
   etiqueta,
-  texto,
 }: {
   area: Area;
   vecina?: Area;
-  etiqueta: string;
-  texto: string;
+  etiqueta: "Subir" | "Bajar";
 }) {
-  if (!vecina) return <span className="px-2 py-1 opacity-0">{texto}</span>;
+  const Icono = etiqueta === "Subir" ? ChevronUp : ChevronDown;
+  // En los bordes se deja el hueco vacío para que las flechas no bailen.
+  if (!vecina) return <span aria-hidden className="block size-9" />;
   return (
     <form action={moverArea}>
       <input type="hidden" name="id" value={area.id} />
@@ -165,8 +175,12 @@ function BotonMover({
         name="paso"
         value={etiqueta === "Subir" ? "subir" : "bajar"}
       />
-      <button type="submit" aria-label={etiqueta} className="px-2 py-1">
-        {texto}
+      <button
+        type="submit"
+        aria-label={etiqueta}
+        className="flex size-9 items-center justify-center rounded-full text-muted hover:bg-secondary"
+      >
+        <Icono aria-hidden className="size-5" />
       </button>
     </form>
   );

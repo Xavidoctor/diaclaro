@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   cancelarDia,
@@ -8,6 +7,7 @@ import {
 } from "@/app/agenda/actions";
 import { CambioDia } from "@/app/agenda/cambio-dia";
 import { FormEvento } from "@/app/agenda/form-evento";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { leerEvento, leerExcepcion } from "@/lib/data/agenda";
 import {
   describirRepeticion,
@@ -42,12 +42,9 @@ export default async function EventoPage({
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-      <Link
-        href={diaValido ? `/agenda?desde=${diaValido}` : "/agenda"}
-        className="text-sm underline"
-      >
-        ← Agenda
-      </Link>
+      <EnlaceVolver href={diaValido ? `/agenda?desde=${diaValido}` : "/agenda"}>
+        Agenda
+      </EnlaceVolver>
       <header className="flex flex-col gap-1">
         <h1 className="break-words text-3xl font-semibold tracking-tight">
           {evento.title}

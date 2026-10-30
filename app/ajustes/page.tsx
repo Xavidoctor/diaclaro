@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { pausarRutina } from "@/app/ajustes/actions";
 import { FormAjustes } from "@/app/ajustes/form-ajustes";
+import { SeccionGoogle } from "@/app/ajustes/seccion-google";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarRutinas } from "@/lib/data/rutinas";
@@ -10,8 +11,11 @@ import { textoFranja, textoVeces } from "@/lib/planner/rutinas";
 
 export const metadata: Metadata = { title: "Ajustes" };
 
-// Ajustes: tus horas habituales, la zona horaria y tus rutinas.
-export default async function AjustesPage() {
+// Ajustes: tus horas habituales, la zona horaria, tus rutinas y Google Calendar.
+export default async function AjustesPage({
+  searchParams,
+}: PageProps<"/ajustes">) {
+  const { google } = await searchParams;
   const [ajustes, rutinas] = await Promise.all([
     leerAjustes(),
     listarRutinas(),
@@ -26,6 +30,10 @@ export default async function AjustesPage() {
           <h2 className="text-lg font-semibold">Tus horas</h2>
           <FormAjustes ajustes={ajustes} />
         </section>
+
+        <SeccionGoogle
+          mensaje={typeof google === "string" ? google : undefined}
+        />
 
         <section className="flex flex-col gap-3">
           <header className="flex items-center justify-between gap-4">
