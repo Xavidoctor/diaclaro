@@ -3,45 +3,48 @@
 @import "shadcn/tailwind.css";
 
 /* Colores de la app. Cambiar aquí cambia toda la interfaz.
-   Los nombres siguen los de shadcn/ui, para que sus componentes usen nuestros colores. */
+   Los nombres siguen los de shadcn/ui, para que sus componentes usen nuestros colores.
+   Ojo: aquí "muted" es el gris de los textos secundarios (text-muted). Para fondos
+   grises suaves usa "secondary" (bg-secondary), no bg-muted. */
 :root {
-  --background: #f8fafc;
+  /* Estilo "Calma": fondo verde muy suave, tarjetas blancas y verde salvia. */
+  --background: #f2f5f1;
   --surface: #ffffff;
-  --foreground: #0f172a;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --primary: #2563eb;
+  --foreground: #1d2a24;
+  --muted: #5f6f66;
+  --border: #dde5df;
+  --primary: #3a7458;
   --primary-foreground: #ffffff;
-  --danger: #b91c1c;
+  --danger: #b42318;
 
   /* Lo que piden los componentes de shadcn/ui. */
   --card: var(--surface);
   --card-foreground: var(--foreground);
   --popover: var(--surface);
   --popover-foreground: var(--foreground);
-  --secondary: #f1f5f9;
+  --secondary: #e3efe7;
   --secondary-foreground: var(--foreground);
   --muted-foreground: var(--muted);
-  --accent: #f1f5f9;
+  --accent: #e3efe7;
   --accent-foreground: var(--foreground);
   --destructive: var(--danger);
   --input: var(--border);
   --ring: var(--primary);
-  --radius: 0.75rem;
+  --radius: 1rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b1120;
-    --surface: #111827;
-    --foreground: #e5e7eb;
-    --muted: #94a3b8;
-    --border: #1f2937;
-    --primary: #60a5fa;
-    --primary-foreground: #0b1120;
-    --danger: #f87171;
-    --secondary: #1e293b;
-    --accent: #1e293b;
+    --background: #0f1512;
+    --surface: #17201b;
+    --foreground: #e4ebe6;
+    --muted: #9fb0a6;
+    --border: #26322b;
+    --primary: #7cc4a0;
+    --primary-foreground: #0f1512;
+    --danger: #f28b82;
+    --secondary: #1f2b24;
+    --accent: #1f2b24;
   }
 }
 
@@ -70,7 +73,7 @@
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-nunito);
 }
 
 body {
@@ -83,17 +86,46 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+  /* En el móvil: sin el recuadro gris al tocar y sin esperar al doble toque. */
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  label {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  /* Si usas el teclado, se ve un anillo en lo que tienes seleccionado. */
+  a:focus-visible,
+  button:focus-visible {
+    @apply rounded-md outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+/* Si el móvil tiene activado "reducir movimiento", quitamos las animaciones. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Piezas reutilizables. Para menús, etiquetas o diálogos, usa components/ui (shadcn/ui). */
 @layer components {
+  /* text-base (16px) evita que el móvil haga zoom al escribir. */
   .input {
-    @apply rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none focus:border-primary;
+    @apply rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none focus:border-primary focus-visible:ring-3 focus-visible:ring-ring/30;
   }
+  /* Mínimo 44px de alto (min-h-11): el tamaño cómodo para pulsar con el dedo. */
   .button-primary {
-    @apply rounded-xl bg-primary px-4 py-3 font-medium text-primary-foreground disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-3 font-medium text-primary-foreground transition-opacity active:opacity-80 disabled:opacity-60;
   }
+  /* Tarjeta blanca sin borde visible, con una sombra muy suave.
+     El borde es transparente para que "card border-primary" lo pueda resaltar. */
   .card {
-    @apply rounded-2xl border border-border bg-surface p-5;
+    @apply rounded-2xl border border-transparent bg-surface p-5 shadow-[0_1px_3px_rgb(29_42_36/0.08)];
   }
 }

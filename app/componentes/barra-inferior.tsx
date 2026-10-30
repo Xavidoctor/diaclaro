@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { CalendarDays, Inbox, LayoutGrid, Sun } from "lucide-react";
 
-// Menú de abajo: Hoy, Agenda, Bandeja y Áreas.
+// Menú de abajo: Hoy, Agenda, Bandeja y Áreas, cada una con su icono.
 const SECCIONES = [
-  { href: "/", nombre: "Hoy" },
-  { href: "/agenda", nombre: "Agenda" },
-  { href: "/bandeja", nombre: "Bandeja" },
-  { href: "/areas", nombre: "Áreas" },
+  { href: "/", nombre: "Hoy", Icono: Sun },
+  { href: "/agenda", nombre: "Agenda", Icono: CalendarDays },
+  { href: "/bandeja", nombre: "Bandeja", Icono: Inbox },
+  { href: "/areas", nombre: "Áreas", Icono: LayoutGrid },
 ] as const;
 
 // "actual" marca la sección en la que estás (en Ajustes no se marca ninguna).
@@ -16,16 +17,18 @@ export function BarraInferior({ actual }: { actual: string }) {
       className="sticky bottom-0 mt-auto border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]"
     >
       <ul className="mx-auto flex max-w-xl">
-        {SECCIONES.map((s) => (
-          <li key={s.href} className="flex-1">
+        {SECCIONES.map(({ href, nombre, Icono }) => (
+          <li key={href} className="flex-1">
             <Link
-              href={s.href}
-              aria-current={s.href === actual ? "page" : undefined}
-              className={`block py-3 text-center text-sm font-medium ${
-                s.href === actual ? "text-primary" : "text-muted"
+              href={href}
+              aria-current={href === actual ? "page" : undefined}
+              className={`flex min-h-14 flex-col items-center justify-center gap-1 text-xs font-medium ${
+                href === actual ? "text-primary" : "text-muted"
               }`}
             >
-              {s.nombre}
+              {/* aria-hidden: el lector de pantalla ya lee el nombre. */}
+              <Icono aria-hidden className="size-5" />
+              {nombre}
             </Link>
           </li>
         ))}
