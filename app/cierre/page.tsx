@@ -1,0 +1,117 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { FormCierre } from "@/app/cierre/form-cierre";
+import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { leerAjustes } from "@/lib/data/ajustes";
+import { leerCierre, listarTareasHechasDesde } from "@/lib/data/cierre";
+import { listarSesionesDelDia } from "@/lib/data/foco";
+import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
+import { textoHoras } from "@/lib/planner/areas";
+import { diaACerrar, hechasEnDia, horaLocal } from "@/lib/planner/cierre";
+import { esFecha, hoyEn, nombreDia, sumarDias } from "@/lib/planner/fechas";
+import { totalMinutos } from "@/lib/planner/foco";
+import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Cierre del día" };
+
+// Cierre del día: un resumen de lo que has hecho y dos preguntas.
+// /cierre?dia=2026-10-29 abre el de otro día (nunca uno futuro).
+export default async function CierrePage({
+  searchParams,
+}: PageProps<"/cierre">) {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) redirect("/login");
+
+  const params = await searchParams;
+  const { timezone } = await leerAjustes();
+  const hoy = hoyEn(timezone);
+  const pedido = typeof params.dia === "string" ? params.dia : "";
+  const dia =
+    esFecha(pedido) && pedido <= hoy
+      ? pedido
+      : diaACerrar(hoy, sumarDias(hoy, -1), horaLocal(timezone));
+
+  // Desde el día anterior a medianoche (UTC) para no perder ninguna por la zona horaria.
+  const [cierre, tareas, sesiones, registros, rutinas] = await Promise.all([
+    leerCierre(dia),
+    listarTareasHechasDesde(new Date(`${sumarDias(dia, -1)}T00:00:00Z`)),
+    listarSesionesDelDia(dia),
+    listarRegistrosDelDia(dia),
+    listarRutinas(),
+  ]);
+  const hechas = hechasEnDia(tareas, dia, timezone);
+  const minutosFoco = totalMinutos(sesiones);
+  const vecesPorRutina = new Map<string, number>();
+  for (const r of registros)
+    vecesPorRutina.set(
+      r.routine_id,
+      (vecesPorRutina.get(r.routine_id) ?? 0) + 1,
+    );
+  const rutinasHechas = rutinas.filter((r) => vecesPorRutina.has(r.id));
+
+  return (
+    <>
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-6 py-8">
+        <header className="flex flex-col gap-1">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Cierre del día
+          </h1>
+          <p className="text-muted first-letter:uppercase">
+            {nombreDia(dia)}
+            {dia === hoy ? " (hoy)" : ""}
+          </p>
+          <nav className="flex gap-4 text-sm">
+            <Link
+              href={`/cierre?dia=${sumarDias(dia, -1)}`}
+              className="underline"
+            >
+              Día anterior
+            </Link>
+            {dia < hoy && (
+              <Link
+                href={`/cierre?dia=${sumarDias(dia, 1)}`}
+                className="underline"
+              >
+                Día siguiente
+              </Link>
+            )}
+          </nav>
+        </header>
+
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Lo que has hecho</h2>
+          {hechas.length === 0 &&
+          rutinasHechas.length === 0 &&
+          minutosFoco === 0 ? (
+            <p className="text-sm text-muted">
+              La app no tiene nada apuntado como hecho este día. Seguro que algo
+              has hecho: escríbelo abajo.
+            </p>
+          ) : (
+            <ul className="card flex flex-col gap-2 p-4 text-sm">
+              {hechas.map((t) => (
+                <li key={t.id} className="break-words">
+                  ✓ {t.title}
+                </li>
+              ))}
+              {rutinasHechas.map((r) => (
+                <li key={r.id} className="break-words">
+                  ✓ {r.title}
+                  {(vecesPorRutina.get(r.id) ?? 0) > 1
+                    ? ` (${vecesPorRutina.get(r.id)} veces)`
+                    : ""}
+                </li>
+              ))}
+              {minutosFoco > 0 && <li>⏱ {textoHoras(minutosFoco)} de foco</li>}
+            </ul>
+          )}
+        </section>
+
+        <FormCierre key={dia} dia={dia} cierre={cierre} />
+      </main>
+      <BarraInferior actual="/cierre" />
+    </>
+  );
+}
