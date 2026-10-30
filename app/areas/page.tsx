@@ -94,6 +94,21 @@ export default async function AreasPage() {
                 className="size-5 shrink-0 text-muted"
               />
             </Link>
+            <Link
+              href="/areas/progreso"
+              className="card flex items-center justify-between gap-3 p-4"
+            >
+              <span className="flex flex-col gap-1">
+                <span className="font-medium">Progreso</span>
+                <span className="text-sm text-muted">
+                  Horas de sueño, horas usadas y horas muertas de cada día
+                </span>
+              </span>
+              <ChevronRight
+                aria-hidden
+                className="size-5 shrink-0 text-muted"
+              />
+            </Link>
             <ListaAreas areas={activas} proyectos={proyectos} ordenable />
             {archivadas.length > 0 && (
               <details>
