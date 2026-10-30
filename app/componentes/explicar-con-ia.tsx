@@ -5,6 +5,7 @@ import {
   explicarConIA,
   type ExplicacionState,
 } from "@/app/componentes/acciones-ia";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 // Botón "Explícamelo": la IA (Groq, gratis) te cuenta el día con palabras.
 // Solo se ve si la app tiene la clave de Groq configurada.
@@ -40,10 +41,9 @@ export function ExplicarConIA() {
         </button>
       </form>
       {estado.texto && (
-        <p className="text-xs text-muted">
-          Texto escrito por una IA: puede equivocarse. Los números y los
-          recortes de arriba los calcula la app.
-        </p>
+        <SaberMas resumen="Escrito por una IA: puede equivocarse.">
+          Los números y los recortes de arriba los calcula la app.
+        </SaberMas>
       )}
     </div>
   );

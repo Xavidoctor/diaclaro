@@ -9,6 +9,7 @@ import {
   type IdeasState,
 } from "@/app/habitos/actions";
 import { MAX_FRASES, MAX_LARGO_FRASE } from "@/lib/planner/habitos";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 // Tus frases para motivarte con este hábito: escribirlas, quitarlas y,
 // si quieres, pedir ideas a la IA y guardar solo las que te gusten.
@@ -35,10 +36,10 @@ export function Frases({
   return (
     <section className="flex flex-col gap-3 border-t border-border pt-4">
       <h2 className="text-lg font-semibold">Tus frases</h2>
-      <p className="text-sm text-muted">
-        Frases para animarte. Cuando te llegue un aviso de este hábito, sale una
-        de ellas. Como mucho {MAX_FRASES}.
-      </p>
+      <SaberMas resumen="Frases para animarte.">
+        Cuando te llegue un aviso de este hábito, sale una de ellas. Como mucho{" "}
+        {MAX_FRASES}.
+      </SaberMas>
 
       {frases.length > 0 && (
         <ul className="flex flex-col gap-2">
@@ -94,10 +95,10 @@ export function Frases({
               {pensando ? "Pensando…" : "Pedir ideas a la IA"}
             </button>
           </form>
-          <p className="text-muted">
-            A la IA solo le llega el nombre de este hábito y lo que quieres
-            (hacerlo más, menos o verlo). Nunca lo que apuntas.
-          </p>
+          <SaberMas resumen="¿Qué le llega a la IA?">
+            Solo el nombre de este hábito y lo que quieres (hacerlo más, menos o
+            verlo). Nunca lo que apuntas.
+          </SaberMas>
           {pendientes.length > 0 && (
             <ul className="flex flex-col gap-2">
               {pendientes.map((f) => (

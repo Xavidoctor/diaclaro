@@ -14,6 +14,7 @@ import {
   type InicioDia,
 } from "@/lib/planner/inicio-dia";
 import { textoFranja, type RutinaDelDia } from "@/lib/planner/rutinas";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 // Botones "Despierto" y "Levantado" arriba de Hoy (antes "Empiezo el día").
 // Al pulsar "Levantado" se guarda la hora y el aviso de sobrecarga calcula tu
@@ -79,11 +80,15 @@ export function BotonesDespertar({
   const alto = grande ? "min-h-16 text-lg" : "py-2";
   return (
     <>
-      <p className="text-sm text-muted">
-        {estado === "despierto" && inicio?.awake_time
-          ? `Despierto desde las ${inicio.awake_time}. Pulsa «Levantado» cuando salgas de la cama.`
-          : "Pulsa «Despierto» al abrir los ojos y «Levantado» al salir de la cama. Calcularé tu día desde que te levantes hasta que te acuestes."}
-      </p>
+      {estado === "despierto" && inicio?.awake_time ? (
+        <p className="text-sm text-muted">
+          {`Despierto desde las ${inicio.awake_time}. Pulsa «Levantado» cuando salgas de la cama.`}
+        </p>
+      ) : (
+        <SaberMas resumen="Pulsa «Despierto» al abrir los ojos y «Levantado» al salir de la cama.">
+          Calcularé tu día desde que te levantes hasta que te acuestes.
+        </SaberMas>
+      )}
       {estado === "sin-empezar" && (
         <form action={marcarDespierto} className="flex flex-col">
           <button type="submit" className={`button-secondary ${alto}`}>

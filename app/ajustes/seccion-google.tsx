@@ -1,6 +1,7 @@
 import { desconectarGoogle } from "@/app/ajustes/actions";
 import { leerConexionGoogle } from "@/lib/data/google";
 import { googleDisponible } from "@/lib/google/api";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 // Mensajes al volver de Google (llegan en /ajustes?google=...).
 const MENSAJES: Record<string, string> = {
@@ -24,19 +25,17 @@ export async function SeccionGoogle({ mensaje }: { mensaje?: string }) {
   return (
     <section id="google" className="card flex flex-col gap-3">
       <h2 className="text-lg font-semibold">Google Calendar</h2>
-      <p className="text-sm text-muted">
-        Si usas Google Calendar, sus eventos pueden salir en tu Agenda. DíaClaro
-        solo los lee: nunca crea, cambia ni borra nada en tu calendario.
-      </p>
+      <SaberMas resumen="Tus eventos de Google, en tu Agenda.">
+        DíaClaro solo los lee: nunca crea, cambia ni borra nada en tu
+        calendario.
+      </SaberMas>
       {aviso && (
         <p role="status" className="text-sm">
           {aviso}
         </p>
       )}
       {!disponible ? (
-        <p className="text-sm text-muted">
-          Aún no está activado en esta app.
-        </p>
+        <p className="text-sm text-muted">Aún no está activado en esta app.</p>
       ) : conexion ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm">

@@ -8,6 +8,7 @@ import {
   type ExplicarDiaState,
 } from "@/app/dia-dificil/acciones-ia";
 import type { Motivo } from "@/lib/planner/dia-dificil";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 // «Cuéntamelo con tus palabras»: en vez de elegir un botón, escribes qué ha
 // pasado y la IA elige el motivo. Solo se ve si la app tiene la clave de Groq.
@@ -82,10 +83,9 @@ export function ExplicarDiaConIA({ motivo }: { motivo: Motivo }) {
         </button>
       </form>
       {estado.texto && (
-        <p className="text-xs text-muted">
-          Texto escrito por una IA: puede equivocarse. Lo que se conserva, se
-          reduce o se aplaza lo calcula la app.
-        </p>
+        <SaberMas resumen="Escrito por una IA: puede equivocarse.">
+          Lo que se conserva, se reduce o se aplaza lo calcula la app.
+        </SaberMas>
       )}
     </div>
   );

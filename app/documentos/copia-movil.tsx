@@ -11,6 +11,7 @@ import {
   listarCopias,
 } from "@/app/documentos/almacen-movil";
 import { planDeCopias, type FichaDocumento } from "@/lib/planner/copias-movil";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 type Ficha = FichaDocumento & { tipoNombre: string };
 
@@ -143,11 +144,11 @@ export function CopiaMovil({
                   ? "Cuando guardes documentos, también tendrás una copia en este móvil."
                   : `Copia en este móvil: ${documentos.length} de ${documentos.length}.`)}
           </p>
-          <p className="text-sm text-muted">
+          <SaberMas resumen="Funciona sin conexión.">
             Sin conexión, abre DíaClaro y te salen tus documentos. La copia solo
             está en este móvil: si borras los datos de Chrome, se pierde, pero
             en Drive siguen a salvo.
-          </p>
+          </SaberMas>
           <button
             type="button"
             onClick={apagar}

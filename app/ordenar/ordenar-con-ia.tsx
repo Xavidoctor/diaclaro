@@ -10,6 +10,7 @@ import {
 } from "@/app/ordenar/actions";
 import type { Propuesta } from "@/lib/ai/interpretar-texto";
 import type { GrupoOpciones } from "@/lib/planner/areas";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 // Paso 1: escribes todo lo que tienes en la cabeza.
 // Paso 2: revisas lo que propone la IA, lo cambias y guardas lo que quieras.
@@ -92,10 +93,10 @@ function Revision({
   return (
     <form action={guardar} className="flex flex-col gap-3">
       <h2 className="text-lg font-semibold">Revisa antes de guardar</h2>
-      <p className="text-sm text-muted">
-        Lo ha propuesto una IA y puede equivocarse. Cambia lo que haga falta y
-        desmarca lo que no quieras. Nada se guarda hasta que pulses «Guardar».
-      </p>
+      <SaberMas resumen="Lo ha propuesto una IA y puede equivocarse.">
+        Cambia lo que haga falta y desmarca lo que no quieras. Nada se guarda
+        hasta que pulses «Guardar».
+      </SaberMas>
       <input type="hidden" name="total" value={propuestas.length} />
       <ul className="flex flex-col gap-3">
         {propuestas.map((p, i) => (

@@ -11,6 +11,7 @@ import { listarHorasDormir } from "@/lib/data/dormir";
 import { nocheDe, textoAcostaste } from "@/lib/planner/dormir";
 import { horaEn, hoyEn, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 export const metadata: Metadata = { title: "Buenas noches" };
 
@@ -47,10 +48,9 @@ export default async function DormirPage() {
         </section>
       ) : (
         <form action={meVoyADormir} className="flex flex-col gap-2">
-          <p className="text-sm text-muted">
-            Púlsalo al meterte en la cama. Con esta hora y la de «Despierto»
-            sabrás cuánto duermes de verdad.
-          </p>
+          <SaberMas resumen="Púlsalo al meterte en la cama.">
+            Con esta hora y la de «Despierto» sabrás cuánto duermes de verdad.
+          </SaberMas>
           <button type="submit" className="button-primary min-h-16 text-lg">
             Me voy a dormir
           </button>

@@ -15,6 +15,7 @@ import {
   type DocumentoImportante,
 } from "@/lib/planner/documentos-importantes";
 import { createClient } from "@/lib/supabase/server";
+import { SaberMas } from "@/app/componentes/saber-mas";
 
 export const metadata: Metadata = { title: "Documentos importantes" };
 
@@ -70,10 +71,10 @@ export default async function DocumentosPage({
           <h1 className="text-3xl font-semibold tracking-tight">
             Documentos importantes
           </h1>
-          <p className="text-sm text-muted">
-            Tu DNI, billetes, entradas… a mano, sin buscar en la galería. Se
-            guardan en una carpeta de tu Google Drive que solo ves tú.
-          </p>
+          <SaberMas resumen="Tu DNI, billetes, entradas… a mano.">
+            Sin buscar en la galería. Se guardan en una carpeta de tu Google
+            Drive que solo ves tú.
+          </SaberMas>
         </header>
 
         {(aviso || compartido > 0 || fallo) && (
