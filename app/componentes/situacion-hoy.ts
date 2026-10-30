@@ -1,6 +1,7 @@
 import "server-only";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
+import { leerInicio } from "@/lib/data/inicio-dia";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { listarTareas, type Tarea } from "@/lib/data/bandeja";
 import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
@@ -9,6 +10,7 @@ import type { Ajustes } from "@/lib/planner/ajustes";
 import { tareasParaHoy } from "@/lib/planner/bandeja";
 import { calcularCarga } from "@/lib/planner/carga";
 import { hoyEn, horaEn } from "@/lib/planner/fechas";
+import { ajustesDelDia } from "@/lib/planner/inicio-dia";
 import { proponerRecortes } from "@/lib/planner/recortes";
 import { rutinasDelDia, type RutinaDelDia } from "@/lib/planner/rutinas";
 import { factoresPorTipo } from "@/lib/planner/tiempos";
@@ -55,13 +57,16 @@ export async function calcularSituacion({
 
 // Lo mismo, cargando antes la agenda y las rutinas de hoy (para el botón de la IA).
 export async function cargarSituacion() {
-  const ajustes = await leerAjustes();
-  const hoy = hoyEn(ajustes.timezone);
-  const [eventos, rutinas, registros] = await Promise.all([
+  const ajustesGuardados = await leerAjustes();
+  const hoy = hoyEn(ajustesGuardados.timezone);
+  const [eventos, rutinas, registros, inicio] = await Promise.all([
     listarEventosHasta(hoy),
     listarRutinas(),
     listarRegistrosDelDia(hoy),
+    leerInicio(hoy),
   ]);
+  // Si has pulsado "Empiezo el día", el día cuenta desde esa hora (como en Hoy).
+  const ajustes = ajustesDelDia(ajustesGuardados, inicio);
   const excepciones = await listarExcepciones(eventos.map((e) => e.id));
   const situacion = await calcularSituacion({
     hoy,
