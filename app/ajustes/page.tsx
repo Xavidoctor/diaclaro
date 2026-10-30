@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { pausarRutina } from "@/app/ajustes/actions";
 import { FormAjustes } from "@/app/ajustes/form-ajustes";
 import { SeccionGoogle } from "@/app/ajustes/seccion-google";
 import { InterruptorAyuda } from "@/app/componentes/ayuda-guia";
@@ -74,20 +73,12 @@ export default async function AjustesPage({
                           : "Cada día",
                         textoVeces(r),
                         textoFranja(r),
-                      ].join(" · ")}
+                        r.active ? "" : "En pausa",
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </span>
                   </Link>
-                  <form action={pausarRutina}>
-                    <input type="hidden" name="id" value={r.id} />
-                    <input
-                      type="hidden"
-                      name="activa"
-                      value={r.active ? "no" : "si"}
-                    />
-                    <button type="submit" className="text-sm underline">
-                      {r.active ? "Pausar" : "Reanudar"}
-                    </button>
-                  </form>
                 </li>
               ))}
             </ul>

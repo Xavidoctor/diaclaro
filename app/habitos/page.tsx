@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { deshacerApunte, pausarHabito } from "@/app/habitos/actions";
+import { deshacerApunte } from "@/app/habitos/actions";
 import { Apuntar } from "@/app/habitos/apuntar";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
@@ -114,7 +114,6 @@ export default async function HabitosPage() {
                   >
                     {h.title}
                   </Link>
-                  <BotonPausa habito={h} />
                 </li>
               ))}
             </ul>
@@ -161,7 +160,6 @@ function FichaHabito({
               .join(" · ")}
           </span>
         </Link>
-        <BotonPausa habito={habito} />
       </div>
 
       {frase && <p className="text-sm italic">{frase}</p>}
@@ -236,17 +234,5 @@ function Semana({ dias }: { dias: { fecha: string; total: number | null }[] }) {
         );
       })}
     </ol>
-  );
-}
-
-function BotonPausa({ habito }: { habito: Habito }) {
-  return (
-    <form action={pausarHabito}>
-      <input type="hidden" name="id" value={habito.id} />
-      <input type="hidden" name="activo" value={habito.active ? "no" : "si"} />
-      <button type="submit" className="text-sm underline">
-        {habito.active ? "Pausar" : "Reanudar"}
-      </button>
-    </form>
   );
 }
