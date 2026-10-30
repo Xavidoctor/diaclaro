@@ -62,7 +62,7 @@ export const DIAS_SEMANA = [
 ] as const;
 
 export type CodigoDia = (typeof DIAS_SEMANA)[number]["codigo"];
-const CODIGOS = DIAS_SEMANA.map((d) => d.codigo) as CodigoDia[];
+export const CODIGOS = DIAS_SEMANA.map((d) => d.codigo) as CodigoDia[];
 
 export type Repeticion =
   | { tipo: "no" }
@@ -259,7 +259,7 @@ export function horaCorta(hora: string | null): string | null {
 export const MAX_TITULO_EVENTO = 200;
 export const MAX_NOTAS_EVENTO = 2000;
 
-const textoOpcional = z
+export const textoOpcional = z
   .string()
   .trim()
   .transform((v) => (v === "" ? null : v));
@@ -271,13 +271,13 @@ const fechaOpcional = textoOpcional.refine((v) => v === null || esFecha(v), {
   error: "La fecha final no es válida.",
 });
 
-const horaOpcional = textoOpcional.refine(
+export const horaOpcional = textoOpcional.refine(
   (v) => v === null || /^([01]\d|2[0-3]):[0-5]\d$/.test(v),
   { error: "La hora no es válida." },
 );
 
 // Comprueba la hora de inicio y fin: el fin solo con inicio, y siempre después.
-function revisarHoras(
+export function revisarHoras(
   inicio: string | null,
   fin: string | null,
 ): string | null {

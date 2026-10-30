@@ -22,9 +22,10 @@ Tu centro de organización personal: captura rápida, plan del día realista, á
 
 ```
 app/                 Pantallas (cada carpeta es una dirección: app/login → /login)
-  page.tsx           Pantalla Hoy (saludo y cuadro de captura)
+  page.tsx           Pantalla Hoy (captura, agenda de hoy y rutinas)
   bandeja/           Bandeja: pestañas Notas y Tareas, archivo y papelera
   agenda/            Agenda: compromisos de los próximos 14 días, con repeticiones y cambios de un día
+  ajustes/           Ajustes: horas habituales, zona horaria y rutinas
   componentes/       Piezas que usan varias pantallas (captura, menú de abajo)
   login/             Acceso con enlace por email
   auth/confirm/      Adonde vuelve el enlace del email: abre la sesión
@@ -81,6 +82,7 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | Archivo | Qué crea |
 | --- | --- |
 | `20261030000000_bandeja_notas_y_tareas.sql` | Tablas `notes` y `tasks`, con sus reglas RLS y la búsqueda en español |
+| `20261030030000_ajustes_y_rutinas.sql` | Tablas `settings` (tus ajustes), `routines` (rutinas) y `routine_logs` (cada vez que marcas una como hecha), con sus reglas RLS |
 | `20261030020000_agenda_eventos.sql` | Tablas `events` (compromisos, que pueden repetirse) y `event_exceptions` (cambios de un solo día), con sus reglas RLS |
 
 ## Publicar en Vercel (una vez)

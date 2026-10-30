@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
+import { leerAjustes } from "@/lib/data/ajustes";
 import {
   agruparPorDia,
   leerFechaParam,
@@ -20,7 +21,7 @@ export default async function AgendaPage({
   searchParams,
 }: PageProps<"/agenda">) {
   const params = await searchParams;
-  const hoy = hoyEn();
+  const hoy = hoyEn((await leerAjustes()).timezone);
   const desde = leerFechaParam(params.desde, hoy);
   const dias = diasDesde(desde, DIAS_VISTA);
   const hasta = dias.at(-1)!;

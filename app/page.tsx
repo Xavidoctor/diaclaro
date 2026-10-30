@@ -1,14 +1,41 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { cerrarSesion } from "@/app/actions";
+import {
+  cerrarSesion,
+  deshacerRutinaHecha,
+  marcarRutinaHecha,
+} from "@/app/actions";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
 import { SaludoLocal } from "@/app/saludo-local";
+import { leerAjustes } from "@/lib/data/ajustes";
+import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
+import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
+import { ocurrenciasEntre, textoHora } from "@/lib/planner/agenda";
+import { hoyEn } from "@/lib/planner/fechas";
+import {
+  rutinasDelDia,
+  textoFranja,
+  type RutinaDelDia,
+} from "@/lib/planner/rutinas";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function HoyPage() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) redirect("/login");
+
+  // Primera versión de Hoy: tu agenda y tus rutinas del día.
+  const { timezone } = await leerAjustes();
+  const hoy = hoyEn(timezone);
+  const [eventos, rutinas, registros] = await Promise.all([
+    listarEventosHasta(hoy),
+    listarRutinas(),
+    listarRegistrosDelDia(hoy),
+  ]);
+  const excepciones = await listarExcepciones(eventos.map((e) => e.id));
+  const agenda = ocurrenciasEntre(eventos, excepciones, hoy, hoy);
+  const deHoy = rutinasDelDia(rutinas, registros, hoy);
 
   return (
     <>
@@ -17,11 +44,16 @@ export default async function HoyPage() {
           <h1 className="text-3xl font-semibold tracking-tight">
             <SaludoLocal />
           </h1>
-          <form action={cerrarSesion}>
-            <button type="submit" className="text-sm text-muted underline">
-              Salir
-            </button>
-          </form>
+          <div className="flex gap-4 text-sm text-muted">
+            <Link href="/ajustes" className="underline">
+              Ajustes
+            </Link>
+            <form action={cerrarSesion}>
+              <button type="submit" className="underline">
+                Salir
+              </button>
+            </form>
+          </div>
         </header>
 
         <section className="flex flex-col gap-3">
@@ -29,12 +61,52 @@ export default async function HoyPage() {
           <CapturaRapida />
         </section>
 
-        <section className="card flex flex-col gap-2">
-          <h2 className="text-lg font-semibold">Hoy</h2>
-          <p className="text-muted">
-            Aquí aparecerá tu día más adelante. De momento, lo que apuntes queda
-            en la Bandeja.
-          </p>
+        <section className="flex flex-col gap-3">
+          <header className="flex items-baseline justify-between gap-4">
+            <h2 className="text-lg font-semibold">Agenda de hoy</h2>
+            <Link href="/agenda" className="text-sm underline">
+              Ver 14 días
+            </Link>
+          </header>
+          {agenda.length === 0 ? (
+            <p className="text-sm text-muted">Hoy no tienes nada apuntado.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {agenda.map((o) => (
+                <li key={`${o.eventoId}|${o.fechaOriginal}`}>
+                  <Link
+                    href={`/agenda/${o.eventoId}?dia=${o.fechaOriginal}`}
+                    className="card flex items-baseline gap-3 p-4"
+                  >
+                    <span className="w-28 shrink-0 text-sm text-muted">
+                      {textoHora(o)}
+                    </span>
+                    <span className="flex-1 break-words">{o.titulo}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="flex flex-col gap-3">
+          <header className="flex items-baseline justify-between gap-4">
+            <h2 className="text-lg font-semibold">Rutinas</h2>
+            <Link href="/ajustes" className="text-sm underline">
+              Cambiar
+            </Link>
+          </header>
+          {deHoy.length === 0 ? (
+            <p className="text-sm text-muted">
+              Hoy no toca ninguna. Puedes añadirlas en Ajustes.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {deHoy.map((r) => (
+                <FilaRutina key={r.rutina.id} item={r} />
+              ))}
+            </ul>
+          )}
         </section>
 
         <p className="text-sm text-muted">
@@ -43,5 +115,42 @@ export default async function HoyPage() {
       </main>
       <BarraInferior actual="/" />
     </>
+  );
+}
+
+function FilaRutina({ item }: { item: RutinaDelDia }) {
+  const { rutina, hechas, completa } = item;
+  return (
+    <li className="card flex items-center gap-3 p-4">
+      <div className="flex flex-1 flex-col gap-1">
+        <span
+          className={`break-words ${completa ? "text-muted line-through" : ""}`}
+        >
+          {rutina.title}
+        </span>
+        <span className="text-sm text-muted">
+          {hechas} de {rutina.times_per_day}
+          {rutina.duration_minutes ? ` · ${rutina.duration_minutes} min` : ""}
+          {" · "}
+          {textoFranja(rutina)}
+        </span>
+      </div>
+      {hechas > 0 && (
+        <form action={deshacerRutinaHecha}>
+          <input type="hidden" name="id" value={rutina.id} />
+          <button type="submit" className="text-sm text-muted underline">
+            Deshacer
+          </button>
+        </form>
+      )}
+      {!completa && (
+        <form action={marcarRutinaHecha}>
+          <input type="hidden" name="id" value={rutina.id} />
+          <button type="submit" className="button-primary py-2 text-sm">
+            Hecho
+          </button>
+        </form>
+      )}
+    </li>
   );
 }
