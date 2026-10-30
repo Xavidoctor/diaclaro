@@ -17,6 +17,7 @@ export const TABLAS = [
   "focus_sessions",
   "day_reviews",
   "day_starts",
+  "hard_days",
   "job_applications",
   "job_application_events",
 ] as const;

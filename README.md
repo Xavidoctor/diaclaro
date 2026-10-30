@@ -96,6 +96,7 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | `20261030090000_temporizador_foco.sql` | Tabla `focus_sessions` (cada rato del temporizador de foco), con sus reglas RLS |
 | `20261030100000_cierre_del_dia.sql` | Tabla `day_reviews` (tu cierre de cada día), con sus reglas RLS |
 | `20261030110000_empiezo_el_dia.sql` | Tabla `day_starts` (a qué hora empiezas cada día), con sus reglas RLS |
+| `20261030120000_dias_dificiles.sql` | Tabla `hard_days` (tus días difíciles y lo que conservaste), con sus reglas RLS |
 | `20261030140000_candidaturas_empleo.sql` | Tabla `job_applications` (tus candidaturas de empleo: empresa, puesto, estado y seguimiento), con sus reglas RLS |
 | `20261030150000_historial_candidaturas.sql` | Tabla `job_application_events` (el historial de cada candidatura: cambios de estado, seguimientos y notas), con sus reglas RLS |
 

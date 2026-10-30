@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { aplicarRecortes } from "@/app/componentes/acciones-recortes";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
-import { aceptarDiaDificil } from "@/app/dia-dificil/actions";
+import { aceptarDiaDificil, aceptarUnCambio } from "@/app/dia-dificil/actions";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
@@ -28,7 +27,8 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Día difícil" };
 
 // Día difícil: eliges el motivo y la app te propone qué conservar, qué
-// reducir y qué aplazar. Nada cambia hasta que pulsas "Aceptar".
+// reducir y qué aplazar. Nada cambia hasta que pulsas "Aceptar". Al aceptar,
+// se apunta que hoy es un día difícil y lo que conservas, para el cierre del día.
 // La lógica está en lib/planner/dia-dificil.ts.
 export default async function DiaDificilPage({
   searchParams,
@@ -104,6 +104,20 @@ async function Propuesta({ motivo }: { motivo: Motivo }) {
     ...reducir.map((r) => `${r.tarea.id}|acortar|${r.nuevosMinutos}`),
     ...aplazar.map((a) => `${a.tarea.id}|aplazar|${a.nuevaFecha}`),
   ];
+  // Viaja con cada botón para apuntar que hoy es un día difícil y qué conservas.
+  const ocultos = (
+    <>
+      <input type="hidden" name="motivo" value={motivo} />
+      {conservar.map((c) => (
+        <input
+          key={c.tarea.id}
+          type="hidden"
+          name="conservar"
+          value={c.tarea.id}
+        />
+      ))}
+    </>
+  );
   const nadaQueTocar =
     conservar.length === 0 && agenda.length === 0 && pendientes.length === 0;
 
@@ -145,6 +159,7 @@ async function Propuesta({ motivo }: { motivo: Motivo }) {
               r.ahorro > 0 ? ` (libera ${textoDuracion(r.ahorro)})` : ""
             }`}
             cambio={`${r.tarea.id}|acortar|${r.nuevosMinutos}`}
+            ocultos={ocultos}
           />
         ))}
       </Columna>
@@ -158,6 +173,7 @@ async function Propuesta({ motivo }: { motivo: Motivo }) {
               a.ahorro > 0 ? ` (libera ${textoDuracion(a.ahorro)})` : ""
             }`}
             cambio={`${a.tarea.id}|aplazar|${a.nuevaFecha}`}
+            ocultos={ocultos}
           />
         ))}
       </Columna>
@@ -170,6 +186,7 @@ async function Propuesta({ motivo }: { motivo: Motivo }) {
             </p>
           )}
           <form action={aceptarDiaDificil}>
+            {ocultos}
             {cambios.map((c) => (
               <input key={c} type="hidden" name="recorte" value={c} />
             ))}
@@ -217,10 +234,12 @@ function Fila({
   titulo,
   detalle,
   cambio,
+  ocultos,
 }: {
   titulo: string;
   detalle: string;
   cambio?: string;
+  ocultos?: ReactNode;
 }) {
   return (
     <li className="card flex items-center gap-3 p-3 text-sm">
@@ -229,8 +248,9 @@ function Fila({
         <span className="text-muted">{detalle}</span>
       </div>
       {cambio && (
-        <form action={aplicarRecortes}>
+        <form action={aceptarUnCambio}>
           <input type="hidden" name="recorte" value={cambio} />
+          {ocultos}
           <button type="submit" className="underline">
             Aceptar
           </button>

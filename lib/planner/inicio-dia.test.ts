@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AJUSTES_INICIALES } from "./ajustes";
-import { ajustesDelDia, leerHoraAcostarse } from "./inicio-dia";
+import { ajustesDelDia, leerHoraAcostarse, primeraRutina } from "./inicio-dia";
+import type { Rutina, RutinaDelDia } from "./rutinas";
 
 // Datos de ejemplo para las pruebas (no son los horarios reales de nadie).
 const AJUSTES = {
@@ -40,5 +41,37 @@ describe("leerHoraAcostarse", () => {
     expect(leerHoraAcostarse(null)).toEqual({ ok: true, valor: null });
     expect(leerHoraAcostarse("00:30")).toEqual({ ok: true, valor: "00:30" });
     expect(leerHoraAcostarse("25:00").ok).toBe(false);
+  });
+});
+
+function rutina(id: string, hechas = 0): RutinaDelDia {
+  const r: Rutina = {
+    id,
+    title: id,
+    notes: null,
+    repeat_rule: null,
+    times_per_day: 1,
+    duration_minutes: null,
+    window_start: null,
+    window_end: null,
+    part_of_day: null,
+    active: true,
+  };
+  return { rutina: r, hechas, completa: hechas >= 1 };
+}
+
+describe("primeraRutina", () => {
+  it("es la primera pendiente si aún no has hecho ninguna", () => {
+    expect(primeraRutina([rutina("paseo"), rutina("otra")])?.rutina.id).toBe(
+      "paseo",
+    );
+  });
+
+  it("si ya has marcado alguna, no se enseña", () => {
+    expect(primeraRutina([rutina("otra"), rutina("paseo", 1)])).toBeNull();
+  });
+
+  it("sin rutinas, nada", () => {
+    expect(primeraRutina([])).toBeNull();
   });
 });
