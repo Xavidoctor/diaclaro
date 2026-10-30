@@ -17,8 +17,10 @@ export function iaDisponible(): boolean {
 
 // Devuelve el texto de la IA, o null si falla (sin clave, sin red, límite
 // del plan gratuito agotado...). La app sigue funcionando igual sin ella.
+// Con json: true, la IA responde con un objeto JSON (para leerlo la app).
 export async function pedirTexto(
   mensajes: MensajeIA[],
+  opciones: { json?: boolean } = {},
 ): Promise<string | null> {
   const clave = process.env.GROQ_API_KEY;
   if (!clave) return null;
@@ -32,8 +34,9 @@ export async function pedirTexto(
       body: JSON.stringify({
         model: process.env.GROQ_MODEL || MODELO_POR_DEFECTO,
         messages: mensajes,
-        temperature: 0.4,
-        max_completion_tokens: 1200,
+        temperature: opciones.json ? 0.1 : 0.4,
+        max_completion_tokens: opciones.json ? 2000 : 1200,
+        ...(opciones.json && { response_format: { type: "json_object" } }),
       }),
       signal: AbortSignal.timeout(20_000),
     });

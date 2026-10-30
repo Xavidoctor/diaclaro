@@ -141,6 +141,8 @@ export async function crearTarea(datos: {
   details?: string | null;
   note_id?: string | null;
   project_id?: string | null;
+  due_date?: string | null;
+  estimated_minutes?: number | null;
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("tasks").insert(datos);
