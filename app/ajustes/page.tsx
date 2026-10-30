@@ -81,6 +81,19 @@ export default async function AjustesPage() {
             </ul>
           )}
         </section>
+
+        <section className="card flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Copia de seguridad</h2>
+          <p className="text-sm text-muted">
+            Descarga un archivo con todos tus datos: notas, tareas, agenda,
+            rutinas, áreas, foco y cierres del día. Hazlo una vez a la semana y
+            guárdalo en un sitio seguro, por ejemplo en Google Drive.
+          </p>
+          {/* Un enlace normal (no Link): es una descarga, no otra pantalla. */}
+          <a href="/exportar" download className="button-primary self-start">
+            Descargar copia
+          </a>
+        </section>
       </main>
       <BarraInferior actual="/ajustes" />
     </>
