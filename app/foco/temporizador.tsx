@@ -220,7 +220,7 @@ export function Temporizador({
         </button>
         <button
           type="button"
-          className="underline"
+          className="button-secondary"
           onClick={() => {
             guardarEstado(pausar(estado, Date.now()));
             setCerrando(true);
@@ -399,7 +399,7 @@ function Guardar({
           {guardando ? "Guardando…" : "Guardar"}
         </button>
         {antesDeTiempo && (
-          <button type="button" onClick={alSeguir} className="underline">
+          <button type="button" onClick={alSeguir} className="button-secondary">
             Seguir con el foco
           </button>
         )}
