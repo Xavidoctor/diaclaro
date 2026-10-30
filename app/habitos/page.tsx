@@ -54,6 +54,10 @@ export default async function HabitosPage() {
           </Link>
         </header>
 
+        <Link href="/habitos/avisos" className="enlace -mt-4 text-sm">
+          Avisos con la app cerrada
+        </Link>
+
         <p className="text-sm text-muted">
           Apunta lo que quieras observar, a tu ritmo. Aquí no hay rachas que se
           rompen ni notas: solo tus datos, para que veas cómo vas. Lo que

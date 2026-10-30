@@ -191,8 +191,9 @@ function Campos({
         />
         <span className="text-muted">
           Desde esa hora, si ese día aún no has apuntado nada, te lo recuerda
-          arriba en Hoy. Se ve al abrir la app; no suena con la app cerrada.
-          Déjalo vacío si no quieres recordatorio.
+          arriba en Hoy. Si activas los avisos (en Hábitos → «Avisos con la app
+          cerrada»), también te llega al móvil. Déjalo vacío si no quieres
+          recordatorio.
         </span>
       </label>
 
