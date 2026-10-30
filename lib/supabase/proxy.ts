@@ -9,6 +9,19 @@ const PUBLIC_PATHS = ["/login", "/auth"];
 // 1. renueva la sesión si ha caducado y guarda las cookies nuevas;
 // 2. si no hay sesión, manda a /login.
 export async function updateSession(request: NextRequest) {
+  // Si Supabase no reconoce la dirección de vuelta, manda el enlace a la
+  // página principal (/?code=...). Lo reenviamos a /auth/confirm para no
+  // perder el código y que el login funcione igual.
+  const { pathname, searchParams } = request.nextUrl;
+  if (
+    pathname !== "/auth/confirm" &&
+    (searchParams.has("code") || searchParams.has("token_hash"))
+  ) {
+    const confirmUrl = request.nextUrl.clone();
+    confirmUrl.pathname = "/auth/confirm";
+    return NextResponse.redirect(confirmUrl);
+  }
+
   let response = NextResponse.next({ request });
   const { url, publishableKey } = supabaseEnv();
 
