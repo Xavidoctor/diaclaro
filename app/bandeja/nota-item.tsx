@@ -7,6 +7,7 @@ import {
   papeleraNota,
 } from "@/app/bandeja/actions";
 import { BotonAccion as Boton } from "@/app/bandeja/boton-accion";
+import { SugerirProyecto } from "@/app/bandeja/sugerir-proyecto";
 import Link from "next/link";
 import { badgeVariants } from "@/components/ui/badge";
 import type { Nota, VistaNotas } from "@/lib/data/bandeja";
@@ -25,15 +26,17 @@ const fecha = new Intl.DateTimeFormat("es-ES", {
 });
 
 // Una nota de la lista, con sus botones. Con "grupos", al editarla se puede
-// elegir su proyecto.
+// elegir su proyecto. Con "ia", una nota sin proyecto puede pedir sugerencia.
 export function NotaItem({
   nota,
   ver,
   grupos,
+  ia = false,
 }: {
   nota: Nota;
   ver: VistaNotas;
   grupos?: GrupoOpciones[];
+  ia?: boolean;
 }) {
   const enPapelera = Boolean(nota.deleted_at);
   const archivada = Boolean(nota.archived_at);
@@ -85,6 +88,9 @@ export function NotaItem({
       )}
 
       {proyecto && <p className="text-sm text-muted">Proyecto: {proyecto}</p>}
+      {ia && !proyecto && opciones.length > 0 && !enPapelera && !archivada && (
+        <SugerirProyecto notaId={nota.id} />
+      )}
 
       {nota.tasks.length > 0 && (
         <p className="text-sm text-muted">
