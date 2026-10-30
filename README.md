@@ -3,7 +3,7 @@
 Tu centro de organización personal: captura rápida, plan del día realista, áreas y proyectos, y rutinas. Web instalable en el móvil.
 
 - Propuesta y plan: [DíaClaro v2](https://claude.ai/artifact/2zyaRKY9L5brpHoRtUDRtp)
-- Etapa actual: **0, preparación** (proyecto, login y publicación).
+- Etapa actual: **1, captura rápida y Bandeja** (notas y tareas).
 
 ## Tecnología
 
@@ -14,19 +14,25 @@ Tu centro de organización personal: captura rápida, plan del día realista, á
 | [Supabase](https://supabase.com) | Base de datos Postgres y login |
 | [Vercel](https://vercel.com) | Publicación de la web |
 | Vitest | Pruebas automáticas |
+| Zod | Comprobar los datos que llegan de los formularios |
 
 ## Cómo está organizado
 
 ```
 app/                 Pantallas (cada carpeta es una dirección: app/login → /login)
-  page.tsx           Pantalla Hoy (de momento, un saludo)
+  page.tsx           Pantalla Hoy (saludo y cuadro de captura)
+  bandeja/           Bandeja: pestañas Notas y Tareas, archivo y papelera
+  componentes/       Piezas que usan varias pantallas (captura, menú de abajo)
   login/             Acceso con enlace por email
   auth/confirm/      Adonde vuelve el enlace del email: abre la sesión
   manifest.ts        Datos para instalarla como app (PWA)
 lib/                 Lógica que no es pantalla
   supabase/          Conexión con Supabase (servidor y proxy)
+  planner/           Reglas puras (sin base de datos), con pruebas
+  data/              Única parte que lee y guarda en Supabase
   auth/validacion.ts Comprobaciones del formulario de acceso, con pruebas
   saludo.ts          Saludo según la hora, con pruebas
+supabase/migrations/ Cambios de la base de datos, en archivos SQL numerados por fecha
 proxy.ts             Se ejecuta antes de cada petición: renueva la sesión y protege las páginas
 ```
 
@@ -60,6 +66,18 @@ npm run build     # compila como en producción
    - *Site URL*: la dirección de Vercel, por ejemplo `https://diaclaro.vercel.app`.
    - *Redirect URLs*: añade `https://diaclaro.vercel.app/auth/confirm` (con tu dirección real) y, para probar en tu ordenador, `http://localhost:3000/auth/confirm`.
 5. Cuando hayas entrado por primera vez, en **Authentication → Sign In / Providers** desactiva **Allow new users to sign up**. Así nadie más puede crearse una cuenta.
+
+## Aplicar los cambios de la base de datos (migraciones)
+
+Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una vez, en orden de fecha** (el nombre empieza por la fecha):
+
+1. Abre tu proyecto en [supabase.com](https://supabase.com) → **SQL Editor** → **New query**.
+2. Copia todo el contenido del archivo de migración, pégalo y pulsa **Run**.
+3. Comprueba en **Table Editor** que aparecen las tablas nuevas, y que cada una muestra el aviso de RLS activado.
+
+| Archivo | Qué crea |
+| --- | --- |
+| `20261030000000_bandeja_notas_y_tareas.sql` | Tablas `notes` y `tasks`, con sus reglas RLS y la búsqueda en español |
 
 ## Publicar en Vercel (una vez)
 

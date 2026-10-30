@@ -43,7 +43,7 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Piezas reutilizables mientras no usemos shadcn/ui (llega en la etapa 1). */
+/* Piezas reutilizables. shadcn/ui se añadirá cuando haga falta algo más complejo (menús, diálogos). */
 @layer components {
   .input {
     @apply rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none focus:border-primary;
