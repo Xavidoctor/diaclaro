@@ -1,18 +1,20 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type {
-  DatosApunte,
-  DatosHabito,
-  Habito,
-  RegistroHabito,
+import {
+  apuntesDeRutinas,
+  type DatosApunte,
+  type DatosHabito,
+  type Habito,
+  type RegistroHabito,
 } from "@/lib/planner/habitos";
+import type { RegistroRutina } from "@/lib/planner/rutinas";
 
 // Única parte de los Hábitos que habla con Supabase.
 // Las reglas RLS ya hacen que cada persona solo vea lo suyo.
 // Importante: nada de aquí se pasa nunca a lib/ai (la IA no ve tus hábitos).
 
 const CAMPOS_HABITO =
-  "id, title, notes, direction, unit, daily_target, repeat_rule, active";
+  "id, title, notes, direction, unit, daily_target, repeat_rule, routine_id, active";
 
 function comprobar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`No se ha podido ${que}: ${error.message}`);
@@ -62,17 +64,42 @@ export async function borrarHabito(id: string) {
   comprobar(error, "borrar el hábito");
 }
 
-// Lo apuntado entre dos días (ambos incluidos).
+// Lo apuntado entre dos días (ambos incluidos), sumando los «Hecho»
+// de las rutinas unidas a algún hábito (cada uno cuenta como 1).
 export async function listarRegistrosEntre(desde: string, hasta: string) {
   const supabase = await createClient();
+  const [propios, unidos] = await Promise.all([
+    supabase
+      .from("habit_logs")
+      .select("habit_id, on_date, amount")
+      .gte("on_date", desde)
+      .lte("on_date", hasta)
+      .limit(5000),
+    supabase
+      .from("habits")
+      .select("id, routine_id")
+      .not("routine_id", "is", null)
+      .limit(100),
+  ]);
+  comprobar(propios.error, "cargar lo apuntado");
+  comprobar(unidos.error, "cargar los hábitos unidos a rutinas");
+  const registros = (propios.data ?? []) as RegistroHabito[];
+  const habitos = (unidos.data ?? []) as Pick<Habito, "id" | "routine_id">[];
+  if (habitos.length === 0) return registros;
+
+  const rutinas = [...new Set(habitos.map((h) => h.routine_id as string))];
   const { data, error } = await supabase
-    .from("habit_logs")
-    .select("habit_id, on_date, amount")
+    .from("routine_logs")
+    .select("routine_id, on_date")
+    .in("routine_id", rutinas)
     .gte("on_date", desde)
     .lte("on_date", hasta)
     .limit(5000);
-  comprobar(error, "cargar lo apuntado");
-  return (data ?? []) as RegistroHabito[];
+  comprobar(error, "cargar las rutinas hechas");
+  return [
+    ...registros,
+    ...apuntesDeRutinas(habitos, (data ?? []) as RegistroRutina[]),
+  ];
 }
 
 export async function apuntarHabito(
@@ -127,4 +154,37 @@ export async function listarApuntesDeHabito(habitoId: string, desde: string) {
     .limit(500);
   comprobar(error, "cargar lo apuntado");
   return (data ?? []) as ApunteConNota[];
+}
+
+// Lo apuntado de un solo hábito entre dos días, con los «Hecho» de su rutina.
+export async function listarRegistrosDeHabito(
+  habito: Pick<Habito, "id" | "routine_id">,
+  desde: string,
+  hasta: string,
+) {
+  const supabase = await createClient();
+  const [propios, hechos] = await Promise.all([
+    supabase
+      .from("habit_logs")
+      .select("habit_id, on_date, amount")
+      .eq("habit_id", habito.id)
+      .gte("on_date", desde)
+      .lte("on_date", hasta)
+      .limit(5000),
+    habito.routine_id
+      ? supabase
+          .from("routine_logs")
+          .select("routine_id, on_date")
+          .eq("routine_id", habito.routine_id)
+          .gte("on_date", desde)
+          .lte("on_date", hasta)
+          .limit(5000)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  comprobar(propios.error, "cargar lo apuntado");
+  comprobar(hechos.error, "cargar las rutinas hechas");
+  return [
+    ...((propios.data ?? []) as RegistroHabito[]),
+    ...apuntesDeRutinas([habito], (hechos.data ?? []) as RegistroRutina[]),
+  ];
 }

@@ -7,6 +7,8 @@ import { leerAjustes } from "@/lib/data/ajustes";
 import { leerHabito, listarApuntesDeHabito } from "@/lib/data/habitos";
 import { fechaCorta, hoyEn, sumarDias } from "@/lib/planner/fechas";
 import { textoCantidad } from "@/lib/planner/habitos";
+import { listarRutinas } from "@/lib/data/rutinas";
+import { EnlaceHistorial } from "@/app/habitos/enlace-historial";
 
 export const metadata: Metadata = { title: "Hábito" };
 
@@ -21,6 +23,7 @@ export default async function HabitoPage({
     id,
     sumarDias(hoyEn(timezone), -13),
   );
+  const rutinas = await listarRutinas();
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
@@ -30,10 +33,11 @@ export default async function HabitoPage({
       <h1 className="break-words text-3xl font-semibold tracking-tight">
         {habito.title}
       </h1>
-      <FormHabito habito={habito} />
+      <FormHabito habito={habito} rutinas={rutinas} />
 
       <section className="flex flex-col gap-3 border-t border-border pt-4">
         <h2 className="text-lg font-semibold">Lo apuntado en 14 días</h2>
+        <EnlaceHistorial id={habito.id} />
         {apuntes.length === 0 ? (
           <p className="text-sm text-muted">Aún no hay nada apuntado.</p>
         ) : (

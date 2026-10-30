@@ -37,7 +37,13 @@ async function hoy() {
 // ---- Crear y cambiar hábitos ----
 
 export type ValoresFormHabito = Record<
-  "title" | "notes" | "direction" | "unit" | "daily_target" | "cuando",
+  | "title"
+  | "notes"
+  | "direction"
+  | "unit"
+  | "daily_target"
+  | "cuando"
+  | "routine_id",
   string
 > & { dias: string[] };
 
@@ -58,6 +64,7 @@ function valoresEscritos(formData: FormData): ValoresFormHabito {
     unit: texto("unit"),
     daily_target: texto("daily_target"),
     cuando: texto("cuando"),
+    routine_id: texto("routine_id"),
     dias: formData.getAll("dias").map(String),
   };
 }

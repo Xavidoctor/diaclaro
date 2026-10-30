@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { CODIGOS, crearRegla, textoOpcional } from "./agenda";
 import type { Resultado } from "./bandeja";
+import { startOfWeek, format, parseISO } from "date-fns";
 import { sumarDias } from "./fechas";
-import { tocaRutina } from "./rutinas";
+import { tocaRutina, type RegistroRutina } from "./rutinas";
 
 // Reglas de los Hábitos. Funciones puras, con pruebas en habitos.test.ts.
 //
@@ -28,6 +29,8 @@ export type Habito = {
   unit: string | null; // "cigarrillos", "minutos"... null = veces
   daily_target: number | null; // null = sin meta
   repeat_rule: string | null; // qué días toca; null = todos los días
+  // Rutina unida: cada «Hecho» de la rutina cuenta como 1. null = sin unir.
+  routine_id: string | null;
   active: boolean;
 };
 
@@ -191,6 +194,76 @@ export function textoTendencia(
   }`;
 }
 
+// Convierte los «Hecho» de las rutinas unidas en apuntes de sus hábitos
+// (1 por cada vez). Así no hace falta apuntar lo mismo dos veces.
+export function apuntesDeRutinas(
+  habitos: Pick<Habito, "id" | "routine_id">[],
+  registros: RegistroRutina[],
+): RegistroHabito[] {
+  return habitos.flatMap((h) =>
+    h.routine_id
+      ? registros
+          .filter((r) => r.routine_id === h.routine_id)
+          .map((r) => ({ habit_id: h.id, on_date: r.on_date, amount: 1 }))
+      : [],
+  );
+}
+
+// El lunes de la semana de ese día, como "2026-10-26".
+export function lunesDe(fecha: string): string {
+  return format(
+    startOfWeek(parseISO(fecha), { weekStartsOn: 1 }),
+    "yyyy-MM-dd",
+  );
+}
+
+export type ResumenDeSemana = {
+  lunes: string;
+  dias: number; // días que cuentan (la semana actual puede ir por la mitad)
+  diasConApuntes: number;
+  total: number;
+  media: number | null; // de los días con apuntes
+  diasEnMeta: number | null; // null si no hay meta
+};
+
+// Resumen de las últimas semanas (de lunes a domingo), de la más nueva a la más vieja.
+// La semana actual cuenta solo hasta hoy. Los días sin apuntar no cuentan.
+export function resumenPorSemanas(
+  habito: Pick<Habito, "id" | "direction" | "daily_target">,
+  registros: RegistroHabito[],
+  hoy: string,
+  semanas: number,
+): ResumenDeSemana[] {
+  const conMeta =
+    habito.daily_target !== null && habito.direction !== "observar";
+  const lunesActual = lunesDe(hoy);
+  return Array.from({ length: semanas }, (_, i) => {
+    const lunes = sumarDias(lunesActual, -7 * i);
+    const fechas = Array.from({ length: 7 }, (_, d) =>
+      sumarDias(lunes, d),
+    ).filter((f) => f <= hoy);
+    const totales = fechas.map((f) => totalDelDia(registros, habito.id, f));
+    const con = totales.filter((t): t is number => t !== null);
+    return {
+      lunes,
+      dias: fechas.length,
+      diasConApuntes: con.length,
+      total: con.reduce((a, b) => a + b, 0),
+      media: media(totales),
+      diasEnMeta: conMeta
+        ? totales.filter((t) => dentroDeMeta(habito, t) === true).length
+        : null,
+    };
+  });
+}
+
+// Cuántas semanas se ven en el historial: 4 (un mes), 13 (tres meses) o 26 (seis).
+export const OPCIONES_SEMANAS = [4, 13, 26] as const;
+export function leerSemanas(valor: unknown): number {
+  const n = Number(valor);
+  return (OPCIONES_SEMANAS as readonly number[]).includes(n) ? n : 4;
+}
+
 // ---- Formularios ----
 
 const numeroOpcional = textoOpcional
@@ -221,6 +294,9 @@ const esquemaHabito = z
     daily_target: numeroOpcional,
     cuando: z.enum(["todos", "algunos"], { error: "Elige qué días toca." }),
     dias: z.array(z.enum(CODIGOS)),
+    routine_id: textoOpcional.pipe(
+      z.uuid({ error: "Esa rutina no es válida." }).nullable(),
+    ),
   })
   .superRefine((d, ctx) => {
     if (d.cuando === "algunos" && d.dias.length === 0)
@@ -237,6 +313,7 @@ export function prepararHabito(datos: {
   daily_target: unknown;
   cuando: unknown;
   dias: unknown[];
+  routine_id?: unknown;
 }): Resultado<DatosHabito> {
   const r = esquemaHabito.safeParse({
     title: datos.title ?? "",
@@ -246,6 +323,7 @@ export function prepararHabito(datos: {
     daily_target: datos.daily_target ?? "",
     cuando: datos.cuando ?? "todos",
     dias: datos.dias,
+    routine_id: datos.routine_id ?? "",
   });
   if (!r.success) return { ok: false, error: r.error.issues[0].message };
   const d = r.data;
@@ -253,6 +331,7 @@ export function prepararHabito(datos: {
     ok: true,
     valor: {
       title: d.title,
+      routine_id: d.routine_id,
       notes: d.notes,
       direction: d.direction,
       unit: d.unit,

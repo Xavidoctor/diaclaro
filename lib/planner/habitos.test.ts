@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  apuntesDeRutinas,
   dentroDeMeta,
+  leerSemanas,
+  lunesDe,
+  resumenPorSemanas,
   esIdea,
   habitosDelDia,
   numero,
@@ -24,6 +28,7 @@ const tabaco: Habito = {
   unit: "cigarrillos",
   daily_target: 10,
   repeat_rule: null,
+  routine_id: null,
   active: true,
 };
 
@@ -35,6 +40,7 @@ const gimnasio: Habito = {
   unit: null,
   daily_target: null,
   repeat_rule: "FREQ=WEEKLY;BYDAY=MO,WE,FR",
+  routine_id: null,
   active: true,
 };
 
@@ -55,7 +61,9 @@ describe("totalDelDia", () => {
   });
 
   it("un apunte de 0 cuenta como 0", () => {
-    expect(totalDelDia([apunte("h1", "2026-10-30", 0)], "h1", "2026-10-30")).toBe(0);
+    expect(
+      totalDelDia([apunte("h1", "2026-10-30", 0)], "h1", "2026-10-30"),
+    ).toBe(0);
   });
 });
 
@@ -64,12 +72,12 @@ describe("habitosDelDia", () => {
     // 2026-10-30 es viernes; 2026-10-31, sábado.
     const pausado = { ...tabaco, id: "h3", active: false };
     const lista = [tabaco, gimnasio, pausado];
-    expect(habitosDelDia(lista, [], "2026-10-30").map((h) => h.habito.id)).toEqual(
-      ["h1", "h2"],
-    );
-    expect(habitosDelDia(lista, [], "2026-10-31").map((h) => h.habito.id)).toEqual(
-      ["h1"],
-    );
+    expect(
+      habitosDelDia(lista, [], "2026-10-30").map((h) => h.habito.id),
+    ).toEqual(["h1", "h2"]);
+    expect(
+      habitosDelDia(lista, [], "2026-10-31").map((h) => h.habito.id),
+    ).toEqual(["h1"]);
   });
 });
 
@@ -140,7 +148,9 @@ describe("resumenSemana", () => {
 
 describe("textoTendencia", () => {
   it("faltan datos: no dice nada", () => {
-    expect(textoTendencia({ media: 5, mediaAnterior: null }, "menos")).toBeNull();
+    expect(
+      textoTendencia({ media: 5, mediaAnterior: null }, "menos"),
+    ).toBeNull();
   });
 
   it("parecido si la diferencia es pequeña", () => {
@@ -184,6 +194,7 @@ describe("prepararHabito", () => {
         unit: "cigarrillos",
         daily_target: null,
         repeat_rule: null,
+        routine_id: null,
       },
     });
   });
@@ -208,10 +219,21 @@ describe("prepararHabito", () => {
     expect(r.ok && r.valor.daily_target).toBeNull();
   });
 
+  it("guarda la rutina unida y rechaza ids raros", () => {
+    const id = "6f1c2a1e-1b2c-4d3e-8f90-123456789abc";
+    const r = prepararHabito({ ...formulario, routine_id: id });
+    expect(r.ok && r.valor.routine_id).toBe(id);
+    expect(prepararHabito({ ...formulario, routine_id: "hola" }).ok).toBe(
+      false,
+    );
+  });
+
   it("pide nombre y días", () => {
     expect(prepararHabito({ ...formulario, title: " " }).ok).toBe(false);
     expect(prepararHabito({ ...formulario, cuando: "algunos" }).ok).toBe(false);
-    expect(prepararHabito({ ...formulario, daily_target: "-1" }).ok).toBe(false);
+    expect(prepararHabito({ ...formulario, daily_target: "-1" }).ok).toBe(
+      false,
+    );
   });
 });
 
@@ -241,5 +263,70 @@ describe("esIdea", () => {
     expect(esIdea("tabaco")).toBe(true);
     expect(esIdea("toString")).toBe(false);
     expect(esIdea(null)).toBe(false);
+  });
+});
+
+describe("apuntesDeRutinas", () => {
+  it("cada «Hecho» de la rutina unida cuenta como 1", () => {
+    const unido = { ...gimnasio, routine_id: "r1" };
+    const r = apuntesDeRutinas(
+      [tabaco, unido],
+      [
+        { routine_id: "r1", on_date: "2026-10-30" },
+        { routine_id: "r1", on_date: "2026-10-30" },
+        { routine_id: "r2", on_date: "2026-10-30" },
+      ],
+    );
+    expect(r).toEqual([
+      { habit_id: "h2", on_date: "2026-10-30", amount: 1 },
+      { habit_id: "h2", on_date: "2026-10-30", amount: 1 },
+    ]);
+    expect(totalDelDia(r, "h2", "2026-10-30")).toBe(2);
+  });
+});
+
+describe("resumenPorSemanas", () => {
+  it("lunes de la semana", () => {
+    expect(lunesDe("2026-10-30")).toBe("2026-10-26");
+    expect(lunesDe("2026-10-26")).toBe("2026-10-26");
+    expect(lunesDe("2026-11-01")).toBe("2026-10-26");
+  });
+
+  it("semanas de la más nueva a la más vieja; la actual, hasta hoy", () => {
+    const registros = [
+      apunte("h1", "2026-10-30", 8),
+      apunte("h1", "2026-10-27", 12),
+      apunte("h1", "2026-10-20", 14),
+    ];
+    const r = resumenPorSemanas(tabaco, registros, "2026-10-30", 3);
+    expect(r.map((s) => s.lunes)).toEqual([
+      "2026-10-26",
+      "2026-10-19",
+      "2026-10-12",
+    ]);
+    expect(r[0]).toEqual({
+      lunes: "2026-10-26",
+      dias: 5,
+      diasConApuntes: 2,
+      total: 20,
+      media: 10,
+      diasEnMeta: 1,
+    });
+    expect(r[1].dias).toBe(7);
+    expect(r[2].media).toBeNull();
+  });
+
+  it("sin meta no cuenta días en meta", () => {
+    expect(
+      resumenPorSemanas(gimnasio, [], "2026-10-30", 1)[0].diasEnMeta,
+    ).toBeNull();
+  });
+});
+
+describe("leerSemanas", () => {
+  it("solo las opciones conocidas; si no, 4", () => {
+    expect(leerSemanas("13")).toBe(13);
+    expect(leerSemanas("99")).toBe(4);
+    expect(leerSemanas(undefined)).toBe(4);
   });
 });
