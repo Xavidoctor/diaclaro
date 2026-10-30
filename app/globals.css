@@ -3,7 +3,9 @@
 @import "shadcn/tailwind.css";
 
 /* Colores de la app. Cambiar aquí cambia toda la interfaz.
-   Los nombres siguen los de shadcn/ui, para que sus componentes usen nuestros colores. */
+   Los nombres siguen los de shadcn/ui, para que sus componentes usen nuestros colores.
+   Ojo: aquí "muted" es el gris de los textos secundarios (text-muted). Para fondos
+   grises suaves usa "secondary" (bg-secondary), no bg-muted. */
 :root {
   --background: #f8fafc;
   --surface: #ffffff;
@@ -83,15 +85,42 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+  /* En el móvil: sin el recuadro gris al tocar y sin esperar al doble toque. */
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  label {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  /* Si usas el teclado, se ve un anillo en lo que tienes seleccionado. */
+  a:focus-visible,
+  button:focus-visible {
+    @apply rounded-md outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+/* Si el móvil tiene activado "reducir movimiento", quitamos las animaciones. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Piezas reutilizables. Para menús, etiquetas o diálogos, usa components/ui (shadcn/ui). */
 @layer components {
+  /* text-base (16px) evita que el móvil haga zoom al escribir. */
   .input {
-    @apply rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none focus:border-primary;
+    @apply rounded-xl border border-border bg-surface px-4 py-3 text-base outline-none focus:border-primary focus-visible:ring-3 focus-visible:ring-ring/30;
   }
+  /* Mínimo 44px de alto (min-h-11): el tamaño cómodo para pulsar con el dedo. */
   .button-primary {
-    @apply rounded-xl bg-primary px-4 py-3 font-medium text-primary-foreground disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-3 font-medium text-primary-foreground transition-opacity active:opacity-80 disabled:opacity-60;
   }
   .card {
     @apply rounded-2xl border border-border bg-surface p-5;
