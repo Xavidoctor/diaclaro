@@ -66,9 +66,9 @@ export function EmpiezoElDia({
 function LoPrimero({ item }: { item: RutinaDelDia }) {
   const { rutina } = item;
   return (
-    <div className="card flex items-center gap-3 p-4">
+    <div className="card flex items-center gap-3 bg-secondary p-4">
       <div className="flex flex-1 flex-col gap-1">
-        <span className="text-sm font-semibold uppercase tracking-wide text-primary">
+        <span className="text-xs font-bold uppercase tracking-wider text-primary">
           Lo primero
         </span>
         <span className="break-words">{rutina.title}</span>

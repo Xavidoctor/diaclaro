@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogOut, Settings } from "lucide-react";
 import { redirect } from "next/navigation";
 import {
   cerrarSesion,
@@ -57,13 +58,21 @@ export default async function HoyPage() {
           <h1 className="text-3xl font-semibold tracking-tight">
             <SaludoLocal />
           </h1>
-          <div className="flex gap-4 text-sm text-muted">
-            <Link href="/ajustes" className="underline">
-              Ajustes
+          <div className="flex text-muted">
+            <Link
+              href="/ajustes"
+              aria-label="Ajustes"
+              className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
+            >
+              <Settings aria-hidden className="size-5" />
             </Link>
             <form action={cerrarSesion}>
-              <button type="submit" className="underline">
-                Salir
+              <button
+                type="submit"
+                aria-label="Salir"
+                className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
+              >
+                <LogOut aria-hidden className="size-5" />
               </button>
             </form>
           </div>
