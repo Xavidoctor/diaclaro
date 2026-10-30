@@ -105,6 +105,7 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | `20261030210000_despierto_y_levantado.sql` | Columna `awake_time` en `day_starts` (a qué hora pulsaste «Despierto»); la hora de levantarte puede quedar vacía hasta que pulses «Levantado» |
 | `20261030230000_habitos_con_rutinas.sql` | Columna `routine_id` en `habits`: un hábito puede ir unido a una rutina y cada «Hecho» suma 1 |
 | `20261030240000_tareas_desde_google.sql` | Columna `google_event` en `tasks`: de qué evento de Google salió una tarea, para no crearla dos veces |
+| `20261030260000_documentos_de_drive.sql` | Columna `drive` en `google_connections` y tabla `project_documents` (enlaces a archivos de Drive que eliges en cada proyecto), con sus reglas RLS |
 
 ## Publicar en Vercel (una vez)
 
@@ -125,6 +126,15 @@ Con esto, cada persona puede pulsar **Ajustes → Conectar con Google** y ver su
 6. Te enseña el **ID de cliente** y el **Secreto del cliente**. No hagas captura del secreto. Cópialos directamente a Vercel → **Settings → Environment Variables** como `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` (entorno Production) y vuelve a desplegar.
 7. En **Público**, pulsa **Publicar app** para pasarla a **En producción**. Si se queda en «Prueba», Google corta el permiso cada 7 días.
 8. Al conectar, Google enseña «Google no ha verificado esta aplicación» porque no hemos pasado su revisión. Es normal en una app personal: pulsa **Configuración avanzada → Ir a DíaClaro**. Sin esa revisión pueden conectarse hasta 100 personas.
+
+### Añadir Google Drive (opcional)
+
+Sirve para enlazar archivos de tu Drive a un proyecto o asignatura. Usa el permiso `drive.file`: DíaClaro solo ve los archivos que eliges en el selector de Google, nunca el resto. Es gratis.
+
+1. En [console.cloud.google.com](https://console.cloud.google.com), con el mismo proyecto, busca y **habilita** **Google Drive API** y **Google Picker API**.
+2. **Google Auth Platform → Acceso a los datos → Agregar o quitar permisos**: añade a mano `https://www.googleapis.com/auth/drive.file`, pulsa **Agregar a la tabla**, **Actualizar** y **Guardar**.
+3. **APIs y servicios → Credenciales → Crear credenciales → Clave de API**. Edita la clave: en **Restricciones de aplicaciones** elige **Sitios web** y añade `https://diaclaro.vercel.app/*`; en **Restricciones de API** elige solo **Google Picker API**. Guarda.
+4. En Vercel añade `GOOGLE_PICKER_API_KEY` con esa clave (Production) y vuelve a desplegar. Esta clave la ve el navegador, por eso va limitada a tu web y al selector.
 
 Si algún día cambias el secreto del cliente, cada persona tendrá que volver a pulsar **Conectar con Google**.
 

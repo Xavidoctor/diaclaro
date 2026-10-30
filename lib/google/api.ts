@@ -13,6 +13,9 @@ const URL_CALENDARIO = "https://www.googleapis.com/calendar/v3";
 
 export const PERMISO_CALENDARIO =
   "https://www.googleapis.com/auth/calendar.readonly";
+// Drive con "drive.file": solo los archivos que eliges tú en el selector de
+// Google. DíaClaro no ve el resto de tu Drive.
+export const PERMISO_DRIVE = "https://www.googleapis.com/auth/drive.file";
 // "openid email" sirve para enseñarte con qué cuenta de Google conectaste.
 const PERMISOS = `openid email ${PERMISO_CALENDARIO}`;
 
@@ -25,18 +28,39 @@ export function googleDisponible(): boolean {
   );
 }
 
+// El selector de archivos de Google necesita además una clave de API
+// (pública, limitada a la web de DíaClaro) en GOOGLE_PICKER_API_KEY.
+export function selectorDriveDisponible(): boolean {
+  return googleDisponible() && Boolean(process.env.GOOGLE_PICKER_API_KEY);
+}
+
+// Lo que el navegador necesita para abrir el selector. El número de proyecto
+// de Google Cloud es el principio del ID de cliente ("12345-abc...").
+export function datosSelectorDrive() {
+  return {
+    claveApi: process.env.GOOGLE_PICKER_API_KEY ?? "",
+    idApp: (process.env.GOOGLE_CLIENT_ID ?? "").split("-")[0],
+  };
+}
+
 export function secretoGoogle(): string {
   return process.env.GOOGLE_CLIENT_SECRET ?? "";
 }
 
 // La dirección de Google donde aceptas darle permiso a DíaClaro.
-export function urlParaConectar(estado: string, vuelta: string): string {
+export function urlParaConectar(
+  estado: string,
+  vuelta: string,
+  conDrive = false,
+): string {
   const url = new URL(URL_PERMISO);
   url.search = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID ?? "",
     redirect_uri: vuelta,
     response_type: "code",
-    scope: PERMISOS,
+    scope: conDrive ? `${PERMISOS} ${PERMISO_DRIVE}` : PERMISOS,
+    // Mantiene los permisos que ya diste (por ejemplo, el calendario al añadir Drive).
+    include_granted_scopes: "true",
     // "offline" + "consent": Google nos da un permiso duradero (refresh token)
     // para leer el calendario sin pedirte que aceptes cada vez.
     access_type: "offline",
@@ -47,7 +71,7 @@ export function urlParaConectar(estado: string, vuelta: string): string {
 }
 
 export type Conexion =
-  | { ok: true; permiso: string; email: string | null }
+  | { ok: true; permiso: string; email: string | null; drive: boolean }
   | { ok: false; motivo: "sin-permiso-calendario" | "fallo" };
 
 // Cuando vuelves de Google, cambia el código de un solo uso por el permiso.
@@ -78,7 +102,8 @@ export async function canjearCodigo(
       id_token?: string;
     };
     // Google deja quitar la casilla del calendario al aceptar: lo comprobamos.
-    if (!datos.scope?.split(" ").includes(PERMISO_CALENDARIO)) {
+    const permisos = datos.scope?.split(" ") ?? [];
+    if (!permisos.includes(PERMISO_CALENDARIO)) {
       return { ok: false, motivo: "sin-permiso-calendario" };
     }
     if (!datos.refresh_token) return { ok: false, motivo: "fallo" };
@@ -86,6 +111,7 @@ export async function canjearCodigo(
       ok: true,
       permiso: datos.refresh_token,
       email: emailDelToken(datos.id_token),
+      drive: permisos.includes(PERMISO_DRIVE),
     };
   } catch (error) {
     console.error("No se ha podido hablar con Google", error);
@@ -135,8 +161,10 @@ export async function leerEventos(
 // Con el permiso duradero se pide un pase de acceso que dura una hora.
 async function pedirAcceso(
   permiso: string,
+  soloPermiso?: string,
 ): Promise<
-  { ok: true; token: string } | { ok: false; motivo: "permiso-retirado" | "fallo" }
+  | { ok: true; token: string }
+  | { ok: false; motivo: "permiso-retirado" | "fallo" }
 > {
   const respuesta = await fetch(URL_TOKEN, {
     method: "POST",
@@ -146,6 +174,8 @@ async function pedirAcceso(
       client_id: process.env.GOOGLE_CLIENT_ID ?? "",
       client_secret: secretoGoogle(),
       grant_type: "refresh_token",
+      // Si se pide, el pase solo sirve para ese permiso (por ejemplo, solo Drive).
+      ...(soloPermiso ? { scope: soloPermiso } : {}),
     }),
     signal: AbortSignal.timeout(8_000),
   });
@@ -163,6 +193,17 @@ async function pedirAcceso(
   const datos = (await respuesta.json()) as { access_token?: string };
   if (!datos.access_token) return { ok: false, motivo: "fallo" };
   return { ok: true, token: datos.access_token };
+}
+
+// Un pase de una hora que SOLO sirve para Drive (drive.file), para que el
+// navegador abra el selector de archivos. No sirve para leer tu calendario.
+export async function pedirAccesoDrive(permiso: string) {
+  try {
+    return await pedirAcceso(permiso, PERMISO_DRIVE);
+  } catch (error) {
+    console.error("No se ha podido pedir acceso a Drive", error);
+    return { ok: false as const, motivo: "fallo" as const };
+  }
 }
 
 // Los calendarios que tienes marcados para ver en Google Calendar.

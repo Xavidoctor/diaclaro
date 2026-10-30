@@ -1,18 +1,31 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { COOKIE_ESTADO, RUTA_VUELTA } from "@/app/api/google/estado";
+import {
+  COOKIE_ESTADO,
+  COOKIE_VOLVER,
+  RUTA_VUELTA,
+} from "@/app/api/google/estado";
 import { guardarConexionGoogle } from "@/lib/data/google";
 import { canjearCodigo, secretoGoogle } from "@/lib/google/api";
 import { cifrar } from "@/lib/google/cifrado";
+import { direccionDeVuelta } from "@/lib/planner/drive";
 
 // Google te devuelve aquí después de aceptar (o de cancelar).
-// Guardamos el permiso cifrado y volvemos a Ajustes con un mensaje.
+// Guardamos el permiso cifrado y volvemos (a Ajustes o a la pantalla de
+// la que venías) con un mensaje.
 export async function GET(request: NextRequest) {
+  const pantalla = direccionDeVuelta(request.cookies.get(COOKIE_VOLVER)?.value);
   const volver = (resultado: string) => {
     const respuesta = NextResponse.redirect(
-      new URL(`/ajustes?google=${resultado}#google`, request.url),
+      new URL(
+        pantalla
+          ? `${pantalla}?google=${resultado}#documentos`
+          : `/ajustes?google=${resultado}#google`,
+        request.url,
+      ),
     );
     respuesta.cookies.delete({ name: COOKIE_ESTADO, path: "/api/google" });
+    respuesta.cookies.delete({ name: COOKIE_VOLVER, path: "/api/google" });
     return respuesta;
   };
 
@@ -35,6 +48,7 @@ export async function GET(request: NextRequest) {
   try {
     await guardarConexionGoogle({
       google_email: conexion.email,
+      drive: conexion.drive,
       refresh_token_cifrado: cifrar(conexion.permiso, secretoGoogle()),
     });
   } catch (error) {

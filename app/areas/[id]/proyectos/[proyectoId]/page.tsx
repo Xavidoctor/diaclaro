@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { archivarProyecto, eliminarProyecto } from "@/app/areas/actions";
 import { FormProyecto } from "@/app/areas/form-proyecto";
 import { NuevaTarea } from "@/app/areas/nueva-tarea";
+import { DocumentosDrive } from "@/app/areas/[id]/proyectos/[proyectoId]/documentos-drive";
 import { ResumirConIA } from "@/app/areas/[id]/proyectos/[proyectoId]/resumir-con-ia";
 import { NotaItem } from "@/app/bandeja/nota-item";
 import { TareaItem } from "@/app/bandeja/tarea-item";
@@ -25,8 +26,10 @@ export const metadata: Metadata = { title: "Proyecto" };
 // Un proyecto (o asignatura) por dentro: sus tareas y sus datos.
 export default async function ProyectoPage({
   params,
+  searchParams,
 }: PageProps<"/areas/[id]/proyectos/[proyectoId]">) {
   const { id, proyectoId } = await params;
+  const { google } = await searchParams;
   const [area, proyecto, tareas, notas, { areas, proyectos }] =
     await Promise.all([
       leerArea(id),
@@ -122,6 +125,12 @@ export default async function ProyectoPage({
           </>
         )}
       </section>
+
+      <DocumentosDrive
+        proyectoId={proyecto.id}
+        ruta={`/areas/${area.id}/proyectos/${proyecto.id}`}
+        mensaje={typeof google === "string" ? google : undefined}
+      />
 
       <details className="card">
         <summary className="cursor-pointer font-semibold">
