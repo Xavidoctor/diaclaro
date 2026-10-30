@@ -126,9 +126,9 @@ export default async function AjustesPage({
               vez. La guía explica cada pantalla con más calma.
             </p>
             <p>
-              Arriba de Hoy, Agenda, Bandeja y Áreas hay un recuadro pequeño de
-              ayuda: puedes ocultarlo si ya lo tienes claro y volver a mostrarlo
-              aquí.
+              Arriba de Hoy, Agenda, Tareas, Notas y Áreas hay un recuadro
+              pequeño de ayuda: puedes ocultarlo si ya lo tienes claro y volver
+              a mostrarlo aquí.
             </p>
           </SaberMas>
           <div className="flex flex-wrap gap-2">

@@ -83,7 +83,9 @@ export function CapturaRapida({
             : pendientes > 0
               ? `Sin conexión: ${pendientes === 1 ? "1 captura guardada" : `${pendientes} capturas guardadas`} en el móvil. Se enviarán al volver la red.`
               : estado.envios > 0
-                ? "Guardado en la Bandeja."
+                ? esTarea
+                  ? "Guardada en Tareas."
+                  : "Guardada en Notas."
                 : esTarea
                   ? "Enter para guardar la tarea."
                   : "Enter para guardar. Usa #etiqueta si quieres clasificarla."}

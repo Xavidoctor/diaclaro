@@ -71,8 +71,8 @@ export default function GuiaPage() {
         <section className="card flex flex-col gap-3">
           <h2 className="text-lg font-semibold">La ayuda de cada pantalla</h2>
           <p className="text-sm text-muted">
-            Arriba de Hoy, Agenda, Bandeja y Áreas hay un recuadro pequeño para
-            hacer el recorrido o venir aquí. Si ya lo tienes claro, puedes
+            Arriba de Hoy, Agenda, Tareas, Notas y Áreas hay un recuadro pequeño
+            para hacer el recorrido o venir aquí. Si ya lo tienes claro, puedes
             quitarlo. La guía y el recorrido siguen en Ajustes para cuando los
             necesites.
           </p>

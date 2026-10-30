@@ -42,13 +42,10 @@ export async function TareasDeHoy({ hoy }: { hoy: string }) {
           <SaberMas resumen="No las acabaste. Siguen aquí hasta que las hagas o las cambies de día.">
             <p>
               Cada tarea dice de qué día era. Con «Pasar a hoy» la pones en el
-              día de hoy; con «Otro día» eliges en el calendario cuándo
-              hacerla. Si ya no hace falta, ábrela con «Editar» y muévela a la
-              papelera.
+              día de hoy; con «Otro día» eliges en el calendario cuándo hacerla.
+              Si ya no hace falta, ábrela con «Editar» y muévela a la papelera.
             </p>
-            <p>
-              Mientras sigan pendientes, también cuentan en tu plan de hoy.
-            </p>
+            <p>Mientras sigan pendientes, también cuentan en tu plan de hoy.</p>
           </SaberMas>
           {atrasadas.length > 1 && (
             <MoverTareas
@@ -93,13 +90,10 @@ export async function TareasDeHoy({ hoy }: { hoy: string }) {
           Poner tareas en un día del calendario
         </Link>
         {sinFecha > 0 && (
-          <Link
-            href="/bandeja?pestana=tareas"
-            className="text-muted underline"
-          >
+          <Link href="/bandeja?pestana=tareas" className="text-muted underline">
             {sinFecha === 1
-              ? "1 tarea sin fecha en la Bandeja"
-              : `${sinFecha} tareas sin fecha en la Bandeja`}
+              ? "1 tarea sin fecha en Tareas"
+              : `${sinFecha} tareas sin fecha en Tareas`}
           </Link>
         )}
       </div>
