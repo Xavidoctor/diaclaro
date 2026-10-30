@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
+import { RegistrarSW } from "@/app/componentes/registrar-sw";
 
 // Letra de la app (estilo "Calma"): Nunito, redondeada y fácil de leer.
 const nunito = Nunito({
@@ -24,7 +25,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className={`${nunito.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <RegistrarSW />
+      </body>
     </html>
   );
 }

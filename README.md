@@ -106,6 +106,8 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | `20261030230000_habitos_con_rutinas.sql` | Columna `routine_id` en `habits`: un hábito puede ir unido a una rutina y cada «Hecho» suma 1 |
 | `20261030240000_tareas_desde_google.sql` | Columna `google_event` en `tasks`: de qué evento de Google salió una tarea, para no crearla dos veces |
 | `20261030260000_documentos_de_drive.sql` | Columna `drive` en `google_connections` y tabla `project_documents` (enlaces a archivos de Drive que eliges en cada proyecto), con sus reglas RLS |
+| `20261030270000_recordatorios_habitos.sql` | Columna `remind_at` en `habits`: la hora (opcional) a la que Hoy te recuerda un hábito si aún no has apuntado nada |
+| `20261030300000_avisos_push.sql` | Tablas `push_subscriptions` (dónde mandar los avisos), `habit_reminder_sends` (avisos ya enviados) y `push_deliveries`, con sus reglas RLS, y la tarea de cada 5 minutos (pg_cron + pg_net) |
 
 ## Publicar en Vercel (una vez)
 
@@ -143,6 +145,18 @@ En **Ajustes → Documentos importantes** (`/documentos`) puedes guardar fotos y
 En Android, con la app instalada en la pantalla de inicio, sale **DíaClaro** en el menú **Compartir** de la galería y de las capturas. Si no sale, desinstala la app de la pantalla de inicio y vuelve a instalarla desde Chrome, para que el móvil lea los cambios. Por este camino el límite es de 4 MB por archivo; desde la pantalla, de 20 MB.
 
 Si algún día cambias el secreto del cliente, cada persona tendrá que volver a pulsar **Conectar con Google**.
+
+## Avisos con la app cerrada (opcional, una vez)
+
+Sirve para que el recordatorio de un hábito llegue al móvil aunque DíaClaro esté cerrada. Es gratis: usa el estándar «Web Push» de los navegadores y las extensiones `pg_cron` y `pg_net` de Supabase Free. Sin esto, los recordatorios siguen saliendo dentro de la app, en Hoy.
+
+1. Ejecuta la migración `20261030300000_avisos_push.sql` en el **SQL Editor** de Supabase.
+2. En la app, ve a **Hábitos → Avisos con la app cerrada** y pulsa **Crear las claves**. Salen cuatro valores. No hagas captura ni los pegues en ningún chat: usa los botones «Copiar».
+3. En Vercel → **Settings → Environment Variables** (entorno Production) añade `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `AVISOS_SECRETO` con sus valores. Después, **Redeploy**.
+4. En el **SQL Editor** de Supabase pega y ejecuta la línea «Para Supabase» (`select vault.create_secret(...)`). Así Supabase guarda la misma contraseña en su caja fuerte (Vault).
+5. En cada móvil u ordenador: **Hábitos → Avisos con la app cerrada → Activar avisos aquí**, y luego **Mandar un aviso de prueba**. En iPhone, primero añade DíaClaro a la pantalla de inicio y ábrela desde el icono.
+
+Cada 5 minutos, Supabase mira qué hábitos han llegado a su hora y aún no tienen nada apuntado, y pide a `/api/avisos/enviar` que mande el aviso (como mucho uno por hábito y día, y solo durante las 3 horas siguientes a su hora). Si la web cambia de dirección, guarda la nueva en Vault con el nombre `diaclaro_avisos_url` (por ejemplo `https://tu-web.vercel.app/api/avisos/enviar`). Si algún día cambias `AVISOS_SECRETO`, cámbialo también en Vault: **Project Settings → Vault**, o borra el secreto `diaclaro_avisos` y créalo de nuevo con la línea del paso 4.
 
 ## Seguridad
 

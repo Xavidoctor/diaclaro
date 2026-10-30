@@ -18,6 +18,7 @@ import {
   resumenSemana,
   textoCantidad,
   textoMeta,
+  textoRecordatorio,
   textoTendencia,
   totalDelDia,
   type Habito,
@@ -52,6 +53,10 @@ export default async function HabitosPage() {
             Añadir
           </Link>
         </header>
+
+        <Link href="/habitos/avisos" className="enlace -mt-4 text-sm">
+          Avisos con la app cerrada
+        </Link>
 
         <p className="text-sm text-muted">
           Apunta lo que quieras observar, a tu ritmo. Aquí no hay rachas que se
@@ -145,7 +150,9 @@ function FichaHabito({
         >
           <span className="break-words font-medium">{habito.title}</span>
           <span className="text-sm text-muted">
-            {[textoMeta(habito), dias].filter(Boolean).join(" · ")}
+            {[textoMeta(habito), dias, textoRecordatorio(habito)]
+              .filter(Boolean)
+              .join(" · ")}
           </span>
         </Link>
         <BotonPausa habito={habito} />

@@ -31,6 +31,8 @@ export type Habito = {
   repeat_rule: string | null; // qué días toca; null = todos los días
   // Rutina unida: cada «Hecho» de la rutina cuenta como 1. null = sin unir.
   routine_id: string | null;
+  // Hora del recordatorio ("21:00"), solo si tú la pones. null = sin recordatorio.
+  remind_at: string | null;
   active: boolean;
 };
 
@@ -264,6 +266,46 @@ export function leerSemanas(valor: unknown): number {
   return (OPCIONES_SEMANAS as readonly number[]).includes(n) ? n : 4;
 }
 
+// ---- Recordatorios ----
+// Un hábito puede tener una hora para recordártelo. Desde esa hora, si ese día
+// toca y aún no has apuntado nada, Hoy te lo recuerda. Si ya apuntaste algo
+// (aunque sea «Hoy, ninguno»), no sale: no hace falta insistir.
+
+// La base de datos devuelve la hora como "21:00:00"; aquí se usa "21:00".
+export function horaCorta(hora: string): string {
+  return hora.slice(0, 5);
+}
+
+// Los hábitos de hoy que tienen recordatorio y aún no tienen nada apuntado.
+// Aún sin mirar la hora: eso lo hace pendientesALaHora con el reloj del momento.
+export function conRecordatorio(deHoy: HabitoDelDia[]): Habito[] {
+  return deHoy
+    .filter(({ habito, total }) => habito.remind_at !== null && total === null)
+    .map(({ habito }) => habito);
+}
+
+// De esos, los que ya han llegado a su hora ("21:00" <= "21:30"), en orden de hora.
+// Las horas "HH:MM" se pueden comparar como texto.
+export function pendientesALaHora<T extends Pick<Habito, "remind_at">>(
+  habitos: T[],
+  hora: string,
+): T[] {
+  return habitos
+    .filter((h) => h.remind_at !== null && horaCorta(h.remind_at) <= hora)
+    .sort((a, b) =>
+      horaCorta(a.remind_at as string).localeCompare(
+        horaCorta(b.remind_at as string),
+      ),
+    );
+}
+
+// "Recordatorio a las 21:00", o null si no tiene.
+export function textoRecordatorio(
+  h: Pick<Habito, "remind_at">,
+): string | null {
+  return h.remind_at ? `Recordatorio a las ${horaCorta(h.remind_at)}` : null;
+}
+
 // ---- Formularios ----
 
 const numeroOpcional = textoOpcional
@@ -297,6 +339,16 @@ const esquemaHabito = z
     routine_id: textoOpcional.pipe(
       z.uuid({ error: "Esa rutina no es válida." }).nullable(),
     ),
+    // Algunos navegadores mandan también los segundos ("21:00:00").
+    remind_at: textoOpcional.pipe(
+      z
+        .string()
+        .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, {
+          error: "La hora del recordatorio no es válida.",
+        })
+        .transform(horaCorta)
+        .nullable(),
+    ),
   })
   .superRefine((d, ctx) => {
     if (d.cuando === "algunos" && d.dias.length === 0)
@@ -314,6 +366,7 @@ export function prepararHabito(datos: {
   cuando: unknown;
   dias: unknown[];
   routine_id?: unknown;
+  remind_at?: unknown;
 }): Resultado<DatosHabito> {
   const r = esquemaHabito.safeParse({
     title: datos.title ?? "",
@@ -324,6 +377,7 @@ export function prepararHabito(datos: {
     cuando: datos.cuando ?? "todos",
     dias: datos.dias,
     routine_id: datos.routine_id ?? "",
+    remind_at: datos.remind_at ?? "",
   });
   if (!r.success) return { ok: false, error: r.error.issues[0].message };
   const d = r.data;
@@ -332,6 +386,7 @@ export function prepararHabito(datos: {
     valor: {
       title: d.title,
       routine_id: d.routine_id,
+      remind_at: d.remind_at,
       notes: d.notes,
       direction: d.direction,
       unit: d.unit,

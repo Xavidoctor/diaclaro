@@ -14,7 +14,7 @@ import type { RegistroRutina } from "@/lib/planner/rutinas";
 // Importante: nada de aquí se pasa nunca a lib/ai (la IA no ve tus hábitos).
 
 const CAMPOS_HABITO =
-  "id, title, notes, direction, unit, daily_target, repeat_rule, routine_id, active";
+  "id, title, notes, direction, unit, daily_target, repeat_rule, routine_id, remind_at, active";
 
 function comprobar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`No se ha podido ${que}: ${error.message}`);
