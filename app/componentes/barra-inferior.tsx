@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CalendarDays, Inbox, LayoutGrid, Sun } from "lucide-react";
+import { PanelEstado } from "@/app/componentes/panel-estado";
 
 // Menú de abajo: Hoy, Agenda, Bandeja y Áreas, cada una con su icono.
 // "guia" es lo que ilumina el recorrido de bienvenida.
@@ -40,6 +41,8 @@ export function BarraInferior({ actual }: { actual: string }) {
           </li>
         ))}
       </ul>
+      {/* El panel «Tu estado»: sale al deslizar a la derecha. */}
+      <PanelEstado />
     </nav>
   );
 }
