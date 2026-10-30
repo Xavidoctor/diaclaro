@@ -2,7 +2,7 @@ import Link from "next/link";
 import { deshacerApunte } from "@/app/habitos/actions";
 import { Apuntar } from "@/app/habitos/apuntar";
 import { listarHabitos, listarRegistrosEntre } from "@/lib/data/habitos";
-import { habitosDelDia, textoCantidad } from "@/lib/planner/habitos";
+import { habitosDelDia, textoHoy } from "@/lib/planner/habitos";
 
 // Sección de Hoy con tus hábitos del día. Si no tienes ninguno activo,
 // no sale nada: los hábitos son opcionales.
@@ -31,9 +31,7 @@ export async function HabitosDeHoy({ hoy }: { hoy: string }) {
             <div className="flex flex-1 flex-col gap-1">
               <span className="break-words">{habito.title}</span>
               <span className="text-sm text-muted">
-                {total === null
-                  ? "Aún nada apuntado"
-                  : `Hoy: ${textoCantidad(total, habito.unit)}`}
+                {textoHoy(total, habito.unit)}
               </span>
             </div>
             {total !== null && (
@@ -44,7 +42,12 @@ export async function HabitosDeHoy({ hoy }: { hoy: string }) {
                 </button>
               </form>
             )}
-            <Apuntar id={habito.id} unidad={habito.unit} conDetalle={false} />
+            <Apuntar
+              id={habito.id}
+              unidad={habito.unit}
+              conDetalle={false}
+              hecho={total !== null && total > 0}
+            />
           </li>
         ))}
       </ul>

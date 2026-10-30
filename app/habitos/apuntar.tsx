@@ -1,26 +1,41 @@
 "use client";
 
 import { useActionState } from "react";
+import { Check } from "lucide-react";
 import { apuntar, type ApunteState } from "@/app/habitos/actions";
 
 // Botón «+1» y, desplegando, otra cantidad con una nota opcional.
-// Se usa en la pantalla de Hábitos y en Hoy.
+// Si el hábito no tiene unidad, el botón es «Hecho» (y, ya hecho, solo
+// sale la marca). Se usa en la pantalla de Hábitos y en Hoy.
 export function Apuntar({
   id,
   unidad,
   conDetalle = true,
   ninguno = false,
+  hecho = false,
 }: {
   id: string;
   unidad: string | null;
   conDetalle?: boolean;
   // Botón «Hoy, ninguno» (apunta 0), para hábitos que quieres hacer menos.
   ninguno?: boolean;
+  // Hoy ya apuntaste algo (para mostrar «Hecho» en los hábitos sin unidad).
+  hecho?: boolean;
 }) {
   const [estado, formAction, guardando] = useActionState<ApunteState, FormData>(
     apuntar,
     { envios: 0 },
   );
+
+  const deMarcar = !unidad;
+  if (deMarcar && hecho) {
+    return (
+      <span className="flex items-center gap-1 py-2 text-sm font-medium text-primary">
+        <Check aria-hidden className="size-4" />
+        Hecho
+      </span>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -41,12 +56,12 @@ export function Apuntar({
           type="submit"
           disabled={guardando}
           className="button-primary py-2 text-sm"
-          aria-label={`Apuntar 1 ${unidad ?? "vez"}`}
+          aria-label={deMarcar ? "Marcar como hecho" : `Apuntar 1 ${unidad}`}
         >
-          +1
+          {deMarcar ? "Hecho" : "+1"}
         </button>
       </form>
-      {conDetalle && (
+      {conDetalle && !deMarcar && (
         <details className="text-sm">
           <summary className="cursor-pointer text-right text-muted underline">
             Otra cantidad

@@ -17,7 +17,7 @@ const peticion = {
   p256dh: "clave",
   auth: "auth",
   habito: "6a1b2c3d-1234-4abc-8def-0123456789ab",
-  titulo: "Tabaco",
+  titulo: "Café",
   hora: "21:00",
 };
 
@@ -53,7 +53,7 @@ describe("leerPeticionAviso", () => {
 describe("contenidoAviso", () => {
   it("es amable, con el nombre y la hora", () => {
     expect(contenidoAviso(peticion)).toEqual({
-      title: "Tabaco",
+      title: "Café",
       body: "Recordatorio de las 21:00. Hoy aún no has apuntado nada. ¿Lo apuntas?",
       tag: `habito-${peticion.habito}`,
       url: `/habitos#habito-${peticion.habito}`,
