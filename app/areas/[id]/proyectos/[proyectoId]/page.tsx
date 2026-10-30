@@ -4,13 +4,19 @@ import { notFound } from "next/navigation";
 import { archivarProyecto, eliminarProyecto } from "@/app/areas/actions";
 import { FormProyecto } from "@/app/areas/form-proyecto";
 import { NuevaTarea } from "@/app/areas/nueva-tarea";
+import { ResumirConIA } from "@/app/areas/[id]/proyectos/[proyectoId]/resumir-con-ia";
+import { NotaItem } from "@/app/bandeja/nota-item";
 import { TareaItem } from "@/app/bandeja/tarea-item";
+import { iaDisponible } from "@/lib/ai/groq";
 import {
   cargarOpcionesProyecto,
   leerArea,
   leerProyecto,
 } from "@/lib/data/areas";
-import { listarTareasDeProyecto } from "@/lib/data/bandeja";
+import {
+  listarNotasDeProyecto,
+  listarTareasDeProyecto,
+} from "@/lib/data/bandeja";
 import { opcionesProyecto } from "@/lib/planner/areas";
 import { agruparTareas } from "@/lib/planner/bandeja";
 
@@ -21,12 +27,14 @@ export default async function ProyectoPage({
   params,
 }: PageProps<"/areas/[id]/proyectos/[proyectoId]">) {
   const { id, proyectoId } = await params;
-  const [area, proyecto, tareas, { areas, proyectos }] = await Promise.all([
-    leerArea(id),
-    leerProyecto(proyectoId),
-    listarTareasDeProyecto(proyectoId),
-    cargarOpcionesProyecto(),
-  ]);
+  const [area, proyecto, tareas, notas, { areas, proyectos }] =
+    await Promise.all([
+      leerArea(id),
+      leerProyecto(proyectoId),
+      listarTareasDeProyecto(proyectoId),
+      listarNotasDeProyecto(proyectoId),
+      cargarOpcionesProyecto(),
+    ]);
   if (!area || !proyecto || proyecto.area_id !== area.id) notFound();
   const opciones = opcionesProyecto(areas, proyectos);
   const { sinPlanificar, conFecha, hechas } = agruparTareas(tareas);
@@ -88,6 +96,30 @@ export default async function ProyectoPage({
               ))}
             </ul>
           </details>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Notas</h2>
+        {notas.length === 0 ? (
+          <p className="text-sm text-muted">
+            Aún no hay notas aquí. En la Bandeja, abre «Editar» en una nota y
+            elige este proyecto.
+          </p>
+        ) : (
+          <>
+            {iaDisponible() && <ResumirConIA proyectoId={proyecto.id} />}
+            <ul className="flex flex-col gap-2">
+              {notas.map((n) => (
+                <NotaItem
+                  key={n.id}
+                  nota={n}
+                  ver={n.archived_at ? "archivo" : "activas"}
+                  grupos={opciones}
+                />
+              ))}
+            </ul>
+          </>
         )}
       </section>
 

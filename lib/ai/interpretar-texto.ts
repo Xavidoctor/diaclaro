@@ -109,14 +109,14 @@ function normalizar(texto: string): string {
 }
 
 // ¿Lo que dice la IA está de verdad en tu texto?
-function estaEnTexto(trozo: string | null, texto: string): boolean {
+export function estaEnTexto(trozo: string | null, texto: string): boolean {
   if (!trozo) return false;
   const t = normalizar(trozo);
   return t.length >= 2 && normalizar(texto).includes(t);
 }
 
 // La IA a veces envuelve el JSON en ```json ... ```: nos quedamos con el objeto.
-function sacarJSON(respuesta: string): unknown {
+export function sacarJSON(respuesta: string): unknown {
   const inicio = respuesta.indexOf("{");
   const fin = respuesta.lastIndexOf("}");
   if (inicio === -1 || fin <= inicio) return null;

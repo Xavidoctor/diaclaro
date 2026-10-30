@@ -14,7 +14,7 @@ export async function leerInicio(fecha: string): Promise<InicioDia | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("day_starts")
-    .select("on_date, start_time, sleep_time")
+    .select("on_date, awake_time, start_time, sleep_time")
     .eq("on_date", fecha)
     .maybeSingle();
   comprobar(error, "leer el inicio del día");
@@ -23,13 +23,17 @@ export async function leerInicio(fecha: string): Promise<InicioDia | null> {
   // La base de datos devuelve "10:12:00": nos quedamos con "10:12".
   return {
     on_date: d.on_date,
-    start_time: horaCorta(d.start_time)!,
+    awake_time: horaCorta(d.awake_time),
+    start_time: horaCorta(d.start_time),
     sleep_time: horaCorta(d.sleep_time),
   };
 }
 
-// Guarda el inicio del día. Si ya existía (pulsaste otra vez), se cambia.
-export async function guardarInicio(inicio: InicioDia) {
+// Guarda el inicio del día. Si ya existía (por ejemplo, pulsaste "Despierto"
+// y ahora "Levantado"), solo se cambian los datos que mandas; los demás se quedan.
+export async function guardarInicio(
+  inicio: Pick<InicioDia, "on_date"> & Partial<InicioDia>,
+) {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;

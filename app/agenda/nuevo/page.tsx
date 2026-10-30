@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { FormEvento } from "@/app/agenda/form-evento";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { leerFechaParam } from "@/lib/planner/agenda";
 import { hoyEn } from "@/lib/planner/fechas";
@@ -16,9 +16,7 @@ export default async function NuevoEventoPage({
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-      <Link href="/agenda" className="text-sm underline">
-        ← Agenda
-      </Link>
+      <EnlaceVolver href="/agenda">Agenda</EnlaceVolver>
       <h1 className="text-3xl font-semibold tracking-tight">Añadir</h1>
       <p className="text-sm text-muted">
         Un compromiso con día: una tutoría, una clase, una cita. Para una clase

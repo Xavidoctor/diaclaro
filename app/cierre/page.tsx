@@ -74,16 +74,13 @@ export default async function CierrePage({
             {dia === hoy ? " (hoy)" : ""}
           </p>
           <nav className="flex gap-4 text-sm">
-            <Link
-              href={`/cierre?dia=${sumarDias(dia, -1)}`}
-              className="underline"
-            >
+            <Link href={`/cierre?dia=${sumarDias(dia, -1)}`} className="enlace">
               Día anterior
             </Link>
             {dia < hoy && (
               <Link
                 href={`/cierre?dia=${sumarDias(dia, 1)}`}
-                className="underline"
+                className="enlace"
               >
                 Día siguiente
               </Link>

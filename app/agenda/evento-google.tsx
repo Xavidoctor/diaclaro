@@ -26,7 +26,7 @@ export function EventoGoogle({
       {tareaId ? (
         <div className="flex flex-wrap gap-4 text-sm">
           <span className="text-muted">Ya está en tus tareas</span>
-          <Link href={`/foco?tarea=${tareaId}`} className="underline">
+          <Link href={`/foco?tarea=${tareaId}`} className="enlace">
             Concentrarme
           </Link>
         </div>
@@ -42,7 +42,7 @@ export function EventoGoogle({
               type="submit"
               name="destino"
               value="tarea"
-              className="text-sm underline"
+              className="enlace text-sm"
             >
               Pasar a tarea
             </button>
@@ -50,7 +50,7 @@ export function EventoGoogle({
               type="submit"
               name="destino"
               value="foco"
-              className="text-sm underline"
+              className="enlace text-sm"
             >
               Concentrarme
             </button>

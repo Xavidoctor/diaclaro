@@ -30,7 +30,7 @@ export async function PlanDeHoy({ hoy }: { hoy: string }) {
         <h2 className="text-lg font-semibold">Tu plan de hoy</h2>
         <p className="text-muted">
           No tienes tareas para hoy. Ponle la fecha de hoy a alguna en la{" "}
-          <Link href="/bandeja?pestana=tareas" className="underline">
+          <Link href="/bandeja?pestana=tareas" className="enlace">
             Bandeja
           </Link>{" "}
           y aquí verás por cuál empezar.
@@ -45,7 +45,7 @@ export async function PlanDeHoy({ hoy }: { hoy: string }) {
     <section className="flex flex-col gap-3">
       <header className="flex items-baseline justify-between gap-4">
         <h2 className="text-lg font-semibold">Tu plan de hoy</h2>
-        <Link href="/dia-dificil" className="text-sm underline">
+        <Link href="/dia-dificil" className="enlace text-sm">
           Día difícil
         </Link>
       </header>

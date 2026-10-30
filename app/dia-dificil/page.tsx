@@ -3,25 +3,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { aceptarDiaDificil, aceptarUnCambio } from "@/app/dia-dificil/actions";
-import { leerAjustes } from "@/lib/data/ajustes";
-import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
-import { cargarOpcionesProyecto } from "@/lib/data/areas";
-import { listarTareas } from "@/lib/data/bandeja";
-import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
-import { ocurrenciasEntre, textoHora } from "@/lib/planner/agenda";
-import { tareasParaHoy } from "@/lib/planner/bandeja";
+import { ContarConIA, ExplicarDiaConIA } from "@/app/dia-dificil/ayuda-ia";
+import { cargarDiaDificil } from "@/app/dia-dificil/situacion";
+import { iaDisponible } from "@/lib/ai/groq";
+import { textoHora } from "@/lib/planner/agenda";
 import { textoDuracion } from "@/lib/planner/carga";
-import {
-  leerMotivo,
-  MOTIVOS,
-  proponerDiaDificil,
-  type Motivo,
-} from "@/lib/planner/dia-dificil";
-import { fechaCorta, hoyEn } from "@/lib/planner/fechas";
-import { marcarTiempoPersonal } from "@/lib/planner/plan";
-import { rutinasDelDia } from "@/lib/planner/rutinas";
-import { factoresPorTipo } from "@/lib/planner/tiempos";
+import { leerMotivo, MOTIVOS, type Motivo } from "@/lib/planner/dia-dificil";
+import { fechaCorta } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Día difícil" };
@@ -43,9 +33,7 @@ export default async function DiaDificilPage({
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-6 py-8">
         <header className="flex flex-col gap-1">
-          <Link href="/" className="text-sm text-muted underline">
-            Volver a Hoy
-          </Link>
+          <EnlaceVolver href="/">Hoy</EnlaceVolver>
           <h1 className="text-3xl font-semibold tracking-tight">Día difícil</h1>
           <p className="text-sm text-muted">
             Pasa. Vamos a quedarnos con lo que de verdad importa hoy.
@@ -71,33 +59,14 @@ function ElegirMotivo() {
           </li>
         ))}
       </ul>
+      {iaDisponible() && <ContarConIA />}
     </section>
   );
 }
 
 async function Propuesta({ motivo }: { motivo: Motivo }) {
-  const ajustes = await leerAjustes();
-  const hoy = hoyEn(ajustes.timezone);
-  const [tareas, { areas, proyectos }, eventos, rutinas, registros] =
-    await Promise.all([
-      listarTareas(false),
-      cargarOpcionesProyecto(),
-      listarEventosHasta(hoy),
-      listarRutinas(),
-      listarRegistrosDelDia(hoy),
-    ]);
-  const excepciones = await listarExcepciones(eventos.map((e) => e.id));
-  const agenda = ocurrenciasEntre(eventos, excepciones, hoy, hoy);
-  const pendientes = rutinasDelDia(rutinas, registros, hoy).filter(
-    (r) => !r.completa,
-  );
-  const { atrasadas, deHoy } = tareasParaHoy(tareas, hoy);
-  const { conservar, reducir, aplazar, ahorro } = proponerDiaDificil(
-    marcarTiempoPersonal([...atrasadas, ...deHoy], areas, proyectos),
-    hoy,
-    motivo,
-    factoresPorTipo(tareas),
-  );
+  const { agenda, pendientes, propuesta } = await cargarDiaDificil(motivo);
+  const { conservar, reducir, aplazar, ahorro } = propuesta;
 
   // Texto que viaja en cada botón, en el formato de aplicarRecortes.
   const cambios = [
@@ -129,6 +98,7 @@ async function Propuesta({ motivo }: { motivo: Motivo }) {
           Cambiar
         </Link>
       </p>
+      {iaDisponible() && <ExplicarDiaConIA motivo={motivo} />}
 
       <Columna titulo="Conservar" vacia={nadaQueTocar}>
         {agenda.map((o) => (

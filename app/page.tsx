@@ -14,6 +14,7 @@ import { CapturaRapida } from "@/app/componentes/captura-rapida";
 import { CierreDeHoy } from "@/app/componentes/cierre-de-hoy";
 import { EmpiezoElDia } from "@/app/componentes/empiezo-el-dia";
 import { FocoDeHoy } from "@/app/componentes/foco-de-hoy";
+import { HabitosDeHoy } from "@/app/componentes/habitos-de-hoy";
 import { PlanDeHoy } from "@/app/componentes/plan-de-hoy";
 import { SeguimientosEmpleo } from "@/app/componentes/seguimientos-empleo";
 import { TareasDeHoy } from "@/app/componentes/tareas-de-hoy";
@@ -105,7 +106,7 @@ export default async function HoyPage() {
         <section className="flex flex-col gap-3">
           <header className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-semibold">Agenda de hoy</h2>
-            <Link href="/agenda" className="text-sm underline">
+            <Link href="/agenda" className="enlace text-sm">
               Ver 14 días
             </Link>
           </header>
@@ -151,7 +152,7 @@ export default async function HoyPage() {
         <section className="flex flex-col gap-3">
           <header className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-semibold">Rutinas</h2>
-            <Link href="/ajustes" className="text-sm underline">
+            <Link href="/ajustes" className="enlace text-sm">
               Cambiar
             </Link>
           </header>
@@ -167,6 +168,8 @@ export default async function HoyPage() {
             </ul>
           )}
         </section>
+
+        <HabitosDeHoy hoy={hoy} />
 
         <CierreDeHoy hoy={hoy} />
 

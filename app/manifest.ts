@@ -21,5 +21,15 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "maskable",
       },
     ],
+    // Atajo: mantén pulsado el icono de DíaClaro y sale «Estoy despierto».
+    // Abre una pantalla con los botones Despierto y Levantado.
+    shortcuts: [
+      {
+        name: "Estoy despierto",
+        short_name: "Despierto",
+        url: "/despierto",
+        icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
+      },
+    ],
   };
 }

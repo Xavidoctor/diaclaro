@@ -16,7 +16,7 @@ export function AvisoGoogle({ estado }: { estado: EstadoGoogle }) {
     return (
       <p className="text-sm text-muted">
         Google ya no me deja leer tu calendario.{" "}
-        <Link href="/ajustes#google" className="underline">
+        <Link href="/ajustes#google" className="enlace">
           Vuelve a conectarlo en Ajustes
         </Link>
         .

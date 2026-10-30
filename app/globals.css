@@ -125,6 +125,14 @@ body {
   }
   /* Tarjeta blanca sin borde visible, con una sombra muy suave.
      El borde es transparente para que "card border-primary" lo pueda resaltar. */
+  /* Botón secundario: verde suave, para la opción que no es la principal. */
+  .button-secondary {
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-secondary px-4 py-3 font-medium text-primary transition-opacity active:opacity-80 disabled:opacity-60;
+  }
+  /* Enlace de texto: verde y en negrita, como en la propuesta Calma. */
+  .enlace {
+    @apply font-semibold text-primary hover:underline;
+  }
   .card {
     @apply rounded-2xl border border-transparent bg-surface p-5 shadow-[0_1px_3px_rgb(29_42_36/0.08)];
   }

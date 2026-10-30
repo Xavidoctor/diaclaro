@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { pausarRutina } from "@/app/ajustes/actions";
 import { FormAjustes } from "@/app/ajustes/form-ajustes";
 import { SeccionGoogle } from "@/app/ajustes/seccion-google";
@@ -40,8 +41,9 @@ export default async function AjustesPage({
             <h2 className="text-lg font-semibold">Rutinas</h2>
             <Link
               href="/ajustes/rutinas/nuevo"
-              className="button-primary py-2 text-sm"
+              className="button-primary gap-1 py-2 text-sm"
             >
+              <Plus aria-hidden className="size-4" />
               Añadir
             </Link>
           </header>
@@ -90,12 +92,28 @@ export default async function AjustesPage({
           )}
         </section>
 
+        <section className="card flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-semibold">Hábitos</h2>
+            <p className="text-sm text-muted">
+              Opcional: apunta lo que quieras observar (tabaco, ejercicio,
+              sueño…), sin juicios. Solo salen en Hoy si añades alguno.
+            </p>
+          </div>
+          <Link
+            href="/habitos"
+            className="button-primary shrink-0 py-2 text-sm"
+          >
+            Abrir
+          </Link>
+        </section>
+
         <section className="card flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Copia de seguridad</h2>
           <p className="text-sm text-muted">
             Descarga un archivo con todos tus datos: notas, tareas, agenda,
-            rutinas, áreas, foco y cierres del día. Hazlo una vez a la semana y
-            guárdalo en un sitio seguro, por ejemplo en Google Drive.
+            rutinas, áreas, foco, cierres del día y hábitos. Hazlo una vez a la
+            semana y guárdalo en un sitio seguro, por ejemplo en Google Drive.
           </p>
           {/* Un enlace normal (no Link): es una descarga, no otra pantalla. */}
           <a href="/exportar" download className="button-primary self-start">
