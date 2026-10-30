@@ -9,15 +9,19 @@ import { AvisoSobrecarga } from "@/app/componentes/aviso-sobrecarga";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
 import { CierreDeHoy } from "@/app/componentes/cierre-de-hoy";
+import { EmpiezoElDia } from "@/app/componentes/empiezo-el-dia";
 import { FocoDeHoy } from "@/app/componentes/foco-de-hoy";
+import { PlanDeHoy } from "@/app/componentes/plan-de-hoy";
 import { SeguimientosEmpleo } from "@/app/componentes/seguimientos-empleo";
 import { TareasDeHoy } from "@/app/componentes/tareas-de-hoy";
 import { SaludoLocal } from "@/app/saludo-local";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
+import { leerInicio } from "@/lib/data/inicio-dia";
 import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
 import { ocurrenciasEntre, textoHora } from "@/lib/planner/agenda";
 import { hoyEn } from "@/lib/planner/fechas";
+import { ajustesDelDia } from "@/lib/planner/inicio-dia";
 import {
   rutinasDelDia,
   textoFranja,
@@ -34,11 +38,14 @@ export default async function HoyPage() {
   const ajustes = await leerAjustes();
   const { timezone } = ajustes;
   const hoy = hoyEn(timezone);
-  const [eventos, rutinas, registros] = await Promise.all([
+  const [eventos, rutinas, registros, inicio] = await Promise.all([
     listarEventosHasta(hoy),
     listarRutinas(),
     listarRegistrosDelDia(hoy),
+    leerInicio(hoy),
   ]);
+  // Si has pulsado "Empiezo el día", el día cuenta desde esa hora.
+  const ajustesHoy = ajustesDelDia(ajustes, inicio);
   const excepciones = await listarExcepciones(eventos.map((e) => e.id));
   const agenda = ocurrenciasEntre(eventos, excepciones, hoy, hoy);
   const deHoy = rutinasDelDia(rutinas, registros, hoy);
@@ -62,12 +69,16 @@ export default async function HoyPage() {
           </div>
         </header>
 
+        <EmpiezoElDia inicio={inicio} ajustes={ajustesHoy} />
+
         <AvisoSobrecarga
           hoy={hoy}
-          ajustes={ajustes}
+          ajustes={ajustesHoy}
           agenda={agenda}
           rutinas={deHoy}
         />
+
+        <PlanDeHoy hoy={hoy} />
 
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Apunta algo</h2>
