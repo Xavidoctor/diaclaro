@@ -47,6 +47,9 @@ export type Ocurrencia = {
   franja: Franja | null;
   seRepite: boolean;
   cambiada: boolean;
+  // Solo en lo que viene de tu Google Calendar (ver google-calendar.ts).
+  // "libre" es cuando en Google lo marcaste como «Disponible».
+  google?: { libre: boolean };
 };
 
 // ---- Repeticiones ----
@@ -223,7 +226,7 @@ function claveOrden(o: Ocurrencia): string {
   return "";
 }
 
-function compararOcurrencias(a: Ocurrencia, b: Ocurrencia): number {
+export function compararOcurrencias(a: Ocurrencia, b: Ocurrencia): number {
   return (
     a.fecha.localeCompare(b.fecha) ||
     claveOrden(a).localeCompare(claveOrden(b)) ||

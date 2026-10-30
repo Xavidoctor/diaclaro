@@ -29,9 +29,11 @@ export async function updateSession(request: NextRequest) {
   // Si Supabase no reconoce la dirección de vuelta, manda el enlace a la
   // página principal (/?code=...). Lo reenviamos a /auth/confirm para no
   // perder el código y que el login funcione igual.
+  // (Google también vuelve con ?code= a /api/google/vuelta: ese no se toca.)
   const { pathname, searchParams } = request.nextUrl;
   if (
     pathname !== "/auth/confirm" &&
+    !pathname.startsWith("/api/google/") &&
     (searchParams.has("code") || searchParams.has("token_hash"))
   ) {
     const confirmUrl = request.nextUrl.clone();
