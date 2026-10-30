@@ -31,7 +31,7 @@ export default async function DespiertoPage() {
         grande
         irAHoy
       />
-      <Link href="/" className="self-start text-sm text-muted underline">
+      <Link href="/" className="enlace self-start text-sm">
         Ir a Hoy
       </Link>
     </main>

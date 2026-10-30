@@ -84,10 +84,7 @@ export function BotonesDespertar({
       </p>
       {estado === "sin-empezar" && (
         <form action={marcarDespierto} className="flex flex-col">
-          <button
-            type="submit"
-            className={`inline-flex items-center justify-center rounded-xl border border-border bg-surface px-4 font-medium transition-opacity active:opacity-80 ${alto}`}
-          >
+          <button type="submit" className={`button-secondary ${alto}`}>
             Despierto
           </button>
         </form>

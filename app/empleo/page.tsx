@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { ListaCandidaturas } from "@/app/empleo/lista";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarCandidaturas } from "@/lib/data/candidaturas";
@@ -25,9 +26,7 @@ export default async function EmpleoPage() {
   return (
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-        <Link href="/areas" className="text-sm underline">
-          ← Áreas
-        </Link>
+        <EnlaceVolver href="/areas">Áreas</EnlaceVolver>
         <header className="flex items-center justify-between gap-4">
           <h1 className="text-3xl font-semibold tracking-tight">
             Candidaturas

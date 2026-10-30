@@ -41,7 +41,7 @@ export async function AvisoSobrecarga({
           Para avisarte si hoy te pasas con lo que tienes que hacer, necesito
           saber a qué hora sueles acostarte.
         </p>
-        <Link href="/ajustes" className="underline">
+        <Link href="/ajustes" className="enlace">
           Ponerla en Ajustes
         </Link>
       </section>

@@ -21,7 +21,7 @@ export async function TareasDeHoy({ hoy }: { hoy: string }) {
     <section className="flex flex-col gap-3">
       <header className="flex items-baseline justify-between gap-4">
         <h2 className="text-lg font-semibold">Tareas</h2>
-        <Link href="/bandeja?pestana=tareas" className="text-sm underline">
+        <Link href="/bandeja?pestana=tareas" className="enlace text-sm">
           Ver todas
         </Link>
       </header>

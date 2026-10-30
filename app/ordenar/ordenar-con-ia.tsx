@@ -77,11 +77,11 @@ function Revision({
       <section role="status" className="card flex flex-col gap-2">
         <p className="font-medium">{estado.hecho}</p>
         <p className="text-sm">
-          <Link href="/bandeja" className="underline">
+          <Link href="/bandeja" className="enlace">
             Ver la Bandeja
           </Link>{" "}
           ·{" "}
-          <Link href="/agenda" className="underline">
+          <Link href="/agenda" className="enlace">
             Ver la Agenda
           </Link>
         </p>

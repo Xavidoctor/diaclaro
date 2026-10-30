@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { FormCandidatura } from "@/app/empleo/form-candidatura";
 import { listarAreas } from "@/lib/data/areas";
 import { areaPorDefecto } from "@/lib/planner/candidaturas";
@@ -10,9 +10,7 @@ export default async function NuevaCandidaturaPage() {
   const areas = await listarAreas();
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-      <Link href="/empleo" className="text-sm underline">
-        ← Candidaturas
-      </Link>
+      <EnlaceVolver href="/empleo">Candidaturas</EnlaceVolver>
       <h1 className="text-3xl font-semibold tracking-tight">
         Añadir candidatura
       </h1>

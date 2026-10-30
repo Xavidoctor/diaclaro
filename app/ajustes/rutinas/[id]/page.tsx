@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eliminarRutina } from "@/app/ajustes/actions";
 import { FormRutina } from "@/app/ajustes/form-rutina";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { leerRutina } from "@/lib/data/rutinas";
 
 export const metadata: Metadata = { title: "Rutina" };
@@ -16,9 +16,7 @@ export default async function RutinaPage({
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-      <Link href="/ajustes" className="text-sm underline">
-        ← Ajustes
-      </Link>
+      <EnlaceVolver href="/ajustes">Ajustes</EnlaceVolver>
       <h1 className="break-words text-3xl font-semibold tracking-tight">
         {rutina.title}
       </h1>
