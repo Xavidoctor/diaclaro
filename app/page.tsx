@@ -7,6 +7,7 @@ import {
 } from "@/app/actions";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
+import { FocoDeHoy } from "@/app/componentes/foco-de-hoy";
 import { TareasDeHoy } from "@/app/componentes/tareas-de-hoy";
 import { SaludoLocal } from "@/app/saludo-local";
 import { leerAjustes } from "@/lib/data/ajustes";
@@ -91,6 +92,8 @@ export default async function HoyPage() {
         </section>
 
         <TareasDeHoy hoy={hoy} />
+
+        <FocoDeHoy hoy={hoy} />
 
         <section className="flex flex-col gap-3">
           <header className="flex items-baseline justify-between gap-4">
