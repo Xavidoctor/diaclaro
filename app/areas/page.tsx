@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, ChevronUp, Plus } from "lucide-react";
 import { crearSugeridas, moverArea } from "@/app/areas/actions";
+import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { contarProyectosPorArea, listarAreas } from "@/lib/data/areas";
 import {
@@ -37,6 +38,8 @@ export default async function AreasPage() {
             Añadir
           </Link>
         </header>
+
+        <AyudaPantalla seccion="areas" />
 
         <Link
           href="/empleo"

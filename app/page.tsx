@@ -6,6 +6,7 @@ import {
   deshacerRutinaHecha,
   marcarRutinaHecha,
 } from "@/app/actions";
+import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { AvisoGoogle, EtiquetaGoogle } from "@/app/componentes/aviso-google";
 import { AvisoSobrecarga } from "@/app/componentes/aviso-sobrecarga";
@@ -86,6 +87,8 @@ export default async function HoyPage() {
             </form>
           </div>
         </header>
+
+        <AyudaPantalla seccion="hoy" />
 
         <EmpiezoElDia inicio={inicio} ajustes={ajustesHoy} rutinas={deHoy} />
 

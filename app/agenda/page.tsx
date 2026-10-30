@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { EventoGoogle } from "@/app/agenda/evento-google";
 import { AvisoGoogle } from "@/app/componentes/aviso-google";
+import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
@@ -68,6 +69,8 @@ export default async function AgendaPage({
             Añadir
           </Link>
         </header>
+
+        <AyudaPantalla seccion="agenda" />
 
         <nav aria-label="Cambiar de días" className="flex gap-4 text-sm">
           <Link

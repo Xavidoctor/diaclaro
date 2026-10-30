@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { pausarRutina } from "@/app/ajustes/actions";
 import { FormAjustes } from "@/app/ajustes/form-ajustes";
 import { SeccionGoogle } from "@/app/ajustes/seccion-google";
+import { InterruptorAyuda } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarRutinas } from "@/lib/data/rutinas";
@@ -106,6 +107,21 @@ export default async function AjustesPage({
           >
             Abrir
           </Link>
+        </section>
+
+        <section className="card flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Guía de uso</h2>
+          <p className="text-sm text-muted">
+            Cómo funciona cada pantalla, explicado paso a paso. Arriba de Hoy,
+            Agenda, Bandeja y Áreas hay un recuadro pequeño de ayuda: puedes
+            ocultarlo si ya lo tienes claro y volver a mostrarlo aquí.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/guia" className="button-primary">
+              Abrir la guía
+            </Link>
+            <InterruptorAyuda />
+          </div>
         </section>
 
         <section className="card flex flex-col gap-3">
