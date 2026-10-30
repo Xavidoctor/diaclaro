@@ -50,12 +50,12 @@ export const IDEAS = {
   agua: { title: "Beber agua", direction: "mas", unit: "vasos" },
   leer: { title: "Leer", direction: "mas", unit: "páginas" },
   caminar: { title: "Caminar", direction: "mas", unit: "minutos" },
-  ejercicio: { title: "Ejercicio", direction: "mas", unit: "minutos" },
+  // Sin unidad: basta con marcar «Hecho».
+  ejercicio: { title: "Ejercicio", direction: "mas", unit: null },
   sueno: { title: "Sueño", direction: "observar", unit: "horas" },
-  movil: { title: "Móvil", direction: "menos", unit: "horas" },
 } as const satisfies Record<
   string,
-  { title: string; direction: Direccion; unit: string }
+  { title: string; direction: Direccion; unit: string | null }
 >;
 export type Idea = keyof typeof IDEAS;
 
@@ -111,6 +111,20 @@ export function numero(n: number): string {
 export function textoCantidad(n: number, unidad: string | null): string {
   if (unidad) return `${numero(n)} ${unidad}`;
   return n === 1 ? "1 vez" : `${numero(n)} veces`;
+}
+
+// Lo de hoy en palabras. Sin unidad, el hábito es de marcar «Hecho».
+export function textoHoy(total: number | null, unidad: string | null): string {
+  if (total === null) return "Aún nada apuntado";
+  if (!unidad && total === 1) return "Hecho hoy";
+  if (!unidad && total > 1) return `Hecho hoy (${numero(total)} veces)`;
+  return `Hoy: ${textoCantidad(total, unidad)}`;
+}
+
+// Direcciones que se ofrecen al crear un hábito. «Hacerlo menos» ya no se
+// ofrece para que sea más sencillo, pero si un hábito ya lo tenía, se respeta.
+export function direccionesDelFormulario(actual?: Direccion): Direccion[] {
+  return actual === "menos" ? [...DIRECCIONES] : ["mas", "observar"];
 }
 
 // "Meta: como mucho 2 horas al día", o lo que quieres si no hay meta.

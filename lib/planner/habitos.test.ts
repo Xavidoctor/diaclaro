@@ -22,17 +22,19 @@ import {
   textoMeta,
   textoTendencia,
   totalDelDia,
+  direccionesDelFormulario,
+  textoHoy,
   type Habito,
   type RegistroHabito,
 } from "./habitos";
 
 // Datos de ejemplo para las pruebas (no son los datos reales de nadie).
-const tabaco: Habito = {
+const cafe: Habito = {
   id: "h1",
-  title: "Tabaco",
+  title: "Café",
   notes: null,
   direction: "menos",
-  unit: "cigarrillos",
+  unit: "cafés",
   daily_target: 10,
   repeat_rule: null,
   routine_id: null,
@@ -81,8 +83,8 @@ describe("totalDelDia", () => {
 describe("habitosDelDia", () => {
   it("solo los activos que tocan ese día", () => {
     // 2026-10-30 es viernes; 2026-10-31, sábado.
-    const pausado = { ...tabaco, id: "h3", active: false };
-    const lista = [tabaco, gimnasio, pausado];
+    const pausado = { ...cafe, id: "h3", active: false };
+    const lista = [cafe, gimnasio, pausado];
     expect(
       habitosDelDia(lista, [], "2026-10-30").map((h) => h.habito.id),
     ).toEqual(["h1", "h2"]);
@@ -99,13 +101,13 @@ describe("textos", () => {
   });
 
   it("textoCantidad usa la unidad o veces", () => {
-    expect(textoCantidad(3, "cigarrillos")).toBe("3 cigarrillos");
+    expect(textoCantidad(3, "cafés")).toBe("3 cafés");
     expect(textoCantidad(1, null)).toBe("1 vez");
     expect(textoCantidad(2, null)).toBe("2 veces");
   });
 
   it("textoMeta según hacia dónde quieres ir", () => {
-    expect(textoMeta(tabaco)).toBe("Meta: como mucho 10 cigarrillos al día");
+    expect(textoMeta(cafe)).toBe("Meta: como mucho 10 cafés al día");
     expect(textoMeta({ ...gimnasio, daily_target: 1 })).toBe(
       "Meta: al menos 1 vez al día",
     );
@@ -115,12 +117,12 @@ describe("textos", () => {
 
 describe("dentroDeMeta", () => {
   it("con menos, como mucho la meta", () => {
-    expect(dentroDeMeta(tabaco, 10)).toBe(true);
-    expect(dentroDeMeta(tabaco, 11)).toBe(false);
+    expect(dentroDeMeta(cafe, 10)).toBe(true);
+    expect(dentroDeMeta(cafe, 11)).toBe(false);
   });
 
   it("sin apuntes o sin meta no se valora", () => {
-    expect(dentroDeMeta(tabaco, null)).toBeNull();
+    expect(dentroDeMeta(cafe, null)).toBeNull();
     expect(dentroDeMeta(gimnasio, 3)).toBeNull();
   });
 });
@@ -136,7 +138,7 @@ describe("resumenSemana", () => {
   ];
 
   it("cuenta solo los días con apuntes", () => {
-    const r = resumenSemana(tabaco, registros, hoy);
+    const r = resumenSemana(cafe, registros, hoy);
     expect(r.dias).toHaveLength(7);
     expect(r.dias[0].fecha).toBe("2026-10-24");
     expect(r.dias[6]).toEqual({ fecha: hoy, total: 8 });
@@ -151,7 +153,7 @@ describe("resumenSemana", () => {
   });
 
   it("sin apuntes no hay media", () => {
-    const r = resumenSemana(tabaco, [], hoy);
+    const r = resumenSemana(cafe, [], hoy);
     expect(r.media).toBeNull();
     expect(r.diasConApuntes).toBe(0);
   });
@@ -183,12 +185,31 @@ describe("textoTendencia", () => {
   });
 });
 
+describe("formulario sencillo", () => {
+  it("textoHoy dice «Hecho» si el hábito no tiene unidad", () => {
+    expect(textoHoy(null, null)).toBe("Aún nada apuntado");
+    expect(textoHoy(1, null)).toBe("Hecho hoy");
+    expect(textoHoy(2, null)).toBe("Hecho hoy (2 veces)");
+    expect(textoHoy(3, "vasos")).toBe("Hoy: 3 vasos");
+  });
+
+  it("«hacerlo menos» solo sale si el hábito ya lo tenía", () => {
+    expect(direccionesDelFormulario()).toEqual(["mas", "observar"]);
+    expect(direccionesDelFormulario("mas")).toEqual(["mas", "observar"]);
+    expect(direccionesDelFormulario("menos")).toEqual([
+      "mas",
+      "menos",
+      "observar",
+    ]);
+  });
+});
+
 describe("prepararHabito", () => {
   const formulario = {
-    title: "Tabaco",
+    title: "Café",
     notes: "",
     direction: "menos",
-    unit: "cigarrillos",
+    unit: "cafés",
     daily_target: "",
     cuando: "todos",
     dias: [],
@@ -199,10 +220,10 @@ describe("prepararHabito", () => {
     expect(r).toEqual({
       ok: true,
       valor: {
-        title: "Tabaco",
+        title: "Café",
         notes: null,
         direction: "menos",
-        unit: "cigarrillos",
+        unit: "cafés",
         daily_target: null,
         repeat_rule: null,
         routine_id: null,
@@ -282,7 +303,7 @@ describe("apuntesDeRutinas", () => {
   it("cada «Hecho» de la rutina unida cuenta como 1", () => {
     const unido = { ...gimnasio, routine_id: "r1" };
     const r = apuntesDeRutinas(
-      [tabaco, unido],
+      [cafe, unido],
       [
         { routine_id: "r1", on_date: "2026-10-30" },
         { routine_id: "r1", on_date: "2026-10-30" },
@@ -310,7 +331,7 @@ describe("resumenPorSemanas", () => {
       apunte("h1", "2026-10-27", 12),
       apunte("h1", "2026-10-20", 14),
     ];
-    const r = resumenPorSemanas(tabaco, registros, "2026-10-30", 3);
+    const r = resumenPorSemanas(cafe, registros, "2026-10-30", 3);
     expect(r.map((s) => s.lunes)).toEqual([
       "2026-10-26",
       "2026-10-19",
@@ -355,7 +376,7 @@ describe("recordatorios", () => {
   });
 
   it("solo recuerda lo que tiene hora y aún no tiene nada apuntado", () => {
-    const fumar = conHora(tabaco, "21:00:00");
+    const fumar = conHora(cafe, "21:00:00");
     const agua = {
       ...conHora(gimnasio, "10:00:00"),
       id: "h3",
@@ -372,7 +393,7 @@ describe("recordatorios", () => {
 
   it("«Hoy, ninguno» (0) también cuenta como apuntado", () => {
     const deHoy = habitosDelDia(
-      [conHora(tabaco, "21:00:00")],
+      [conHora(cafe, "21:00:00")],
       [apunte("h1", "2026-10-30", 0)],
       "2026-10-30",
     );
@@ -380,7 +401,7 @@ describe("recordatorios", () => {
   });
 
   it("no recuerda un hábito pausado ni uno que hoy no toca", () => {
-    const pausado = { ...conHora(tabaco, "09:00"), active: false };
+    const pausado = { ...conHora(cafe, "09:00"), active: false };
     // 2026-10-31 es sábado y el gimnasio toca lunes, miércoles y viernes.
     const deSabado = habitosDelDia(
       [pausado, conHora(gimnasio, "09:00")],
@@ -391,7 +412,7 @@ describe("recordatorios", () => {
   });
 
   it("sale desde su hora, no antes, y en orden de hora", () => {
-    const noche = conHora(tabaco, "21:00:00");
+    const noche = conHora(cafe, "21:00:00");
     const manana = { ...conHora(gimnasio, "08:00:00"), id: "h3" };
     expect(pendientesALaHora([noche, manana], "07:59")).toEqual([]);
     expect(pendientesALaHora([noche, manana], "08:00")).toEqual([manana]);
@@ -402,15 +423,15 @@ describe("recordatorios", () => {
   });
 
   it("textoRecordatorio", () => {
-    expect(textoRecordatorio(conHora(tabaco, "21:00:00"))).toBe(
+    expect(textoRecordatorio(conHora(cafe, "21:00:00"))).toBe(
       "Recordatorio a las 21:00",
     );
-    expect(textoRecordatorio(tabaco)).toBeNull();
+    expect(textoRecordatorio(cafe)).toBeNull();
   });
 
   it("prepararHabito guarda la hora sin segundos y la deja vacía si no hay", () => {
     const base = {
-      title: "Tabaco",
+      title: "Café",
       notes: "",
       direction: "menos",
       unit: "",
