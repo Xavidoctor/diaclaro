@@ -22,6 +22,7 @@ export const TABLAS = [
   "job_application_events",
   "habits",
   "habit_logs",
+  "project_documents",
 ] as const;
 export type Tabla = (typeof TABLAS)[number];
 
