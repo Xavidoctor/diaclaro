@@ -107,3 +107,4 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 - La *publishable key* es pública por diseño; los datos se protegen con reglas RLS en cada tabla (desde la etapa 1).
 - Abre el enlace del email en el mismo navegador donde lo pediste (en Android, la app instalada comparte sesión con Chrome).
 - Activa la verificación en dos pasos en GitHub, Supabase, Vercel y tu email.
+- **Copia de seguridad:** el plan gratuito de Supabase no guarda copias que puedas recuperar tú. En **Ajustes → Copia de seguridad** descargas un archivo JSON con todos tus datos. Hazlo una vez a la semana y guárdalo en Drive.
