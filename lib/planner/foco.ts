@@ -9,21 +9,29 @@ import type { Resultado } from "./bandeja";
 // milisegundos desde 1970 (lo que devuelve Date.now()).
 
 export const MAX_OBJETIVO = 600; // 10 horas como mucho
+const MAX_SESION = 1440; // un rato de foco dura como mucho un día
 const MINUTO = 60_000;
 
+// Dos modos:
+// - Cuenta atrás: objetivoMinutos es un número y avisa al llegar a cero.
+// - Cronómetro: objetivoMinutos es null y cuenta hacia arriba hasta que paras.
 export type Temporizador = {
   inicio: number;
-  objetivoMinutos: number;
+  objetivoMinutos: number | null;
   pausadoDesde: number | null; // null = está en marcha
   pausaAcumulada: number; // milisegundos que ha estado en pausa
   tareaId: string | null;
+  // Lo que se ve encima del reloj: la tarea o la rutina.
   tareaTitulo: string | null;
+  // La rutina con modo foco que estás haciendo (al guardar, se apunta como hecha).
+  rutinaId: string | null;
 };
 
 export function iniciar(
-  objetivoMinutos: number,
+  objetivoMinutos: number | null,
   tarea: { id: string; title: string } | null,
   ahora: number,
+  rutina: { id: string; title: string } | null = null,
 ): Temporizador {
   return {
     inicio: ahora,
@@ -31,7 +39,8 @@ export function iniciar(
     pausadoDesde: null,
     pausaAcumulada: 0,
     tareaId: tarea?.id ?? null,
-    tareaTitulo: tarea?.title ?? null,
+    tareaTitulo: tarea?.title ?? rutina?.title ?? null,
+    rutinaId: rutina?.id ?? null,
   };
 }
 
@@ -56,18 +65,28 @@ export function transcurrido(t: Temporizador, ahora: number): number {
 }
 
 // Lo que falta para llegar al objetivo (nunca menos de 0).
+// Con el cronómetro no hay objetivo: el límite es un día.
 export function restante(t: Temporizador, ahora: number): number {
-  return Math.max(0, t.objetivoMinutos * MINUTO - transcurrido(t, ahora));
+  const limite = (t.objetivoMinutos ?? MAX_SESION) * MINUTO;
+  return Math.max(0, limite - transcurrido(t, ahora));
 }
 
 export function terminado(t: Temporizador, ahora: number): boolean {
   return restante(t, ahora) === 0;
 }
 
+// Lo que se ve en el reloj: lo que falta (cuenta atrás) o lo que llevas (cronómetro).
+export function tiempoEnReloj(t: Temporizador, ahora: number): number {
+  return t.objetivoMinutos === null
+    ? transcurrido(t, ahora)
+    : restante(t, ahora);
+}
+
 // Minutos para guardar. Si se te pasó el aviso y volviste tarde, no cuenta
 // más del objetivo: siempre puedes cambiar el número antes de guardar.
 export function minutosHechos(t: Temporizador, ahora: number): number {
-  const ms = Math.min(transcurrido(t, ahora), t.objetivoMinutos * MINUTO);
+  const limite = (t.objetivoMinutos ?? MAX_SESION) * MINUTO;
+  const ms = Math.min(transcurrido(t, ahora), limite);
   return Math.round(ms / MINUTO);
 }
 
@@ -87,11 +106,13 @@ export function textoReloj(ms: number): string {
 
 const esquemaGuardado = z.object({
   inicio: z.number().finite().positive(),
-  objetivoMinutos: z.number().int().min(1).max(MAX_OBJETIVO),
+  objetivoMinutos: z.number().int().min(1).max(MAX_OBJETIVO).nullable(),
   pausadoDesde: z.number().finite().positive().nullable(),
   pausaAcumulada: z.number().finite().min(0),
   tareaId: z.string().nullable(),
   tareaTitulo: z.string().nullable(),
+  // Los temporizadores guardados antes de las rutinas con foco no lo tienen.
+  rutinaId: z.string().nullable().default(null),
 });
 
 export function leerGuardado(texto: string | null): Temporizador | null {
@@ -120,6 +141,7 @@ export function prepararObjetivo(valor: unknown): Resultado<number> {
 
 export type DatosSesion = {
   task_id: string | null;
+  routine_id: string | null;
   started_at: string;
   ended_at: string;
   planned_minutes: number | null;
@@ -128,6 +150,7 @@ export type DatosSesion = {
 
 const esquemaSesion = z.object({
   tarea: z.uuid().nullable(),
+  rutina: z.uuid().nullable(),
   inicio: z.iso.datetime(),
   objetivo: z.coerce.number().int().min(1).max(MAX_OBJETIVO).nullable(),
   minutos: z.coerce
@@ -142,6 +165,7 @@ const esquemaSesion = z.object({
 export function prepararSesion(
   formulario: {
     tarea: unknown;
+    rutina?: unknown;
     inicio: unknown;
     objetivo: unknown;
     minutos: unknown;
@@ -151,6 +175,7 @@ export function prepararSesion(
   const vacioANull = (v: unknown) => (v === "" || v == null ? null : v);
   const r = esquemaSesion.safeParse({
     tarea: vacioANull(formulario.tarea),
+    rutina: vacioANull(formulario.rutina),
     inicio: formulario.inicio,
     objetivo: vacioANull(formulario.objetivo),
     minutos: formulario.minutos === "" ? undefined : formulario.minutos,
@@ -173,6 +198,7 @@ export function prepararSesion(
     ok: true,
     valor: {
       task_id: r.data.tarea,
+      routine_id: r.data.rutina,
       started_at: inicio.toISOString(),
       ended_at: fin.toISOString(),
       planned_minutes: r.data.objetivo,

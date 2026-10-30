@@ -6,7 +6,12 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { guardarSesionFoco, type GuardarFocoState } from "@/app/foco/actions";
+import { useRouter } from "next/navigation";
+import {
+  guardarSesionFoco,
+  rutinaHechaSinMedir,
+  type GuardarFocoState,
+} from "@/app/foco/actions";
 import {
   MAX_OBJETIVO,
   iniciar,
@@ -15,9 +20,9 @@ import {
   pausar,
   prepararObjetivo,
   reanudar,
-  restante,
   terminado,
   textoReloj,
+  tiempoEnReloj,
   type Temporizador as Estado,
 } from "@/lib/planner/foco";
 
@@ -25,6 +30,13 @@ export type TareaParaFoco = {
   id: string;
   title: string;
   estimated_minutes: number | null;
+};
+
+// Rutina con modo foco que vas a empezar (llega con /foco?rutina=<id>).
+export type RutinaParaFoco = {
+  id: string;
+  title: string;
+  duration_minutes: number | null;
 };
 
 // ---- El temporizador en marcha se guarda en este navegador ----
@@ -100,9 +112,11 @@ function avisarFin(titulo: string | null) {
 export function Temporizador({
   tareas,
   tareaInicial,
+  rutina,
 }: {
   tareas: TareaParaFoco[];
   tareaInicial: string | null;
+  rutina: RutinaParaFoco | null;
 }) {
   const texto = useSyncExternalStore(suscribirse, leerTexto, () => null);
   const estado = leerGuardado(texto);
@@ -134,7 +148,7 @@ export function Temporizador({
     const antes = document.title;
     document.title = fin
       ? "¡Tiempo! · DíaClaro"
-      : `${textoReloj(restante(estado, ahora))} · Foco`;
+      : `${textoReloj(tiempoEnReloj(estado, ahora))} · Foco`;
     return () => {
       document.title = antes;
     };
@@ -169,7 +183,11 @@ export function Temporizador({
     return <p className="text-sm text-muted">Cargando el temporizador…</p>;
   }
   if (!estado) {
-    return <Empezar tareas={tareas} tareaInicial={tareaInicial} />;
+    return rutina ? (
+      <EmpezarRutina rutina={rutina} />
+    ) : (
+      <Empezar tareas={tareas} tareaInicial={tareaInicial} />
+    );
   }
   if (fin || cerrando) {
     return (
@@ -197,12 +215,14 @@ export function Temporizador({
         aria-live="off"
         className="text-6xl font-semibold tabular-nums tracking-tight"
       >
-        {textoReloj(restante(estado, ahora))}
+        {textoReloj(tiempoEnReloj(estado, ahora))}
       </p>
       <p className="text-sm text-muted">
         {pausado
           ? "En pausa"
-          : `Objetivo: ${estado.objetivoMinutos} min. Puedes bloquear el móvil, el tiempo sigue contando.`}
+          : estado.objetivoMinutos === null
+            ? "Cronómetro en marcha. Pulsa «Terminar ya» cuando acabes."
+            : `Objetivo: ${estado.objetivoMinutos} min. Puedes bloquear el móvil, el tiempo sigue contando.`}
       </p>
       <div className="flex flex-wrap justify-center gap-3">
         <button
@@ -230,6 +250,148 @@ export function Temporizador({
         </button>
       </div>
     </div>
+  );
+}
+
+// Pide permiso para avisarte al terminar (solo la primera vez).
+function pedirPermisoAviso() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission().catch(() => {});
+  }
+}
+
+// ---- Antes de empezar una rutina con modo foco ----
+// Primero te pide alejar el móvil; luego eliges cuenta atrás o cronómetro.
+
+function EmpezarRutina({ rutina }: { rutina: RutinaParaFoco }) {
+  const [listo, setListo] = useState(false);
+  const [modo, setModo] = useState<"atras" | "cronometro">(
+    rutina.duration_minutes ? "atras" : "cronometro",
+  );
+  const [minutos, setMinutos] = useState(
+    rutina.duration_minutes
+      ? String(Math.min(rutina.duration_minutes, MAX_OBJETIVO))
+      : "",
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  if (!listo) {
+    return (
+      <div className="card flex flex-col gap-4">
+        <p className="break-words text-sm text-muted">{rutina.title}</p>
+        <h2 className="text-xl font-semibold">Aleja el móvil</h2>
+        <p className="text-sm">
+          Ponlo en silencio y déjalo lejos de ti, boca abajo o en otra
+          habitación. Si eliges cuenta atrás, te aviso cuando acabe.
+        </p>
+        <button
+          type="button"
+          className="button-primary"
+          onClick={() => setListo(true)}
+        >
+          Ya está
+        </button>
+        <form action={rutinaHechaSinMedir}>
+          <input type="hidden" name="rutina" value={rutina.id} />
+          <button type="submit" className="text-sm text-muted underline">
+            Ya la he hecho, apuntarla sin medir
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  function empezar(e: React.FormEvent) {
+    e.preventDefault();
+    let objetivo: number | null = null;
+    if (modo === "atras") {
+      const r = prepararObjetivo(minutos);
+      if (!r.ok) {
+        setError(r.error);
+        return;
+      }
+      objetivo = r.valor;
+      pedirPermisoAviso();
+    }
+    guardarEstado(iniciar(objetivo, null, Date.now(), rutina));
+  }
+
+  return (
+    <form onSubmit={empezar} className="card flex flex-col gap-4">
+      <p className="break-words font-medium">{rutina.title}</p>
+      <div
+        className="flex flex-col gap-2"
+        role="radiogroup"
+        aria-label="Cómo medir el tiempo"
+      >
+        {(
+          [
+            [
+              "atras",
+              "Cuenta atrás",
+              "Pones los minutos y te aviso al acabar.",
+            ],
+            ["cronometro", "Cronómetro", "Cuenta lo que tardas; lo paras tú."],
+          ] as const
+        ).map(([valor, nombre, explicacion]) => (
+          <label
+            key={valor}
+            className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-3 text-sm has-[:checked]:border-primary"
+          >
+            <input
+              type="radio"
+              name="modo"
+              value={valor}
+              checked={modo === valor}
+              onChange={() => setModo(valor)}
+              className="mt-1 size-4"
+            />
+            <span>
+              {nombre}
+              <span className="block text-muted">{explicacion}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+      {modo === "atras" && (
+        <>
+          <label className="flex flex-col gap-1 text-sm">
+            Minutos
+            <input
+              value={minutos}
+              onChange={(e) => setMinutos(e.target.value)}
+              inputMode="numeric"
+              placeholder="Escribe los minutos o elige abajo"
+              className="input py-2"
+            />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {RAPIDOS.map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMinutos(String(m))}
+                className={`rounded-full border px-3 py-1 text-sm ${
+                  minutos === String(m)
+                    ? "border-primary text-primary"
+                    : "border-border"
+                }`}
+              >
+                {m} min
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+      <button type="submit" className="button-primary">
+        Empezar
+      </button>
+    </form>
   );
 }
 
@@ -266,10 +428,7 @@ function Empezar({
       setError(r.error);
       return;
     }
-    // Pide permiso para avisarte al terminar (solo la primera vez).
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission().catch(() => {});
-    }
+    pedirPermisoAviso();
     const tarea = tareas.find((t) => t.id === tareaId) ?? null;
     guardarEstado(iniciar(r.valor, tarea, Date.now()));
   }
@@ -344,11 +503,14 @@ function Guardar({
   alGuardar: () => void;
   alSeguir: () => void;
 }) {
+  const router = useRouter();
   async function accion(prev: GuardarFocoState, formData: FormData) {
     const r = await guardarSesionFoco(prev, formData);
     if (!r.error) {
       guardarEstado(null);
       alGuardar();
+      // Si era una rutina, ya está apuntada como hecha: de vuelta a Hoy.
+      if (r.rutinaHecha) router.push("/");
     }
     return r;
   }
@@ -360,18 +522,27 @@ function Guardar({
   return (
     <form action={formAction} className="card flex flex-col gap-4">
       <h2 className="text-lg font-semibold">
-        {antesDeTiempo ? "Terminar antes de tiempo" : "¡Tiempo!"}
+        {estado.objetivoMinutos === null
+          ? "Has terminado"
+          : antesDeTiempo
+            ? "Terminar antes de tiempo"
+            : "¡Tiempo!"}
       </h2>
       {estado.tareaTitulo && (
         <p className="break-words text-sm text-muted">{estado.tareaTitulo}</p>
       )}
       <input type="hidden" name="tarea" value={estado.tareaId ?? ""} />
+      <input type="hidden" name="rutina" value={estado.rutinaId ?? ""} />
       <input
         type="hidden"
         name="inicio"
         value={new Date(estado.inicio).toISOString()}
       />
-      <input type="hidden" name="objetivo" value={estado.objetivoMinutos} />
+      <input
+        type="hidden"
+        name="objetivo"
+        value={estado.objetivoMinutos ?? ""}
+      />
       <label className="flex flex-col gap-1 text-sm">
         Minutos de foco
         <input

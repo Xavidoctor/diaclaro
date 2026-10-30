@@ -163,13 +163,16 @@ export default async function HoyPage() {
         <section className="flex flex-col gap-3">
           <header className="flex items-baseline justify-between gap-4">
             <h2 className="text-lg font-semibold">Rutinas</h2>
-            <Link href="/ajustes" className="enlace text-sm">
-              Cambiar
+            <Link
+              href="/ajustes/rutinas/nuevo?desde=hoy"
+              className="enlace text-sm"
+            >
+              + Añadir
             </Link>
           </header>
           {deHoy.length === 0 ? (
             <p className="text-sm text-muted">
-              Hoy no toca ninguna. Puedes añadirlas en Ajustes.
+              Hoy no toca ninguna. Pulsa «+ Añadir» para crear una.
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -198,11 +201,13 @@ function FilaRutina({ item }: { item: RutinaDelDia }) {
   return (
     <li className="card flex items-center gap-3 p-4">
       <div className="flex flex-1 flex-col gap-1">
-        <span
+        {/* Tocando el nombre la cambias (y ahí activas el modo foco). */}
+        <Link
+          href={`/ajustes/rutinas/${rutina.id}?desde=hoy`}
           className={`break-words ${completa ? "text-muted line-through" : ""}`}
         >
           {rutina.title}
-        </span>
+        </Link>
         <span className="text-sm text-muted">
           {hechas} de {rutina.times_per_day}
           {rutina.duration_minutes ? ` · ${rutina.duration_minutes} min` : ""}
@@ -218,7 +223,16 @@ function FilaRutina({ item }: { item: RutinaDelDia }) {
           </button>
         </form>
       )}
-      {!completa && (
+      {/* Con modo foco, «Empezar» abre Foco: alejas el móvil y mides el tiempo. */}
+      {!completa && rutina.focus && (
+        <Link
+          href={`/foco?rutina=${rutina.id}`}
+          className="button-primary py-2 text-sm"
+        >
+          Empezar
+        </Link>
+      )}
+      {!completa && !rutina.focus && (
         <form action={marcarRutinaHecha}>
           <input type="hidden" name="id" value={rutina.id} />
           <button type="submit" className="button-primary py-2 text-sm">

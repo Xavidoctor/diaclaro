@@ -28,8 +28,15 @@ export type Rutina = {
   window_start: string | null;
   window_end: string | null;
   part_of_day: Franja | null;
+  // Modo foco: al empezar, te pide alejar el móvil y puedes medir el tiempo.
+  focus: boolean;
+  // Con foco: minutos antes de la hora de inicio para avisarte. null = sin aviso.
+  focus_alarm_minutes: number | null;
   active: boolean;
 };
+
+// Los minutos que puedes elegir para el aviso antes de empezar.
+export const MINUTOS_AVISO = [5, 10, 15, 30, 60] as const;
 
 export type RegistroRutina = { routine_id: string; on_date: string };
 
@@ -141,8 +148,25 @@ const esquemaRutina = z
     window_start: horaOpcional,
     window_end: horaOpcional,
     part_of_day: textoOpcional.pipe(z.enum(FRANJAS).nullable()),
+    focus: z.boolean(),
+    focus_alarm_minutes: textoOpcional
+      .transform((v) => (v === null ? null : Number(v)))
+      .pipe(
+        z
+          .number({ error: "Elige cuántos minutos antes te aviso." })
+          .int("Elige cuántos minutos antes te aviso.")
+          .min(1, "Elige cuántos minutos antes te aviso.")
+          .max(120, "Como mucho 2 horas antes.")
+          .nullable(),
+      ),
   })
   .superRefine((d, ctx) => {
+    if (d.focus && d.focus_alarm_minutes !== null && !d.window_start)
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Para avisarte antes de empezar, pon a qué hora empieza (en «Desde»).",
+      });
     const errorHoras = revisarHoras(d.window_start, d.window_end);
     if (errorHoras) ctx.addIssue({ code: "custom", message: errorHoras });
     if (d.cuando === "algunos" && d.dias.length === 0)
@@ -161,6 +185,8 @@ export function prepararRutina(datos: {
   window_start: unknown;
   window_end: unknown;
   part_of_day: unknown;
+  focus?: unknown;
+  focus_alarm_minutes?: unknown;
 }): Resultado<DatosRutina> {
   const r = esquemaRutina.safeParse({
     title: datos.title ?? "",
@@ -172,6 +198,9 @@ export function prepararRutina(datos: {
     window_start: datos.window_start ?? "",
     window_end: datos.window_end ?? "",
     part_of_day: datos.part_of_day ?? "",
+    // La casilla del formulario manda "si" cuando está marcada.
+    focus: datos.focus === "si",
+    focus_alarm_minutes: datos.focus_alarm_minutes ?? "",
   });
   if (!r.success) return { ok: false, error: r.error.issues[0].message };
   const d = r.data;
@@ -194,6 +223,9 @@ export function prepararRutina(datos: {
       window_end: d.window_end,
       // Con hora de inicio de la franja, la parte del día sobra.
       part_of_day: d.window_start ? null : d.part_of_day,
+      focus: d.focus,
+      // Sin foco no hay aviso antes de empezar.
+      focus_alarm_minutes: d.focus ? d.focus_alarm_minutes : null,
     },
   };
 }

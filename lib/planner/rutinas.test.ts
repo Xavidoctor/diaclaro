@@ -20,6 +20,8 @@ const paseo: Rutina = {
   window_start: null,
   window_end: null,
   part_of_day: null,
+  focus: false,
+  focus_alarm_minutes: null,
   active: true,
 };
 
@@ -152,7 +154,44 @@ describe("prepararRutina", () => {
         window_start: null,
         window_end: null,
         part_of_day: null,
+        focus: false,
+        focus_alarm_minutes: null,
       },
+    });
+  });
+
+  it("guarda el modo foco con su aviso antes de empezar", () => {
+    const r = prepararRutina({
+      ...formulario,
+      window_start: "16:00",
+      focus: "si",
+      focus_alarm_minutes: "10",
+    });
+    expect(r).toMatchObject({
+      ok: true,
+      valor: { focus: true, focus_alarm_minutes: 10, window_start: "16:00" },
+    });
+  });
+
+  it("el aviso antes de empezar necesita la hora de inicio", () => {
+    expect(
+      prepararRutina({ ...formulario, focus: "si", focus_alarm_minutes: "10" }),
+    ).toEqual({
+      ok: false,
+      error:
+        "Para avisarte antes de empezar, pon a qué hora empieza (en «Desde»).",
+    });
+  });
+
+  it("sin foco no hay aviso, aunque llegue uno", () => {
+    const r = prepararRutina({
+      ...formulario,
+      window_start: "16:00",
+      focus_alarm_minutes: "10",
+    });
+    expect(r).toMatchObject({
+      ok: true,
+      valor: { focus: false, focus_alarm_minutes: null },
     });
   });
 
