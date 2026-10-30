@@ -62,6 +62,7 @@ const CAMPOS: (keyof DatosCandidatura)[] = [
   "next_follow_up",
   "next_step",
   "notes",
+  "area_id",
 ];
 
 // Crear o cambiar una candidatura (si el formulario trae "id", es cambiar).
@@ -127,7 +128,7 @@ export async function seguimientoHecho(formData: FormData) {
 export type FormStateNota = {
   envios: number;
   error?: string;
-  valores?: { on_date: string; note: string };
+  valores?: { on_date: string; note: string; minutos: string };
 };
 
 export async function apuntarEnHistorial(
@@ -139,6 +140,7 @@ export async function apuntarEnHistorial(
   const valores = {
     on_date: String(formData.get("on_date") ?? ""),
     note: String(formData.get("note") ?? ""),
+    minutos: String(formData.get("minutos") ?? ""),
   };
   const r = prepararNotaHistorial(valores, await hoy());
   if (!r.ok) return { envios, error: r.error, valores };

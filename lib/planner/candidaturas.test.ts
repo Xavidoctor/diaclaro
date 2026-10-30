@@ -10,6 +10,11 @@ import {
   ordenarHistorial,
   prepararCandidatura,
   prepararNotaHistorial,
+  areaPorDefecto,
+  lunesDe,
+  minutosPorArea,
+  minutosTotales,
+  textoSemanaCandidaturas,
   seguimientosPendientes,
   separarCandidaturas,
   textoEntrada,
@@ -30,6 +35,7 @@ function candidatura(cambios: Partial<Candidatura>): Candidatura {
     next_follow_up: null,
     next_step: null,
     notes: null,
+    area_id: null,
     created_at: "2026-10-01T10:00:00Z",
     ...cambios,
   };
@@ -44,6 +50,7 @@ const vacio = {
   next_follow_up: "",
   next_step: "",
   notes: "",
+  area_id: "",
 };
 
 describe("estaActiva", () => {
@@ -166,6 +173,7 @@ describe("prepararCandidatura", () => {
         next_follow_up: null,
         next_step: null,
         notes: null,
+        area_id: null,
       },
     });
   });
@@ -249,6 +257,7 @@ describe("historial", () => {
       kind: "nota",
       status: null,
       note: "Algo",
+      minutes: null,
       created_at: "2026-10-30T10:00:00Z",
       ...cambios,
     };
@@ -284,12 +293,14 @@ describe("historial", () => {
       kind: "estado",
       status: "oferta",
       note: null,
+      minutes: null,
     });
     expect(entradaSeguimientoHecho({ next_step: "Escribir" }, hoy)).toEqual({
       on_date: hoy,
       kind: "seguimiento",
       status: null,
       note: "Escribir",
+      minutes: null,
     });
   });
 
@@ -316,7 +327,102 @@ describe("historial", () => {
         kind: "nota",
         status: null,
         note: "Me llamaron",
+        minutes: null,
       },
     });
+  });
+});
+
+describe("tiempo en las áreas", () => {
+  it("propone el área Empleo si la tienes (sin fijarse en mayúsculas)", () => {
+    const areas = [
+      { id: "e", name: "Estudios", archived_at: null },
+      { id: "m", name: " EMPLEO ", archived_at: null },
+    ];
+    expect(areaPorDefecto(areas)).toBe("m");
+    expect(
+      areaPorDefecto([{ id: "x", name: "Estudios", archived_at: null }]),
+    ).toBe(null);
+    expect(
+      areaPorDefecto([{ id: "m", name: "Empleo", archived_at: "2026-10-01" }]),
+    ).toBe(null);
+  });
+
+  it("acepta un área válida o ninguna en el formulario", () => {
+    const base = { ...vacio, company: "A", role: "B" };
+    expect(prepararCandidatura({ ...base, area_id: "hola" }).ok).toBe(false);
+    const r = prepararCandidatura({
+      ...base,
+      area_id: "6f1c2d3e-1a2b-4c5d-8e9f-0a1b2c3d4e5f",
+    });
+    expect(r.ok && r.valor.area_id).toBe(
+      "6f1c2d3e-1a2b-4c5d-8e9f-0a1b2c3d4e5f",
+    );
+  });
+
+  it("calcula el lunes de la semana", () => {
+    expect(lunesDe("2026-10-30")).toBe("2026-10-26"); // viernes
+    expect(lunesDe("2026-10-26")).toBe("2026-10-26"); // lunes
+    expect(lunesDe("2026-11-01")).toBe("2026-10-26"); // domingo
+  });
+
+  it("suma los minutos de la semana en cada área", () => {
+    const candidaturas = [
+      { id: "a", area_id: "empleo" },
+      { id: "b", area_id: "empleo" },
+      { id: "c", area_id: null },
+    ];
+    const entradas = [
+      { application_id: "a", on_date: "2026-10-27", minutes: 30 },
+      { application_id: "b", on_date: "2026-10-30", minutes: 45 },
+      { application_id: "a", on_date: "2026-10-20", minutes: 60 }, // otra semana
+      { application_id: "c", on_date: "2026-10-28", minutes: 15 }, // sin área
+      { application_id: "a", on_date: "2026-10-28", minutes: null },
+    ];
+    const r = minutosPorArea(
+      candidaturas,
+      entradas,
+      "2026-10-26",
+      "2026-11-01",
+    );
+    expect([...r]).toEqual([["empleo", 75]]);
+  });
+
+  it("suma todo el tiempo de una candidatura", () => {
+    expect(
+      minutosTotales([{ minutes: 30 }, { minutes: null }, { minutes: 15 }]),
+    ).toBe(45);
+  });
+
+  it("los minutos de una nota son opcionales y razonables", () => {
+    const hoy = "2026-10-30";
+    const nota = { on_date: hoy, note: "Preparé la entrevista" };
+    const r = prepararNotaHistorial({ ...nota, minutos: "45" }, hoy);
+    expect(r.ok && r.valor.minutes).toBe(45);
+    expect(prepararNotaHistorial({ ...nota, minutos: "" }, hoy)).toMatchObject({
+      ok: true,
+      valor: { minutes: null },
+    });
+    expect(prepararNotaHistorial({ ...nota, minutos: "mucho" }, hoy).ok).toBe(
+      false,
+    );
+    expect(prepararNotaHistorial({ ...nota, minutos: "0" }, hoy).ok).toBe(
+      false,
+    );
+    expect(prepararNotaHistorial({ ...nota, minutos: "2000" }, hoy).ok).toBe(
+      false,
+    );
+  });
+});
+
+describe("textoSemanaCandidaturas", () => {
+  it("dice el tiempo de la semana, y el objetivo si lo hay", () => {
+    expect(textoSemanaCandidaturas(0, 360)).toBe(null);
+    expect(textoSemanaCandidaturas(75, null)).toBe(
+      "Esta semana llevas 1 h 15 min en candidaturas.",
+    );
+    expect(textoSemanaCandidaturas(90, 360)).toBe(
+      "Esta semana llevas 1 h 30 min en candidaturas (de las 6 h que te propones aquí).",
+    );
   });
 });
