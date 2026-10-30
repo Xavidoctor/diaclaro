@@ -1,12 +1,17 @@
 import Link from "next/link";
 
-// Menú de abajo. De momento, Hoy y Bandeja; Semana y Áreas llegarán en otras etapas.
+// Menú de abajo. De momento, Hoy, Agenda y Bandeja; Áreas llegará en otra etapa.
 const SECCIONES = [
   { href: "/", nombre: "Hoy" },
+  { href: "/agenda", nombre: "Agenda" },
   { href: "/bandeja", nombre: "Bandeja" },
 ] as const;
 
-export function BarraInferior({ actual }: { actual: "/" | "/bandeja" }) {
+export function BarraInferior({
+  actual,
+}: {
+  actual: (typeof SECCIONES)[number]["href"];
+}) {
   return (
     <nav
       aria-label="Secciones"
