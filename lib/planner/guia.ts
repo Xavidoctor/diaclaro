@@ -123,7 +123,7 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
     titulo: "Hábitos",
     resumen: "Para observar lo que quieras, sin juicios.",
     pasos: [
-      "En Ajustes, abre Hábitos y añade lo que quieras seguir (tabaco, ejercicio, sueño…).",
+      "En Ajustes, abre Hábitos y añade lo que quieras seguir (agua, lectura, ejercicio…).",
       "Cada día lo apuntas desde Hoy y ves un resumen de la semana. No hay rachas que se rompan.",
     ],
     enlace: { href: "/habitos", texto: "Ir a Hábitos" },
