@@ -8,6 +8,7 @@ import {
 import { AvisoSobrecarga } from "@/app/componentes/aviso-sobrecarga";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
+import { CierreDeHoy } from "@/app/componentes/cierre-de-hoy";
 import { FocoDeHoy } from "@/app/componentes/foco-de-hoy";
 import { TareasDeHoy } from "@/app/componentes/tareas-de-hoy";
 import { SaludoLocal } from "@/app/saludo-local";
@@ -123,6 +124,8 @@ export default async function HoyPage() {
             </ul>
           )}
         </section>
+
+        <CierreDeHoy hoy={hoy} />
 
         <p className="text-sm text-muted">
           Has entrado como {data.claims.email}
