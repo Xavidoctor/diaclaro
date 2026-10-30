@@ -83,3 +83,34 @@ export function primeraRutina(rutinas: RutinaDelDia[]): RutinaDelDia | null {
   if (rutinas.some((r) => r.hechas > 0)) return null;
   return rutinas.find((r) => !r.completa) ?? null;
 }
+
+// Para corregir las horas a mano, por ejemplo si no pulsaste el botón justo
+// al levantarte. Lee "Despierto" y "Levantado" del formulario (vacía = null).
+// Comprueba que haya al menos una, que no sean más tarde que ahora y que
+// "Levantado" no vaya antes que "Despierto". La app nunca rellena una hora
+// por su cuenta: solo guarda lo que escribes.
+export function leerHorasDespertar(
+  despierto: unknown,
+  levantado: unknown,
+  ahora: string, // "10:30", la hora actual
+):
+  | { ok: true; awake_time: string | null; start_time: string | null }
+  | { ok: false; error: string } {
+  const a = horaOpcional.safeParse(despierto ?? "");
+  const l = horaOpcional.safeParse(levantado ?? "");
+  if (!a.success || !l.success)
+    return { ok: false, error: "Alguna hora no es válida." };
+  const awake = a.data;
+  const start = l.data;
+  if (!awake && !start)
+    return { ok: false, error: "Pon al menos una de las dos horas." };
+  // "HH:MM" con ceros delante se puede comparar como texto.
+  if ((awake && awake > ahora) || (start && start > ahora))
+    return { ok: false, error: "Esa hora aún no ha llegado." };
+  if (awake && start && start < awake)
+    return {
+      ok: false,
+      error: "La hora de levantarte no puede ser antes que la de despertarte.",
+    };
+  return { ok: true, awake_time: awake, start_time: start };
+}

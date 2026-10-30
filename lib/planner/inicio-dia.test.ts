@@ -4,6 +4,7 @@ import {
   ajustesDelDia,
   estadoDespertar,
   leerHoraAcostarse,
+  leerHorasDespertar,
   minutosEnLaCama,
   primeraRutina,
   textoEnLaCama,
@@ -102,6 +103,43 @@ describe("leerHoraAcostarse", () => {
     expect(leerHoraAcostarse(null)).toEqual({ ok: true, valor: null });
     expect(leerHoraAcostarse("00:30")).toEqual({ ok: true, valor: "00:30" });
     expect(leerHoraAcostarse("25:00").ok).toBe(false);
+  });
+});
+
+describe("leerHorasDespertar", () => {
+  it("guarda las dos horas, o solo una", () => {
+    expect(leerHorasDespertar("08:40", "09:05", "10:00")).toEqual({
+      ok: true,
+      awake_time: "08:40",
+      start_time: "09:05",
+    });
+    expect(leerHorasDespertar("", "09:05", "10:00")).toEqual({
+      ok: true,
+      awake_time: null,
+      start_time: "09:05",
+    });
+    expect(leerHorasDespertar("08:40", null, "10:00")).toEqual({
+      ok: true,
+      awake_time: "08:40",
+      start_time: null,
+    });
+  });
+
+  it("pide al menos una hora", () => {
+    expect(leerHorasDespertar("", "", "10:00").ok).toBe(false);
+  });
+
+  it("no acepta horas que aún no han llegado", () => {
+    expect(leerHorasDespertar("08:40", "10:01", "10:00").ok).toBe(false);
+    expect(leerHorasDespertar("10:30", "", "10:00").ok).toBe(false);
+  });
+
+  it("no acepta levantarse antes de despertarse", () => {
+    expect(leerHorasDespertar("09:00", "08:30", "10:00").ok).toBe(false);
+  });
+
+  it("rechaza horas mal escritas", () => {
+    expect(leerHorasDespertar("9h", "", "10:00").ok).toBe(false);
   });
 });
 

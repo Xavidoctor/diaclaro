@@ -5,7 +5,10 @@ import { redirect } from "next/navigation";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { borrarInicio, guardarInicio } from "@/lib/data/inicio-dia";
 import { hoyEn, horaEn } from "@/lib/planner/fechas";
-import { leerHoraAcostarse } from "@/lib/planner/inicio-dia";
+import {
+  leerHoraAcostarse,
+  leerHorasDespertar,
+} from "@/lib/planner/inicio-dia";
 import { createClient } from "@/lib/supabase/server";
 
 // Acciones de los botones "Despierto" y "Levantado" (antes "Empiezo el día").
@@ -42,6 +45,32 @@ export async function empezarDia(formData: FormData) {
   });
   if (formData.get("ir_a_hoy")) redirect("/");
   refresh();
+}
+
+// Corregir las horas a mano: si no pulsaste el botón justo al despertarte o
+// al levantarte, pones la hora aproximada. Así los datos de tu día son buenos.
+// "envios" cuenta los guardados buenos, para cerrar el formulario después.
+export type CorregirHorasState = { error?: string; envios: number };
+
+export async function corregirHoras(
+  estado: CorregirHorasState,
+  formData: FormData,
+): Promise<CorregirHorasState> {
+  await exigirSesion();
+  const { timezone } = await leerAjustes();
+  const horas = leerHorasDespertar(
+    formData.get("awake_time"),
+    formData.get("start_time"),
+    horaEn(timezone),
+  );
+  if (!horas.ok) return { error: horas.error, envios: estado.envios };
+  await guardarInicio({
+    on_date: hoyEn(timezone),
+    awake_time: horas.awake_time,
+    start_time: horas.start_time,
+  });
+  refresh();
+  return { envios: estado.envios + 1 };
 }
 
 export async function deshacerInicioDia() {
