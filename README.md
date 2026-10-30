@@ -108,6 +108,7 @@ Cada archivo de `supabase/migrations/` crea o cambia tablas. Se aplican **una ve
 | `20261030260000_documentos_de_drive.sql` | Columna `drive` en `google_connections` y tabla `project_documents` (enlaces a archivos de Drive que eliges en cada proyecto), con sus reglas RLS |
 | `20261030270000_recordatorios_habitos.sql` | Columna `remind_at` en `habits`: la hora (opcional) a la que Hoy te recuerda un hábito si aún no has apuntado nada |
 | `20261030300000_avisos_push.sql` | Tablas `push_subscriptions` (dónde mandar los avisos), `habit_reminder_sends` (avisos ya enviados) y `push_deliveries`, con sus reglas RLS, y la tarea de cada 5 minutos (pg_cron + pg_net) |
+| `20261030350000_frases_habitos.sql` | Columna `phrases` en `habits` (tus frases para motivarte, hasta 20) y la tarea de avisos, que ahora manda una de ellas al azar |
 
 ## Publicar en Vercel (una vez)
 

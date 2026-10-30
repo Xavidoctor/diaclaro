@@ -15,6 +15,8 @@ const esquemaPeticion = z.object({
   habito: z.uuid(),
   titulo: z.string().min(1).max(100),
   hora: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  // Una de tus frases, al azar (desde la migración 20261030350000). null = ninguna.
+  frase: z.string().min(1).max(200).nullish(),
 });
 
 export type PeticionAviso = z.infer<typeof esquemaPeticion>;
@@ -34,13 +36,17 @@ export type ContenidoAviso = {
 };
 
 export function contenidoAviso(
-  p: Pick<PeticionAviso, "habito" | "titulo" | "hora">,
+  p: Pick<PeticionAviso, "habito" | "titulo" | "hora" | "frase">,
 ): ContenidoAviso {
+  const recordatorio = `Recordatorio de las ${p.hora}.`;
   return {
     title: p.titulo,
-    body: `Recordatorio de las ${p.hora}. Hoy aún no has apuntado nada. ¿Lo apuntas?`,
+    body: p.frase
+      ? `${p.frase}\n${recordatorio}`
+      : `${recordatorio} Hoy aún no has apuntado nada. ¿Lo apuntas?`,
     tag: `habito-${p.habito}`,
-    url: "/",
+    // Al tocarlo, se abre Hábitos justo en ese hábito.
+    url: `/habitos#habito-${p.habito}`,
   };
 }
 

@@ -8,10 +8,19 @@ import {
   borrarHabito,
   cambiarHabito,
   crearHabito,
+  leerHabito,
   quitarUltimoApunte,
 } from "@/lib/data/habitos";
+import { iaDisponible, pedirTexto } from "@/lib/ai/groq";
+import { leerFrases, mensajesFrasesHabito } from "@/lib/ai/frases-habito";
+import { apuntarUsoIA, MAX_USOS_IA_DIA } from "@/lib/data/uso-ia";
 import { hoyEn } from "@/lib/planner/fechas";
-import { prepararApunte, prepararHabito } from "@/lib/planner/habitos";
+import {
+  anadirFrase,
+  prepararApunte,
+  prepararHabito,
+  quitarFrase,
+} from "@/lib/planner/habitos";
 import { createClient } from "@/lib/supabase/server";
 
 // Acciones de los Hábitos. Cada una comprueba primero que hay sesión.
@@ -141,4 +150,71 @@ export async function deshacerApunte(formData: FormData) {
   await exigirSesion();
   await quitarUltimoApunte(leerId(formData), await hoy());
   refresh();
+}
+
+// ---- Frases para motivarte ----
+
+export type FraseState = { envios: number; error?: string; guardada?: string };
+
+// Añade una frase (escrita por ti o una idea de la IA que has elegido).
+// Las frases que ya tienes se leen aquí, en el servidor.
+export async function guardarFrase(
+  prev: FraseState,
+  formData: FormData,
+): Promise<FraseState> {
+  await exigirSesion();
+  const envios = prev.envios + 1;
+  const habito = await leerHabito(leerId(formData));
+  if (!habito) return { envios, error: "No encuentro este hábito." };
+  const frase = formData.get("frase");
+  const r = anadirFrase(habito.phrases, frase);
+  if (!r.ok) return { envios, error: r.error };
+  try {
+    await cambiarHabito(habito.id, { phrases: r.valor });
+  } catch {
+    return { envios, error: "No se ha podido guardar. Revisa la conexión." };
+  }
+  refresh();
+  return { envios, guardada: String(frase).trim() };
+}
+
+export async function borrarFrase(formData: FormData) {
+  await exigirSesion();
+  const habito = await leerHabito(leerId(formData));
+  if (!habito) return;
+  await cambiarHabito(habito.id, {
+    phrases: quitarFrase(habito.phrases, formData.get("frase")),
+  });
+  refresh();
+}
+
+export type IdeasState = { ideas?: string[]; error?: string };
+
+// Pide ideas de frases a la IA. Solo propone: no se guarda ninguna hasta que
+// pulsas «Guardar». A la IA solo le llega el nombre del hábito y lo que quieres.
+export async function pedirIdeasDeFrases(
+  _prev: IdeasState,
+  formData: FormData,
+): Promise<IdeasState> {
+  await exigirSesion();
+  if (!iaDisponible()) return { error: "La IA no está configurada." };
+  const habito = await leerHabito(leerId(formData));
+  if (!habito) return { error: "No encuentro este hábito." };
+  if (!(await apuntarUsoIA(await hoy())))
+    return {
+      error: `Hoy ya has usado la IA ${MAX_USOS_IA_DIA} veces. Mañana vuelve a estar disponible.`,
+    };
+
+  const mensajes = mensajesFrasesHabito({
+    titulo: habito.title,
+    direccion: habito.direction,
+  });
+  const respuesta =
+    (await pedirTexto(mensajes, { json: true })) ??
+    (await pedirTexto(mensajes));
+  const ideas = respuesta ? leerFrases(respuesta) : null;
+  if (!ideas) return { error: "La IA no ha respondido bien. Prueba otra vez." };
+  // No enseña las que ya tienes guardadas.
+  const tuyas = new Set(habito.phrases.map((f) => f.toLowerCase()));
+  return { ideas: ideas.filter((f) => !tuyas.has(f.toLowerCase())) };
 }
