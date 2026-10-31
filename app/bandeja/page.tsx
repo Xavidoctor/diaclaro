@@ -284,7 +284,8 @@ async function PestanaTareas({ papelera }: { papelera: boolean }) {
 }
 
 // «Hoy» y «Sin día», las dos listas que importan, cada una en su caja:
-// «Hoy» con fondo verde suave y «Sin día» blanca con una rayita gris.
+// «Hoy» con fondo verde suave y rayita verde; «Sin día» blanca con el borde normal
+// (sin rayita gris, para no confundirla con el gris de las áreas).
 // Son tonos suaves a propósito: cada tarea ya puede llevar el color de su área.
 function Seccion({
   titulo,
@@ -305,12 +306,12 @@ function Seccion({
 }) {
   const caja =
     tono === "hoy"
-      ? "border-primary bg-secondary"
-      : "border-border bg-surface";
+      ? "border-l-4 border-primary bg-secondary"
+      : "border border-border bg-surface";
   return (
     <section
       aria-label={titulo}
-      className={`flex flex-col gap-3 rounded-2xl border-l-4 p-3 ${caja}`}
+      className={`flex flex-col gap-3 rounded-2xl p-3 ${caja}`}
     >
       <h2
         className={`px-1 text-lg font-semibold ${
