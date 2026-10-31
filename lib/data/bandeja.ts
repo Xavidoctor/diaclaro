@@ -166,6 +166,7 @@ export async function crearTarea(datos: {
   due_date?: string | null;
   due_time?: string | null;
   estimated_minutes?: number | null;
+  hard_deadline?: boolean;
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("tasks").insert(datos);

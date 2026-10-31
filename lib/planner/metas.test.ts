@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  metasPorDia,
   metasProximas,
   ordenarMetas,
   partirAviso,
@@ -7,6 +8,7 @@ import {
   textoAviso,
   textoFalta,
   tiposParaProyecto,
+  tituloTareaDeMeta,
   type Meta,
 } from "./metas";
 
@@ -144,5 +146,32 @@ describe("ordenarMetas y metasProximas", () => {
       "pasada",
       "pronto",
     ]);
+  });
+});
+
+describe("metasPorDia", () => {
+  it("agrupa por fecha y deja fuera las que no tienen", () => {
+    const porDia = metasPorDia([
+      meta("b", { due_date: "2026-11-05" }),
+      meta("sin fecha"),
+      meta("a", { due_date: "2026-11-05" }),
+      meta("c", { due_date: "2026-11-06" }),
+    ]);
+    expect([...porDia.keys()]).toEqual(["2026-11-05", "2026-11-06"]);
+    expect(porDia.get("2026-11-05")!.map((m) => m.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("tituloTareaDeMeta", () => {
+  it("dice qué hay que preparar", () => {
+    expect(tituloTareaDeMeta({ title: "Parcial", kind: "examen" })).toBe(
+      "Preparar el examen: Parcial",
+    );
+    expect(tituloTareaDeMeta({ title: "Trabajo", kind: "entrega" })).toBe(
+      "Preparar la entrega: Trabajo",
+    );
+    expect(tituloTareaDeMeta({ title: "Web", kind: "meta" })).toBe(
+      "Preparar la meta: Web",
+    );
   });
 });

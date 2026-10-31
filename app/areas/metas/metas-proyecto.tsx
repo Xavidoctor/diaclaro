@@ -1,6 +1,10 @@
 import { Bell, Check } from "lucide-react";
 import { FormMeta } from "@/app/areas/metas/form-meta";
-import { eliminarMeta, marcarMetaHecha } from "@/app/areas/metas/actions";
+import {
+  crearTareaDeMeta,
+  eliminarMeta,
+  marcarMetaHecha,
+} from "@/app/areas/metas/actions";
 import { diaDeHoy } from "@/lib/data/dia-activo";
 import { listarMetasDeProyecto } from "@/lib/data/metas";
 import type { Proyecto } from "@/lib/planner/areas";
@@ -74,7 +78,7 @@ export async function MetasProyecto({ proyecto }: { proyecto: Proyecto }) {
   );
 }
 
-// Lo que se ve de una meta: tipo y cuánto falta. Tocando «Cambiar» se edita.
+// Lo que se ve de una meta: tipo y cuánto falta. En «Opciones» se cambia.
 function FilaMeta({
   meta,
   hoy,
@@ -130,8 +134,25 @@ function FilaMeta({
         </div>
       </div>
       <details>
-        <summary className="cursor-pointer text-sm text-muted">Cambiar</summary>
+        <summary className="cursor-pointer text-sm text-muted">
+          Opciones
+        </summary>
         <div className="mt-3 flex flex-col gap-4">
+          {!hecha && meta.due_date && (
+            <form action={crearTareaDeMeta} className="flex flex-col gap-1">
+              <input type="hidden" name="id" value={meta.id} />
+              <button
+                type="submit"
+                className="self-start text-sm font-semibold underline"
+              >
+                Crear una tarea para prepararla
+              </button>
+              <span className="text-sm text-muted">
+                Se añade a «Tareas» con esta fecha como fecha dura: el aviso de
+                sobrecarga no la recortará y la subirá cuando se acerque.
+              </span>
+            </form>
+          )}
           <FormMeta proyectoId={meta.project_id} tipos={tipos} meta={meta} />
           <form action={eliminarMeta}>
             <input type="hidden" name="id" value={meta.id} />

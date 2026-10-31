@@ -3,13 +3,15 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import type { FormState } from "@/app/areas/actions";
+import { crearTarea } from "@/lib/data/bandeja";
 import {
   borrarMeta,
   cambiarMeta,
   crearMeta,
+  leerMeta,
   marcarMeta,
 } from "@/lib/data/metas";
-import { prepararMeta } from "@/lib/planner/metas";
+import { prepararMeta, tituloTareaDeMeta } from "@/lib/planner/metas";
 import { createClient } from "@/lib/supabase/server";
 
 // Acciones de las metas de los proyectos. Cada una comprueba primero que hay sesión.
@@ -69,6 +71,22 @@ export async function guardarMeta(
 export async function marcarMetaHecha(formData: FormData) {
   await exigirSesion();
   await marcarMeta(leerTexto(formData, "id"), formData.get("hecha") === "si");
+  refresh();
+}
+
+// Crea en el proyecto una tarea para preparar la meta, con la fecha de la
+// meta como fecha dura: así el aviso de sobrecarga nunca la recorta y la
+// sube arriba cuando se acerca. Los minutos los pones tú en la tarea.
+export async function crearTareaDeMeta(formData: FormData) {
+  await exigirSesion();
+  const meta = await leerMeta(leerTexto(formData, "id"));
+  if (!meta || !meta.due_date) return;
+  await crearTarea({
+    title: tituloTareaDeMeta(meta),
+    project_id: meta.project_id,
+    due_date: meta.due_date,
+    hard_deadline: true,
+  });
   refresh();
 }
 

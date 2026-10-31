@@ -26,21 +26,33 @@ export type MetaConProyecto = Meta & {
   projects: { name: string; area_id: string };
 };
 
-// Las metas pendientes con fecha hasta "hasta" (también las ya pasadas),
-// con el nombre de su proyecto, para Hoy. Las de proyectos archivados no salen.
-export async function listarMetasPendientesHasta(hasta: string) {
+// Las metas pendientes con fecha hasta "hasta" (y desde "desde", si lo das;
+// si no, también las ya pasadas), con el nombre de su proyecto, para Hoy y
+// la Agenda. Las de proyectos archivados no salen.
+export async function listarMetasPendientes(hasta: string, desde?: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let consulta = supabase
     .from("project_goals")
     .select(`${CAMPOS_META}, projects!inner(name, area_id)`)
     .is("done_at", null)
     .is("projects.archived_at", null)
     .not("due_date", "is", null)
-    .lte("due_date", hasta)
-    .order("due_date")
-    .limit(50);
+    .lte("due_date", hasta);
+  if (desde) consulta = consulta.gte("due_date", desde);
+  const { data, error } = await consulta.order("due_date").limit(200);
   comprobar(error, "cargar las metas");
   return (data ?? []) as unknown as MetaConProyecto[];
+}
+
+export async function leerMeta(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("project_goals")
+    .select(CAMPOS_META)
+    .eq("id", id)
+    .maybeSingle();
+  comprobar(error, "leer la meta");
+  return (data as Meta | null) ?? null;
 }
 
 export async function crearMeta(proyectoId: string, datos: DatosMeta) {

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { CalendarioMes } from "@/app/agenda/calendario-mes";
 import { ListaDelDia } from "@/app/agenda/lista-del-dia";
+import { MetasDelDia } from "@/app/agenda/metas-del-dia";
 import { NuevaTareaDia } from "@/app/agenda/nueva-tarea-dia";
 import { TareaItem } from "@/app/bandeja/tarea-item";
 import { MoverTareas } from "@/app/componentes/mover-tareas";
@@ -13,6 +14,7 @@ import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { listarTareas } from "@/lib/data/bandeja";
+import { listarMetasPendientes } from "@/lib/data/metas";
 import { listarRutinas } from "@/lib/data/rutinas";
 import { tareasDesdeGoogle } from "@/lib/data/google";
 import {
@@ -32,6 +34,7 @@ import {
 } from "@/lib/planner/calendario";
 import { diasDesde, esFecha, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import { juntarAgendas } from "@/lib/planner/google-calendar";
+import { metasPorDia } from "@/lib/planner/metas";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { diaDeHoy } from "@/lib/data/dia-activo";
 
@@ -70,7 +73,7 @@ export default async function AgendaPage({
   ]);
   const hasta = rangos.at(-1)!.hasta;
 
-  const [eventos, googles, tareas, rutinas, { areas, proyectos }] =
+  const [eventos, googles, tareas, rutinas, { areas, proyectos }, metas] =
     await Promise.all([
       listarEventosHasta(hasta),
       Promise.all(
@@ -79,6 +82,8 @@ export default async function AgendaPage({
       listarTareas(false),
       listarRutinas(),
       cargarOpcionesProyecto(),
+      // Entregas, exámenes y metas. Si falta su migración, simplemente no salen.
+      listarMetasPendientes(hasta, rangos[0].desde).catch(() => []),
     ]);
   const google = {
     estado: googles[0].estado,
@@ -109,10 +114,12 @@ export default async function AgendaPage({
     google.ocurrencias,
   );
   const porDia = agruparPorDia(todas, dias);
+  const metasDelDia = metasPorDia(metas);
   // Un puntito en el calendario si ese día hay algo apuntado o tareas sin hacer.
   const diasConAlgo = new Set([
     ...todas.map((o) => o.fecha),
     ...diasConTareas(tareas),
+    ...metasDelDia.keys(),
   ]);
   // En el día elegido, las tareas ya salen abajo («Tareas de este día»).
   const delElegido = elegido
@@ -196,6 +203,7 @@ export default async function AgendaPage({
           {porDia.map(({ fecha, ocurrencias }) => (
             <li key={fecha} className="flex flex-col gap-2">
               <TituloDia fecha={fecha} hoy={hoy} />
+              <MetasDelDia metas={metasDelDia.get(fecha) ?? []} />
               <ListaDelDia ocurrencias={ocurrencias} importadas={importadas} />
             </li>
           ))}
@@ -216,6 +224,7 @@ export default async function AgendaPage({
             className="flex scroll-mt-4 flex-col gap-2"
           >
             <TituloDia fecha={elegido} hoy={hoy} />
+            <MetasDelDia metas={metasDelDia.get(elegido) ?? []} />
             <ListaDelDia ocurrencias={delElegido} importadas={importadas} />
             <Link
               href={`/agenda/nuevo?dia=${elegido}`}

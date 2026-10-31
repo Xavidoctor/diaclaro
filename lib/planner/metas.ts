@@ -136,6 +136,27 @@ export function ordenarMetas<T extends Meta>(metas: T[]): T[] {
   );
 }
 
+// Agrupa las metas por su fecha, para enseñarlas en cada día de la Agenda.
+export function metasPorDia<T extends Meta>(metas: T[]): Map<string, T[]> {
+  const porDia = new Map<string, T[]>();
+  for (const m of ordenarMetas(metas)) {
+    if (!m.due_date) continue;
+    porDia.set(m.due_date, [...(porDia.get(m.due_date) ?? []), m]);
+  }
+  return porDia;
+}
+
+// El título de la tarea que se crea para preparar una meta.
+export function tituloTareaDeMeta(meta: Pick<Meta, "title" | "kind">): string {
+  const que =
+    meta.kind === "examen"
+      ? "el examen"
+      : meta.kind === "entrega"
+        ? "la entrega"
+        : "la meta";
+  return `Preparar ${que}: ${meta.title}`.slice(0, 500);
+}
+
 // Las metas pendientes con fecha de aquí a "dias" días (y las que ya han
 // pasado sin marcar), para enseñarlas en Hoy.
 export function metasProximas<T extends Meta>(

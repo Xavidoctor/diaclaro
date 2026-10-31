@@ -1,14 +1,14 @@
 import Link from "next/link";
-import { listarMetasPendientesHasta } from "@/lib/data/metas";
+import { listarMetasPendientes } from "@/lib/data/metas";
 import { fechaCorta, sumarDias } from "@/lib/planner/fechas";
 import { NOMBRE_TIPO, textoFalta } from "@/lib/planner/metas";
 
 // Sección de Hoy con las entregas, exámenes y metas de los próximos 14 días
 // (y las que ya han pasado sin marcar). Si no hay ninguna, no se muestra.
 export async function MetasProximas({ hoy }: { hoy: string }) {
-  let metas: Awaited<ReturnType<typeof listarMetasPendientesHasta>>;
+  let metas: Awaited<ReturnType<typeof listarMetasPendientes>>;
   try {
-    metas = await listarMetasPendientesHasta(sumarDias(hoy, 14));
+    metas = await listarMetasPendientes(sumarDias(hoy, 14));
   } catch {
     // La tabla aún no existe (falta la migración): Hoy sigue funcionando.
     return null;
