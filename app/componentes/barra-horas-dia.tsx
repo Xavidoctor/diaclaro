@@ -38,9 +38,8 @@ export function BarraHorasDia({
       <p className="text-muted">
         {textoDuracion(horas.ocupado)} ocupadas ·{" "}
         {textoDuracion(horas.libre)} libres
-        {esHoy
-          ? ` · te quedan ${textoDuracion(quedan)} despierto`
-          : ` de ${textoDuracion(total)}`}
+        {/* Otro día, cuántas horas tiene (hoy ya se ve en la barra). */}
+        {!esHoy && ` de ${textoDuracion(total)}`}
       </p>
     </div>
   );
