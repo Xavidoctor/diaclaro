@@ -71,6 +71,34 @@ export async function aplicarCambio(
     return e ? { estado: "error" } : { estado: "ok" };
   }
 
+  if (cambio.tipo === "rutina-hecha") {
+    const { data, error } = await supabase
+      .from("routines")
+      .select("id")
+      .eq("id", cambio.rutinaId)
+      .maybeSingle();
+    if (error) return { estado: "error" };
+    if (!data) return { estado: "no-existe" };
+    const hoy = await leerDiaDeHoy();
+    const dia = diaDelApunte(cambio.dia, hoy) ?? hoy.dia;
+    // Esa vez ya estaba apuntada (desde otro aparato): no se repite.
+    if (cambio.vez) {
+      const { data: ya, error: e } = await supabase
+        .from("routine_logs")
+        .select("id")
+        .eq("routine_id", cambio.rutinaId)
+        .eq("on_date", dia)
+        .eq("slot", cambio.vez)
+        .limit(1);
+      if (e) return { estado: "error" };
+      if (ya && ya.length > 0) return { estado: "ok" };
+    }
+    const { error: e } = await supabase
+      .from("routine_logs")
+      .insert({ routine_id: cambio.rutinaId, on_date: dia, slot: cambio.vez });
+    return e ? { estado: "error" } : { estado: "ok" };
+  }
+
   if (cambio.tipo !== "apunte-habito") return { estado: "error" };
 
   // Apuntar un hábito: se suma, así que no hay nada que se pueda pisar.

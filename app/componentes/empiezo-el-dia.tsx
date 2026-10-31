@@ -3,7 +3,7 @@ import {
   empezarDia,
   marcarDespierto,
 } from "@/app/componentes/acciones-inicio";
-import { marcarRutinaHecha } from "@/app/actions";
+import { BotonRutinaHecha } from "@/app/componentes/boton-rutina-hecha";
 import Link from "next/link";
 import { CorregirDormir } from "@/app/componentes/corregir-dormir";
 import { CorregirHoras } from "@/app/componentes/corregir-horas";
@@ -193,12 +193,7 @@ function LoPrimero({ item }: { item: RutinaDelDia }) {
           {textoFranja(rutina)}
         </span>
       </div>
-      <form action={marcarRutinaHecha}>
-        <input type="hidden" name="id" value={rutina.id} />
-        <button type="submit" className="button-primary py-2 text-sm">
-          Hecho
-        </button>
-      </form>
+      <BotonRutinaHecha id={rutina.id} titulo={rutina.title} />
     </div>
   );
 }
