@@ -5,6 +5,8 @@ import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
 import { NotaItem } from "@/app/bandeja/nota-item";
 import { TareaItem } from "@/app/bandeja/tarea-item";
+import { PonerleDia } from "@/app/componentes/ponerle-dia";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 import { badgeVariants } from "@/components/ui/badge";
 import { iaDisponible } from "@/lib/ai/groq";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
@@ -97,9 +99,7 @@ async function PestanaNotas({
 
   return (
     <section className="flex flex-col gap-4">
-      {ver === "activas" && (
-        <CapturaRapida conAsistente={ia} />
-      )}
+      {ver === "activas" && <CapturaRapida conAsistente={ia} />}
 
       <form role="search" action="/bandeja" className="flex flex-col gap-2">
         {ver !== "activas" && <input type="hidden" name="ver" value={ver} />}
@@ -216,9 +216,10 @@ function mensajeVacio(ver: VistaNotas, hayFiltros: boolean) {
 }
 
 async function PestanaTareas({ papelera }: { papelera: boolean }) {
-  const [tareas, { areas, proyectos }] = await Promise.all([
+  const [tareas, { areas, proyectos }, hoy] = await Promise.all([
     listarTareas(papelera),
     cargarOpcionesProyecto(),
+    diaDeHoy(),
   ]);
   const grupos = agruparTareas(tareas);
   const opciones = opcionesProyecto(areas, proyectos);
@@ -253,6 +254,7 @@ async function PestanaTareas({ papelera }: { papelera: boolean }) {
             tareas={grupos.sinPlanificar}
             opciones={opciones}
             vacio="Ninguna tarea sin fecha."
+            ponerleDia={hoy}
           />
           <Grupo
             titulo="Con fecha"
@@ -277,11 +279,13 @@ function Grupo({
   tareas,
   opciones,
   vacio,
+  ponerleDia,
 }: {
   titulo: string;
   tareas: Awaited<ReturnType<typeof listarTareas>>;
   opciones: GrupoOpciones[];
   vacio: string;
+  ponerleDia?: string; // hoy: con él, cada tarea lleva «Ponerle día»
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -293,7 +297,11 @@ function Grupo({
       ) : (
         <ul className="flex flex-col gap-2">
           {tareas.map((tarea) => (
-            <TareaItem key={tarea.id} tarea={tarea} grupos={opciones} />
+            <TareaItem key={tarea.id} tarea={tarea} grupos={opciones}>
+              {ponerleDia && !tarea.done_at && (
+                <PonerleDia id={tarea.id} hoy={ponerleDia} />
+              )}
+            </TareaItem>
           ))}
         </ul>
       )}
