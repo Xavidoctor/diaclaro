@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { archivarProyecto, eliminarProyecto } from "@/app/areas/actions";
 import { FormProyecto } from "@/app/areas/form-proyecto";
 import { AnadirEnProyecto } from "@/app/areas/anadir-en-proyecto";
+import { MetasProyecto } from "@/app/areas/metas/metas-proyecto";
 import { DocumentosDrive } from "@/app/areas/[id]/proyectos/[proyectoId]/documentos-drive";
 import { ResumirConIA } from "@/app/areas/[id]/proyectos/[proyectoId]/resumir-con-ia";
 import { NotaItem } from "@/app/bandeja/nota-item";
@@ -142,6 +143,8 @@ export default async function ProyectoPage({
           </details>
         )}
       </section>
+
+      <MetasProyecto proyecto={proyecto} />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Notas</h2>

@@ -12,6 +12,7 @@ import { CierreDeHoy } from "@/app/componentes/cierre-de-hoy";
 import { EmpiezoElDia } from "@/app/componentes/empiezo-el-dia";
 import { FocoDeHoy } from "@/app/componentes/foco-de-hoy";
 import { HabitosDeHoy } from "@/app/componentes/habitos-de-hoy";
+import { MetasProximas } from "@/app/componentes/metas-proximas";
 import { PlanDeHoy } from "@/app/componentes/plan-de-hoy";
 import { RecordatoriosHabitos } from "@/app/componentes/recordatorios-habitos";
 import { SeguimientosEmpleo } from "@/app/componentes/seguimientos-empleo";
@@ -159,6 +160,8 @@ export default async function HoyPage() {
         </section>
 
         <TareasDeHoy hoy={hoy} />
+
+        <MetasProximas hoy={hoy} />
 
         <SeguimientosEmpleo hoy={hoy} />
 

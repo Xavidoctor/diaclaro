@@ -8,6 +8,7 @@ export const TABLAS = [
   "settings",
   "areas",
   "projects",
+  "project_goals",
   "notes",
   "tasks",
   "events",
