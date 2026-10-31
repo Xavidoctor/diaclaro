@@ -8,6 +8,7 @@ import Link from "next/link";
 import { CorregirDormir } from "@/app/componentes/corregir-dormir";
 import { CorregirHoras } from "@/app/componentes/corregir-horas";
 import type { Ajustes } from "@/lib/planner/ajustes";
+import type { NocheParaCorregir } from "@/lib/planner/dormir";
 import type { ModoDelDia } from "@/lib/planner/dia-activo";
 import { nombreDia } from "@/lib/planner/fechas";
 import {
@@ -30,8 +31,8 @@ import { SaberMas } from "@/app/componentes/saber-mas";
 // - "trasnoche": sigues en el día de ayer ("dia") hasta que pulses «Me voy a
 //   dormir»; los botones de abajo ya abren el día nuevo.
 // - "cerrado": ya te has ido a dormir; los botones abren mañana.
-// "inicio" es el del día que abren los botones. "anoche" es la hora a la que
-// te dormiste la noche anterior a ese día, si la hay.
+// "inicio" es el del día que abren los botones. "anoche" es la noche anterior
+// a ese día: la hora a la que te dormiste (si la hay), la prevista y el motivo.
 export function EmpiezoElDia({
   inicio,
   ajustes,
@@ -45,7 +46,7 @@ export function EmpiezoElDia({
   rutinas: RutinaDelDia[];
   modo: ModoDelDia;
   dia: string;
-  anoche: string | null;
+  anoche: NocheParaCorregir;
 }) {
   if (modo === "trasnoche")
     return (
@@ -93,7 +94,8 @@ export function EmpiezoElDia({
     <section className="card flex flex-col gap-3 p-4">
       {modo === "cerrado" && (
         <p className="text-sm text-muted">
-          Día cerrado{anoche ? ` a las ${anoche}` : ""}. ¡Buenas noches!{" "}
+          Día cerrado{anoche.hora ? ` a las ${anoche.hora}` : ""}. ¡Buenas
+          noches!{" "}
           <Link href="/dormir" className="underline">
             Deshacer
           </Link>
@@ -107,7 +109,7 @@ export function EmpiezoElDia({
 // Los dos botones, para la tarjeta de Hoy y para la pantalla /despierto.
 // "grande" los hace más altos, para pulsarlos medio dormido.
 // "irAHoy": al pulsar "Levantado", te lleva a Hoy.
-// "anoche": la hora a la que te dormiste la noche anterior (para corregirla).
+// "anoche": la noche anterior (para corregir la hora y apuntar el motivo).
 export function BotonesDespertar({
   inicio,
   ajustes,
@@ -117,7 +119,7 @@ export function BotonesDespertar({
 }: {
   inicio: InicioDia | null;
   ajustes: Ajustes;
-  anoche: string | null;
+  anoche: NocheParaCorregir;
   grande?: boolean;
   irAHoy?: boolean;
 }) {

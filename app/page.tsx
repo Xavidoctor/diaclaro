@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { deshacerRutinaHecha, marcarRutinaHecha } from "@/app/actions";
+import { AbrirEnlace } from "@/app/componentes/abrir-enlace";
 import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { AvisoDemo } from "@/app/componentes/aviso-demo";
@@ -36,7 +37,7 @@ import {
 } from "@/lib/planner/rutinas";
 import { createClient } from "@/lib/supabase/server";
 import { leerDiaDeHoy } from "@/lib/data/dia-activo";
-import { listarHorasDormir } from "@/lib/data/dormir";
+import { leerNocheParaCorregir } from "@/lib/data/dormir";
 import { sumarDias } from "@/lib/planner/fechas";
 
 export default async function HoyPage() {
@@ -65,7 +66,7 @@ export default async function HoyPage() {
   const noche = sumarDias(diaActivo.abrir, -1);
   const [inicioAbrir, dormirAnoche] = await Promise.all([
     diaActivo.abrir === hoy ? inicio : leerInicio(diaActivo.abrir),
-    listarHorasDormir(noche, noche).catch(() => []),
+    leerNocheParaCorregir(noche, ajustes.sleep_time),
   ]);
   // Si has pulsado "Empiezo el día", el día cuenta desde esa hora.
   const ajustesHoy = ajustesDelDia(ajustes, inicio);
@@ -98,7 +99,7 @@ export default async function HoyPage() {
             rutinas={deHoy}
             modo={diaActivo.modo}
             dia={hoy}
-            anoche={dormirAnoche[0]?.bed_time ?? null}
+            anoche={dormirAnoche}
           />
         </div>
 
@@ -233,6 +234,7 @@ function FilaRutina({ fila }: { fila: FilaRutinaHoy }) {
           {rutina.title}
         </Link>
         <span className="text-sm text-muted">{detalle}</span>
+        {rutina.url && <AbrirEnlace url={rutina.url} />}
       </div>
       {puedeDeshacer && (
         <form action={deshacerRutinaHecha}>

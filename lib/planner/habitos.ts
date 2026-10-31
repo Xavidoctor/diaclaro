@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CODIGOS, crearRegla, textoOpcional } from "./agenda";
 import type { Resultado } from "./bandeja";
+import { enlaceOpcional } from "./enlaces";
 import { startOfWeek, format, parseISO } from "date-fns";
 import { sumarDias } from "./fechas";
 import { tocaRutina, type RegistroRutina } from "./rutinas";
@@ -35,6 +36,8 @@ export type Habito = {
   remind_at: string | null;
   // Tus frases para motivarte (las tuyas y las ideas de la IA que guardaste).
   phrases: string[];
+  // Enlace para abrir desde Hoy (un podcast, una clase…). Vacío = sin enlace.
+  url?: string | null;
   active: boolean;
 };
 
@@ -402,6 +405,7 @@ const esquemaHabito = z
         .transform(horaCorta)
         .nullable(),
     ),
+    url: enlaceOpcional,
   })
   .superRefine((d, ctx) => {
     if (d.cuando === "algunos" && d.dias.length === 0)
@@ -421,6 +425,7 @@ export function prepararHabito(datos: {
   dias: unknown[];
   routine_id?: unknown;
   remind_at?: unknown;
+  url?: unknown;
 }): Resultado<DatosHabito> {
   const r = esquemaHabito.safeParse({
     title: datos.title ?? "",
@@ -432,6 +437,7 @@ export function prepararHabito(datos: {
     dias: datos.dias,
     routine_id: datos.routine_id ?? "",
     remind_at: datos.remind_at ?? "",
+    url: datos.url ?? "",
   });
   if (!r.success) return { ok: false, error: r.error.issues[0].message };
   const d = r.data;
@@ -441,6 +447,7 @@ export function prepararHabito(datos: {
       title: d.title,
       routine_id: d.routine_id,
       remind_at: d.remind_at,
+      url: d.url,
       notes: d.notes,
       direction: d.direction,
       unit: d.unit,

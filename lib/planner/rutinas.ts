@@ -10,6 +10,7 @@ import {
   type Franja,
 } from "./agenda";
 import type { Resultado } from "./bandeja";
+import { enlaceOpcional } from "./enlaces";
 import { sumarDias } from "./fechas";
 
 // Reglas de las Rutinas. Funciones puras, con pruebas en rutinas.test.ts.
@@ -38,6 +39,8 @@ export type Rutina = {
   active: boolean;
   // El proyecto (o asignatura) al que pertenece. Vacío = sin proyecto.
   project_id?: string | null;
+  // Enlace para abrir desde Hoy (un podcast, una clase…). Vacío = sin enlace.
+  url?: string | null;
 };
 
 // Los minutos que puedes elegir para el aviso antes de empezar.
@@ -250,6 +253,7 @@ const esquemaRutina = z
           .max(120, "Como mucho 2 horas antes.")
           .nullable(),
       ),
+    url: enlaceOpcional,
   })
   .superRefine((d, ctx) => {
     const primera = d.times_per_day > 1 ? d.horas.find((h) => h) : null;
@@ -286,6 +290,7 @@ export function prepararRutina(datos: {
   part_of_day: unknown;
   focus?: unknown;
   focus_alarm_minutes?: unknown;
+  url?: unknown;
 }): Resultado<DatosRutina> {
   const r = esquemaRutina.safeParse({
     title: datos.title ?? "",
@@ -301,6 +306,7 @@ export function prepararRutina(datos: {
     // La casilla del formulario manda "si" cuando está marcada.
     focus: datos.focus === "si",
     focus_alarm_minutes: datos.focus_alarm_minutes ?? "",
+    url: datos.url ?? "",
   });
   if (!r.success) return { ok: false, error: r.error.issues[0].message };
   const d = r.data;
@@ -339,6 +345,7 @@ export function prepararRutina(datos: {
       focus: d.focus,
       // Sin foco no hay aviso antes de empezar.
       focus_alarm_minutes: d.focus ? d.focus_alarm_minutes : null,
+      url: d.url,
     },
   };
 }

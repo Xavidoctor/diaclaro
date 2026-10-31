@@ -228,8 +228,15 @@ describe("prepararHabito", () => {
         repeat_rule: null,
         routine_id: null,
         remind_at: null,
+        url: null,
       },
     });
+  });
+
+  it("guarda el enlace y rechaza lo que no lo es", () => {
+    const r = prepararHabito({ ...formulario, url: "open.spotify.com/show/1" });
+    expect(r.ok && r.valor.url).toBe("https://open.spotify.com/show/1");
+    expect(prepararHabito({ ...formulario, url: "mi podcast" }).ok).toBe(false);
   });
 
   it("guarda la meta y los días", () => {

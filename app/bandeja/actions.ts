@@ -27,6 +27,7 @@ import {
   leerCampoEtiquetas,
   tipoInicial,
 } from "@/lib/planner/etiquetas";
+import { enlaceOpcional } from "@/lib/planner/enlaces";
 import { leerImportancia } from "@/lib/planner/recortes";
 import { leerMinutosReales } from "@/lib/planner/tiempos";
 import { createClient } from "@/lib/supabase/server";
@@ -173,12 +174,13 @@ export async function editarNota(formData: FormData) {
 
 // Crea una tarea a partir de la nota. La nota conserva su texto intacto,
 // queda enlazada a la tarea y pasa al archivo (ya está decidida).
+// Si la nota tenía un enlace, la tarea se lo queda para abrirlo desde Hoy.
 export async function convertirEnTarea(formData: FormData) {
   await exigirSesion();
   const nota = await leerNota(leerId(formData));
   if (!nota) return;
   const { title, details } = tareaDesdeNota(nota.body);
-  await crearTarea({ title, details, note_id: nota.id });
+  await crearTarea({ title, details, note_id: nota.id, url: nota.url });
   await cambiarNota(nota.id, { archived_at: new Date().toISOString() });
   refresh();
 }
@@ -225,6 +227,12 @@ export async function editarTarea(
   if (formData.has("importance")) {
     cambios.importance = leerImportancia(formData.get("importance"));
     cambios.hard_deadline = formData.get("hard_deadline") === "si";
+  }
+  // El enlace (un podcast, una clase…) solo se cambia si el formulario lo trae.
+  if (formData.has("url")) {
+    const enlace = enlaceOpcional.safeParse(formData.get("url"));
+    if (!enlace.success) return { error: enlace.error.issues[0].message };
+    cambios.url = enlace.data;
   }
   await cambiarTarea(leerId(formData), cambios);
   refresh();

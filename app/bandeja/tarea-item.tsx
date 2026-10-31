@@ -3,6 +3,7 @@ import { BotonAccion } from "@/app/bandeja/boton-accion";
 import { CasillaHecha } from "@/app/bandeja/casilla-hecha";
 import { DividirTarea } from "@/app/bandeja/dividir-tarea";
 import { FichaTarea } from "@/app/bandeja/ficha-tarea";
+import { AbrirEnlace } from "@/app/componentes/abrir-enlace";
 import { iaDisponible } from "@/lib/ai/groq";
 import type { Tarea } from "@/lib/data/bandeja";
 import { nombreProyecto, type GrupoOpciones } from "@/lib/planner/areas";
@@ -97,6 +98,7 @@ export function TareaItem({
               {tarea.details}
             </p>
           )}
+          {tarea.url && !enPapelera && <AbrirEnlace url={tarea.url} conSitio />}
         </div>
       </div>
 

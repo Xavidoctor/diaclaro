@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CasillaHecha } from "@/app/bandeja/casilla-hecha";
+import { AbrirEnlace } from "@/app/componentes/abrir-enlace";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { listarTareas } from "@/lib/data/bandeja";
 import { tareasParaHoy } from "@/lib/planner/bandeja";
@@ -56,12 +57,15 @@ export async function PlanDeHoy({ hoy }: { hoy: string }) {
         </p>
         <p className="text-xl font-semibold break-words">{siguiente.title}</p>
         <p className="text-sm text-muted">{detalle(siguiente, hoy)}</p>
-        <Link
-          href={`/foco?tarea=${siguiente.id}`}
-          className="button-primary self-start py-2 text-sm"
-        >
-          Concentrarme
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href={`/foco?tarea=${siguiente.id}`}
+            className="button-primary py-2 text-sm"
+          >
+            Concentrarme
+          </Link>
+          {siguiente.url && <AbrirEnlace url={siguiente.url} />}
+        </div>
       </div>
 
       <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
@@ -107,7 +111,7 @@ function Fila({
   numero,
   hoy,
 }: {
-  tarea: TareaParaPlan;
+  tarea: TareaParaPlan & { url: string | null };
   numero: number;
   hoy: string;
 }) {
@@ -123,6 +127,11 @@ function Fila({
           {numero}. {tarea.title}
         </span>
         <span className="text-sm text-muted">{detalle(tarea, hoy)}</span>
+        {tarea.url && (
+          <span className="mt-1">
+            <AbrirEnlace url={tarea.url} />
+          </span>
+        )}
       </div>
     </li>
   );
