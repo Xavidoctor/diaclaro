@@ -2,7 +2,6 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { leerAjustes } from "@/lib/data/ajustes";
 import {
   anadirAlHistorial,
   borrarCandidatura,
@@ -20,8 +19,8 @@ import {
   prepararNotaHistorial,
   type DatosCandidatura,
 } from "@/lib/planner/candidaturas";
-import { hoyEn } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Acciones de las Candidaturas de empleo. Cada una comprueba primero que hay sesión.
 
@@ -31,10 +30,9 @@ async function exigirSesion() {
   if (!data?.claims) redirect("/login");
 }
 
-// El día de hoy en tu zona horaria (la de Ajustes).
+// El día en el que estás (no cambia a medianoche, sino al pulsar «Me voy a dormir»).
 async function hoy() {
-  const { timezone } = await leerAjustes();
-  return hoyEn(timezone);
+  return diaDeHoy();
 }
 
 function leerTexto(formData: FormData, campo: string): string {

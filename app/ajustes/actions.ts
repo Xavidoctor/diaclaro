@@ -65,7 +65,7 @@ export type ValoresFormRutina = Record<
   | "focus"
   | "focus_alarm_minutes",
   string
-> & { dias: string[] };
+> & { dias: string[]; horas: string[] };
 
 // Si algo falla, "valores" devuelve lo escrito para no perderlo
 // ("envios" cambia en cada intento y sirve para redibujar el formulario).
@@ -89,6 +89,7 @@ function valoresEscritos(formData: FormData): ValoresFormRutina {
     focus: texto("focus"),
     focus_alarm_minutes: texto("focus_alarm_minutes"),
     dias: formData.getAll("dias").map(String),
+    horas: formData.getAll("horas").map(String),
   };
 }
 
