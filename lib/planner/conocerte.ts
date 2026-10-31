@@ -113,13 +113,13 @@ export function conocerte(d: {
       id: "sueno",
       titulo: "Tu sueño",
       texto: `Duermes unas ${textoDuracion(sueno.media)} de media.`,
-      deDonde: `Según ${sueno.dias} noches de las últimas 4 semanas (con «Me voy a dormir» y «Despierto»).`,
+      deDonde: `Según ${sueno.dias} noches de las últimas 4 semanas (con «Me voy a dormir» y «Me he levantado»).`,
       corregir: { href: "/areas/progreso", texto: "Ver tu progreso" },
     });
   else
     pendientes.push({
       id: "sueno",
-      texto: `Cuánto duermes: cuando uses «Me voy a dormir» y «Despierto» unos ${MIN_DIAS} días.`,
+      texto: `Cuánto duermes: cuando uses «Me voy a dormir» y «Me he levantado» unos ${MIN_DIAS} días.`,
     });
 
   const levantado = horaMedia(d.horas.map((h) => h.levantado));
@@ -144,7 +144,7 @@ export function conocerte(d: {
   else
     pendientes.push({
       id: "horario",
-      texto: `A qué hora te levantas y te acuestas: cuando pulses «Levantado» y «Me voy a dormir» unos ${MIN_DIAS} días.`,
+      texto: `A qué hora te levantas y te acuestas: cuando pulses «Me he levantado» y «Me voy a dormir» unos ${MIN_DIAS} días.`,
     });
 
   // ---- Cuándo te concentras ----

@@ -12,7 +12,7 @@ import {
 } from "@/lib/planner/inicio-dia";
 import { createClient } from "@/lib/supabase/server";
 
-// Acciones de los botones "Despierto" y "Levantado" (antes "Empiezo el día").
+// Acciones del botón «Me he levantado» (antes «Despierto» y «Levantado»).
 // El día y la hora se calculan aquí, en tu zona horaria; no los manda el navegador.
 // El día es el que abren los botones: si sigues en el de ayer (de madrugada,
 // sin haber pulsado «Me voy a dormir»), es el día nuevo del reloj.
@@ -27,18 +27,7 @@ async function exigirSesion() {
   if (!data?.claims) redirect("/login");
 }
 
-// "Despierto": te has despertado, pero sigues en la cama.
-export async function marcarDespierto() {
-  await exigirSesion();
-  const { timezone } = await leerAjustes();
-  await guardarInicio({
-    on_date: await diaQueAbres(),
-    awake_time: horaEn(timezone),
-  });
-  refresh();
-}
-
-// "Levantado": empieza el día. Si vienes de la pantalla /despierto,
+// «Me he levantado»: empieza el día. Si vienes de la pantalla /despierto,
 // te lleva a Hoy.
 export async function empezarDia(formData: FormData) {
   await exigirSesion();
@@ -65,8 +54,14 @@ export async function corregirHoras(
 ): Promise<CorregirHorasState> {
   await exigirSesion();
   const { timezone } = await leerAjustes();
+  // Ahora solo hay una hora: la de levantarte.
+  if (!formData.get("start_time"))
+    return {
+      error: "Pon la hora a la que te levantaste.",
+      envios: estado.envios,
+    };
   const horas = leerHorasDespertar(
-    formData.get("awake_time"),
+    null,
     formData.get("start_time"),
     horaEn(timezone),
   );

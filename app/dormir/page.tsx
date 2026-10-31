@@ -49,7 +49,7 @@ export default async function DormirPage() {
       ) : (
         <form action={meVoyADormir} className="flex flex-col gap-2">
           <SaberMas resumen="Púlsalo al meterte en la cama.">
-            Con esta hora y la de «Despierto» sabrás cuánto duermes de verdad.
+            Con esta hora y la de «Me he levantado» sabrás cuánto duermes de verdad.
           </SaberMas>
           <button type="submit" className="button-primary min-h-16 text-lg">
             Me voy a dormir

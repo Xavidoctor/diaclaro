@@ -8,8 +8,10 @@ import type { RutinaDelDia } from "./rutinas";
 // calcula desde tu hora real de empezar, no desde la de Ajustes.
 // Si no tienes hora de acostarte en Ajustes, la pide una vez para ese día.
 //
-// Hay dos botones: "Despierto" (te has despertado, pero sigues en la cama) y
-// "Levantado" (el antiguo "Empiezo el día"). Puedes pulsar solo uno o los dos.
+// Ahora hay un solo botón, «Me he levantado» (guarda start_time). Los días
+// antiguos pueden tener también awake_time, de cuando había dos botones:
+// "Despierto" (te has despertado, pero sigues en la cama) y
+// "Levantado" (el antiguo "Empiezo el día").
 
 export type InicioDia = {
   on_date: string; // "2026-10-30"

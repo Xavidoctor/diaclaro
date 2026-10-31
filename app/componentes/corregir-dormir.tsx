@@ -12,7 +12,7 @@ import {
   type NocheParaCorregir,
 } from "@/lib/planner/dormir";
 
-// Enlace pequeño debajo de «Despierto» y «Levantado»: por si no te dormiste
+// Enlace pequeño debajo de «Me he levantado»: por si no te dormiste
 // justo al pulsar «Me voy a dormir» (o se te olvidó), pones la hora de verdad.
 // Si la hora es más tarde de lo previsto, puedes apuntar por qué (opcional):
 // luego lo ves en «Tu semana», en «Tus noches».

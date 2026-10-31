@@ -51,8 +51,8 @@ export default async function HoyPage() {
   // Hoy: tu agenda, tus tareas y tus rutinas del día.
   const ajustes = await leerAjustes();
   const { timezone } = ajustes;
-  // El día no cambia a medianoche: empieza al pulsar «Despierto» o
-  // «Levantado» y acaba al pulsar «Me voy a dormir».
+  // El día no cambia a medianoche: empieza al pulsar «Me he levantado»
+  // y acaba al pulsar «Me voy a dormir».
   const diaActivo = await leerDiaDeHoy();
   const hoy = diaActivo.dia;
   const [
@@ -121,9 +121,9 @@ export default async function HoyPage() {
         <AvisoSobrecarga
           hoy={hoy}
           ajustes={ajustesHoy}
-          // Las horas del día cuentan desde que te despiertas.
+          // Las horas del día cuentan desde que te levantas.
           despertar={
-            inicio?.awake_time ?? inicio?.start_time ?? ajustes.wake_time
+            inicio?.start_time ?? inicio?.awake_time ?? ajustes.wake_time
           }
           agenda={agenda}
           rutinas={deHoy}
