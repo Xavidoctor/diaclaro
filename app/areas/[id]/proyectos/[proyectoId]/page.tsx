@@ -82,8 +82,7 @@ export default async function ProyectoPage({
         )}
       </header>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Añadir</h2>
+      <section aria-label="Añadir" className="flex flex-col gap-3">
         <AnadirEnProyecto proyectoId={proyecto.id} ruta={ruta} />
       </section>
 

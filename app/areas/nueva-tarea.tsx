@@ -37,6 +37,7 @@ export function NuevaTarea({ proyectoId }: { proyectoId: string }) {
           required
           maxLength={500}
           placeholder="Nueva tarea…"
+          autoFocus
           className="input flex-1 py-2"
         />
         <button

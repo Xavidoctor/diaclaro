@@ -8,6 +8,7 @@ import { NuevaTareaDia } from "@/app/agenda/nueva-tarea-dia";
 import { TareaItem } from "@/app/bandeja/tarea-item";
 import { MoverTareas } from "@/app/componentes/mover-tareas";
 import { AvisoGoogle } from "@/app/componentes/aviso-google";
+import { DesplegarAnadir } from "@/app/componentes/desplegar-anadir";
 import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
@@ -294,7 +295,11 @@ export default async function AgendaPage({
                 ))}
               </ul>
             )}
-            {elegido >= hoy && <NuevaTareaDia dia={elegido} />}
+            {elegido >= hoy && (
+              <DesplegarAnadir texto="Añadir tarea a este día">
+                <NuevaTareaDia dia={elegido} />
+              </DesplegarAnadir>
+            )}
           </section>
         ) : (
           <p className="text-sm text-muted">

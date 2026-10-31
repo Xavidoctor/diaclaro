@@ -28,6 +28,7 @@ export function NuevaTareaDia({ dia }: { dia: string }) {
           required
           maxLength={500}
           placeholder="¿Qué quieres hacer?"
+          autoFocus
           className="input py-2"
         />
       </label>
