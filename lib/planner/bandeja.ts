@@ -266,6 +266,36 @@ export function tareasParaHoy<T extends TareaParaAgrupar>(
   };
 }
 
+// Las secciones de la pantalla Tareas, en el orden en que se ven:
+// - hoy: lo que toca hoy. Primero lo que se quedó de días anteriores,
+//   luego lo de hoy y al final las de fecha límite en marcha.
+// - sinDia: la lista general, sin fecha (las más nuevas primero).
+// - masAdelante: las de un día que aún no ha llegado (plegadas).
+// - hechas: las ya hechas, la última primero (plegadas).
+// "hoy" es una fecha como "2026-10-30" (en tu zona horaria).
+export function seccionesTareas<T extends TareaParaAgrupar>(
+  tareas: T[],
+  hoy: string,
+) {
+  const pendientes = tareas.filter((t) => !t.done_at);
+  const conFecha = pendientes.filter((t) => t.due_date).sort(porFechaYHora);
+  const enMarcha = (t: T) => t.due_kind === "limite" && t.due_date! > hoy;
+  return {
+    hoy: [
+      ...conFecha.filter((t) => t.due_date! < hoy),
+      ...conFecha.filter((t) => t.due_date === hoy),
+      ...conFecha.filter(enMarcha),
+    ],
+    sinDia: pendientes
+      .filter((t) => !t.due_date)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    masAdelante: conFecha.filter((t) => t.due_date! > hoy && !enMarcha(t)),
+    hechas: tareas
+      .filter((t) => t.done_at)
+      .sort((a, b) => b.done_at!.localeCompare(a.done_at!)),
+  };
+}
+
 // Cuánto hace que tocaba una tarea que no acabaste:
 // "de ayer", "de hace 3 días" o, si hace más de una semana, "del 12 oct.".
 export function textoPendienteDesde(fecha: string, hoy: string): string {

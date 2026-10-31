@@ -3,6 +3,7 @@ import {
   cuandoDeTarea,
   textoFechaLimite,
   agruparTareas,
+  seccionesTareas,
   porFechaYHora,
   tareasParaHoy,
   diasConTareas,
@@ -472,5 +473,58 @@ describe("tres formas de poner una tarea", () => {
     expect(textoFechaLimite("2026-11-06", "2026-11-02")).toBe(
       "Hasta el 6 nov · quedan 4 días",
     );
+  });
+});
+
+describe("seccionesTareas", () => {
+  const t = (
+    id: string,
+    due_date: string | null,
+    extra: {
+      due_kind?: "dia" | "limite";
+      done_at?: string;
+      created_at?: string;
+      due_time?: string;
+    } = {},
+  ) => ({
+    id,
+    due_date,
+    due_kind: extra.due_kind,
+    due_time: extra.due_time ?? null,
+    done_at: extra.done_at ?? null,
+    created_at: extra.created_at ?? "2026-10-01T00:00:00Z",
+  });
+
+  const r = seccionesTareas(
+    [
+      t("lunes", "2026-11-02"),
+      t("tema1", "2026-11-05", { due_kind: "limite" }),
+      t("hoyTarde", "2026-10-30", { due_time: "18:00" }),
+      t("hoyManana", "2026-10-30", { due_time: "09:00" }),
+      t("ayer", "2026-10-29"),
+      t("viejaSin", null, { created_at: "2026-10-01T00:00:00Z" }),
+      t("nuevaSin", null, { created_at: "2026-10-29T00:00:00Z" }),
+      t("hecha1", "2026-10-30", { done_at: "2026-10-30T08:00:00Z" }),
+      t("hecha2", null, { done_at: "2026-10-30T10:00:00Z" }),
+    ],
+    "2026-10-30",
+  );
+
+  it("en «Hoy» van las de antes, las de hoy por hora y las de fecha límite", () => {
+    expect(r.hoy.map((x) => x.id)).toEqual([
+      "ayer",
+      "hoyManana",
+      "hoyTarde",
+      "tema1",
+    ]);
+  });
+
+  it("la lista general (sin día) va de la más nueva a la más vieja", () => {
+    expect(r.sinDia.map((x) => x.id)).toEqual(["nuevaSin", "viejaSin"]);
+  });
+
+  it("deja aparte las de otro día y las hechas", () => {
+    expect(r.masAdelante.map((x) => x.id)).toEqual(["lunes"]);
+    expect(r.hechas.map((x) => x.id)).toEqual(["hecha2", "hecha1"]);
   });
 });
