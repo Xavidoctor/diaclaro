@@ -8,6 +8,7 @@ import { ListaDelDia } from "@/app/agenda/lista-del-dia";
 import { MetasDelDia } from "@/app/agenda/metas-del-dia";
 import { NuevaTareaDia } from "@/app/agenda/nueva-tarea-dia";
 import { TareaItem } from "@/app/bandeja/tarea-item";
+import { AEsteDia } from "@/app/agenda/a-este-dia";
 import { MoverTareas } from "@/app/componentes/mover-tareas";
 import { AvisoGoogle } from "@/app/componentes/aviso-google";
 import { DesplegarAnadir } from "@/app/componentes/desplegar-anadir";
@@ -39,7 +40,12 @@ import {
 } from "@/lib/planner/agenda";
 import { opcionesProyecto } from "@/lib/planner/areas";
 import { bloquesDeRutinas, bloquesDeTareas } from "@/lib/planner/bloques";
-import { diasConTareas, tareasDelDia } from "@/lib/planner/bandeja";
+import {
+  diasConTareas,
+  tareasDelDia,
+  tareasParaHoy,
+} from "@/lib/planner/bandeja";
+import { areasDelDia, textoDiaDe } from "@/lib/planner/resumen-dias";
 import {
   juntarRangos,
   leerMesParam,
@@ -65,6 +71,8 @@ export const metadata: Metadata = { title: "Agenda" };
 const DIAS_RESUMEN = 2;
 // Lo que se enseña de cada día del resumen.
 const COSAS_RESUMEN = 4;
+// Las tareas abiertas que se ven debajo del día (el resto, en Tareas).
+const ABIERTAS_A_LA_VISTA = 5;
 
 // La Agenda:
 //   1. Un recuadro con un día entero, por horas (al entrar, hoy). Con las
@@ -179,6 +187,28 @@ export default async function AgendaPage({
   const conHora = deEsteDia.filter((o) => o.horaInicio);
   const sinHora = deEsteDia.filter((o) => !o.horaInicio);
   const tareasDia = tareasDelDia(tareas, dia);
+  // Las tareas abiertas: pendientes y sin día, para ponerlas en este día.
+  const abiertas = tareasParaHoy(tareas, hoy).sinDia;
+  // De qué va cada día del resumen, según las áreas de sus tareas y rutinas.
+  const proyectoDeTarea = new Map(tareas.map((t) => [t.id, t.project_id]));
+  const proyectoDeRutina = new Map(rutinas.map((r) => [r.id, r.project_id]));
+  const diaDe = (fecha: string) =>
+    textoDiaDe(
+      areasDelDia(
+        [
+          ...delDia(fecha).map((o) =>
+            o.bloque?.tipo === "tarea"
+              ? proyectoDeTarea.get(o.bloque.id)
+              : o.bloque
+                ? proyectoDeRutina.get(o.bloque.id)
+                : null,
+          ),
+          ...tareasDelDia(tareas, fecha).map((t) => t.project_id),
+        ],
+        proyectos,
+        areas,
+      ),
+    );
   const grupos = opcionesProyecto(areas, proyectos);
   const sePuedeOrdenar = dia >= hoy;
   const horas = await horasDeEsteDia();
@@ -383,6 +413,45 @@ export default async function AgendaPage({
           </nav>
         </section>
 
+        {/* Las tareas abiertas (sin día): ponlas en el día de arriba. */}
+        {abiertas.length > 0 && (
+          <section
+            aria-labelledby="tareas-abiertas"
+            className="card flex flex-col gap-3 p-4"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h2 id="tareas-abiertas" className="font-semibold">
+                Tareas abiertas ({abiertas.length})
+              </h2>
+              <Link href="/bandeja?pestana=tareas" className="enlace text-sm">
+                Ver todas
+              </Link>
+            </div>
+            <p className="text-xs text-muted">
+              Sin día. Ponlas en {dia === hoy ? "hoy" : "este día"} cuando
+              quieras hacerlas.
+            </p>
+            <ul className="flex flex-col gap-2">
+              {abiertas.slice(0, ABIERTAS_A_LA_VISTA).map((tarea) => (
+                <TareaItem key={tarea.id} tarea={tarea} grupos={grupos}>
+                  {sePuedeOrdenar && (
+                    <AEsteDia
+                      id={tarea.id}
+                      dia={dia}
+                      texto={dia === hoy ? "Poner hoy" : "Poner en este día"}
+                    />
+                  )}
+                </TareaItem>
+              ))}
+            </ul>
+            {abiertas.length > ABIERTAS_A_LA_VISTA && (
+              <p className="text-xs text-muted">
+                Y {abiertas.length - ABIERTAS_A_LA_VISTA} más en Tareas.
+              </p>
+            )}
+          </section>
+        )}
+
         {/* 2. El resumen de los días siguientes. */}
         <section
           aria-label="Los días siguientes"
@@ -395,6 +464,7 @@ export default async function AgendaPage({
               hoy={hoy}
               href={irA(fecha)}
               ocurrencias={delDia(fecha)}
+              diaDe={diaDe(fecha)}
               tareas={
                 tareasDelDia(tareas, fecha).filter((t) => !t.done_at).length
               }
@@ -423,19 +493,22 @@ export default async function AgendaPage({
   );
 }
 
-// Un día del resumen: lo primero que tiene y cuántas tareas. Tocarlo lo
+// Un día del resumen: de qué va ese día («Día de Estudio y Dropshipping»,
+// según tus áreas). Si nada tiene área, lo primero que tiene. Tocarlo lo
 // abre en el recuadro de arriba.
 function ResumenDia({
   fecha,
   hoy,
   href,
   ocurrencias,
+  diaDe,
   tareas,
 }: {
   fecha: string;
   hoy: string;
   href: string;
   ocurrencias: Ocurrencia[];
+  diaDe: string | null;
   tareas: number;
 }) {
   const vistas = ocurrencias.slice(0, COSAS_RESUMEN);
@@ -449,7 +522,9 @@ function ResumenDia({
         </span>
         <ChevronRight aria-hidden className="size-4 text-muted" />
       </span>
-      {vistas.length === 0 && tareas === 0 ? (
+      {diaDe ? (
+        <span className="font-medium">{diaDe}</span>
+      ) : vistas.length === 0 && tareas === 0 ? (
         <span className="text-sm text-muted">Nada apuntado.</span>
       ) : (
         <ul className="flex flex-col gap-0.5 text-sm">
