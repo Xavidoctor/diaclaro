@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { GripVertical, Lock, Video } from "lucide-react";
+import { Check, GripVertical, Lock, Video } from "lucide-react";
 import { moverEnElDia, terminarAntes } from "@/app/agenda/acciones-mover";
+import { CasillaHecha } from "@/app/bandeja/casilla-hecha";
+import { marcarTarea } from "@/app/bandeja/actions";
+import { CasillaRutina } from "@/app/componentes/casilla-rutina";
 import { useArrastre } from "@/app/agenda/use-arrastre";
 import { textoHora, type Ocurrencia } from "@/lib/planner/agenda";
 import {
@@ -46,9 +49,11 @@ export function DiaPorHoras({
   cuadros,
   sePuedeOrdenar,
   ahora,
+  esHoy,
   detallesGoogle,
 }: {
   cuadros: CuadroDelDia[];
+  esHoy: boolean; // las rutinas solo se marcan como hechas el mismo día
   sePuedeOrdenar: boolean; // en los días que ya pasaron, nada se mueve
   ahora: string | null; // la hora de ahora, solo si es hoy
   detallesGoogle: Record<string, React.ReactNode>;
@@ -99,8 +104,9 @@ export function DiaPorHoras({
           return (
             <Cuadro
               // Con la hora en la clave: al guardar una hora nueva, empieza de cero.
-              key={`${cuadro.clave}|${c.o.horaInicio}|${c.o.horaFin}`}
+              key={`${cuadro.clave}|${c.o.horaInicio}|${c.o.horaFin}|${c.o.bloque?.hecha}`}
               c={c}
+              esHoy={esHoy}
               desde={desde}
               href={cuadro.href}
               movible={sePuedeOrdenar && sePuedeMover(c.o)}
@@ -124,6 +130,7 @@ export function DiaPorHoras({
 // Un cuadro del día.
 function Cuadro({
   c,
+  esHoy,
   desde,
   href,
   movible,
@@ -132,6 +139,7 @@ function Cuadro({
   alTocarGoogle,
 }: {
   c: Colocado<Ocurrencia>;
+  esHoy: boolean;
   desde: number;
   href: string | null;
   movible: boolean;
@@ -141,6 +149,8 @@ function Cuadro({
 }) {
   const { o } = c;
   const [aviso, setAviso] = useState<string | null>(null);
+  // Hecho o no, al momento (sin esperar a que se recargue la Agenda).
+  const [hecha, setHecha] = useState(Boolean(o.bloque?.hecha));
   const minutos = duracion(o);
 
   // La hora en la que quedaría si lo sueltas ahora.
@@ -224,18 +234,14 @@ function Cuadro({
         ? "Grabada · la ves ahora"
         : o.cambiada
           ? "Cambiada"
-          : bloque?.tipo === "tarea"
-            ? "Tarea"
-            : bloque
-              ? "Rutina"
-              : null;
+          : null;
 
   const contenido = (
     <>
       <span className="flex items-start gap-1">
         <span
           className={`min-w-0 flex-1 truncate text-sm font-medium ${
-            bloque?.hecha ? "text-muted line-through" : ""
+            hecha ? "text-muted line-through" : ""
           }`}
         >
           {o.titulo}
@@ -301,23 +307,103 @@ function Cuadro({
         transform: conHoraNueva ? `translateY(${dy}px)` : undefined,
       }}
     >
-      {href ? (
-        <Link
-          href={href}
-          draggable={false}
-          className="flex min-h-0 flex-1 flex-col"
-        >
-          {contenido}
-        </Link>
-      ) : (
-        <button
-          type="button"
-          className="flex min-h-0 flex-1 flex-col text-left"
-        >
-          {contenido}
-        </button>
-      )}
+      <div className="flex min-h-0 flex-1 items-start gap-2">
+        {bloque && (
+          // Al pulsar la casilla no empieza a arrastrarse el cuadro.
+          <span className="shrink-0" onPointerDown={(e) => e.stopPropagation()}>
+            <CasillaDelCuadro
+              o={o}
+              hecha={hecha}
+              esHoy={esHoy}
+              alCambiar={setHecha}
+            />
+          </span>
+        )}
+        {href ? (
+          <Link
+            href={href}
+            draggable={false}
+            className="flex min-h-0 min-w-0 flex-1 flex-col"
+          >
+            {contenido}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className="flex min-h-0 min-w-0 flex-1 flex-col text-left"
+          >
+            {contenido}
+          </button>
+        )}
+      </div>
     </div>
+  );
+}
+
+// La casilla de «Hecho» a la izquierda de cada tarea o rutina.
+// Las tareas se marcan cualquier día (te pregunta cuánto has tardado) y se
+// desmarcan con otro toque. Las rutinas, solo hoy: otro día solo se ve si
+// la hiciste.
+function CasillaDelCuadro({
+  o,
+  hecha,
+  esHoy,
+  alCambiar,
+}: {
+  o: Ocurrencia;
+  hecha: boolean;
+  esHoy: boolean;
+  alCambiar: (hecha: boolean) => void;
+}) {
+  const { tipo, id, vez } = o.bloque!;
+  if (tipo === "rutina") {
+    if (esHoy)
+      return (
+        <CasillaRutina
+          id={id}
+          titulo={o.titulo}
+          vez={vez ?? null}
+          hecha={hecha}
+          alCambiar={alCambiar}
+        />
+      );
+    return hecha ? <Marcada /> : null;
+  }
+  if (!hecha)
+    return (
+      <CasillaHecha
+        id={id}
+        titulo={o.titulo}
+        previstos={duracion(o)}
+        alMarcar={() => alCambiar(true)}
+      />
+    );
+  return (
+    <form
+      action={async (datos) => {
+        alCambiar(false);
+        await marcarTarea(datos);
+      }}
+    >
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="hecha" value="" />
+      <button
+        type="submit"
+        aria-label={`Desmarcar «${o.titulo}»`}
+        className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground"
+      >
+        <Check aria-hidden className="size-4" />
+      </button>
+    </form>
+  );
+}
+
+function Marcada() {
+  return (
+    <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+      <Check aria-hidden className="size-4" />
+      <span className="sr-only">Hecha</span>
+    </span>
   );
 }
 

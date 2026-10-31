@@ -17,7 +17,7 @@ import { leerAjustes } from "@/lib/data/ajustes";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { listarTareas } from "@/lib/data/bandeja";
 import { listarMetasPendientes } from "@/lib/data/metas";
-import { listarRutinas } from "@/lib/data/rutinas";
+import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
 import {
   leerOpcionesRutinas,
   listarMovidas,
@@ -41,7 +41,11 @@ import {
 } from "@/lib/planner/calendario";
 import { esFecha, horaEn, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import { claveGoogle, juntarAgendas } from "@/lib/planner/google-calendar";
-import { marcarGrabadas } from "@/lib/planner/dia-por-horas";
+import {
+  conRutinasHechas,
+  cuentaHechas,
+  marcarGrabadas,
+} from "@/lib/planner/dia-por-horas";
 import { metasPorDia } from "@/lib/planner/metas";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { enlaceBloque } from "@/app/agenda/lista-del-dia";
@@ -94,6 +98,7 @@ export default async function AgendaPage({
     metas,
     opciones,
     movidas,
+    registrosDia,
   ] = await Promise.all([
     listarEventosHasta(hasta),
     Promise.all(
@@ -108,6 +113,8 @@ export default async function AgendaPage({
     // Si falta su migración, todo sale con su hora de siempre.
     leerOpcionesRutinas().catch(() => new Map<string, OpcionesRutina>()),
     listarMovidas(rangos[0].desde, hasta).catch(() => []),
+    // Las rutinas que ya has hecho ese día (para su casilla de «Hecho»).
+    listarRegistrosDelDia(dia).catch(() => []),
   ]);
   const rutinas = rutinasGuardadas.map((r) => ({
     ...r,
@@ -153,7 +160,8 @@ export default async function AgendaPage({
     ...metasDelDia.keys(),
   ]);
 
-  const deEsteDia = delDia(dia);
+  const deEsteDia = conRutinasHechas(delDia(dia), rutinas, registrosDia, dia);
+  const cuenta = cuentaHechas(deEsteDia);
   const conHora = deEsteDia.filter((o) => o.horaInicio);
   const sinHora = deEsteDia.filter((o) => !o.horaInicio);
   const tareasDia = tareasDelDia(tareas, dia);
@@ -230,6 +238,11 @@ export default async function AgendaPage({
                 Hoy
               </span>
             )}
+            {cuenta.total > 0 && (
+              <span className="ml-auto text-sm text-muted">
+                {cuenta.hechas} de {cuenta.total} hechas
+              </span>
+            )}
           </div>
 
           <MetasDelDia metas={metasDelDia.get(dia) ?? []} />
@@ -249,6 +262,7 @@ export default async function AgendaPage({
                 cuadros={cuadros}
                 sePuedeOrdenar={sePuedeOrdenar}
                 ahora={dia === hoy ? horaEn(timezone) : null}
+                esHoy={dia === hoy}
                 detallesGoogle={detallesGoogle}
               />
             )

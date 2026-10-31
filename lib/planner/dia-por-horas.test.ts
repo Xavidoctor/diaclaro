@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { Ocurrencia } from "./agenda";
 import {
   colocar,
+  conRutinasHechas,
+  cuentaHechas,
   encajar,
   estaPasando,
   horaDeTerminar,
@@ -145,5 +147,48 @@ describe("terminar antes", () => {
     const lista = [o("Clase", "17:00", "18:00", rutina()), paseo];
     expect(siguienteParaAdelantar(lista, "17:40", sePuedeMover)).toBe(paseo);
     expect(siguienteParaAdelantar(lista, "19:10", sePuedeMover)).toBeNull();
+  });
+});
+
+describe("conRutinasHechas y cuentaHechas", () => {
+  const paseo = (vez: number) =>
+    o("Paseo", vez === 1 ? "09:00" : "19:00", null, {
+      tipo: "rutina",
+      id: "r1",
+      hecha: false,
+      vez,
+    });
+  const paseoDatos = {
+    id: "r1",
+    times_per_day: 2,
+    times_of_day: ["09:00", "19:00"],
+  };
+
+  it("marca solo la vez apuntada", () => {
+    const lista = conRutinasHechas(
+      [paseo(1), paseo(2)],
+      [paseoDatos],
+      [{ routine_id: "r1", on_date: "2026-11-02", slot: 1 }],
+      "2026-11-02",
+    );
+    expect(lista.map((x) => x.bloque?.hecha)).toEqual([true, false]);
+    expect(cuentaHechas(lista)).toEqual({ hechas: 1, total: 2 });
+  });
+
+  it("lo apuntado otro día no cuenta", () => {
+    const lista = conRutinasHechas(
+      [paseo(1)],
+      [paseoDatos],
+      [{ routine_id: "r1", on_date: "2026-11-01", slot: 1 }],
+      "2026-11-02",
+    );
+    expect(lista[0].bloque?.hecha).toBe(false);
+  });
+
+  it("los compromisos no cuentan como cosas por hacer", () => {
+    expect(cuentaHechas([o("Clase", "10:00", "11:00")])).toEqual({
+      hechas: 0,
+      total: 0,
+    });
   });
 });
