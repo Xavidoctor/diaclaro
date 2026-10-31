@@ -1,0 +1,74 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { EnlaceVolver } from "@/app/componentes/enlace-volver";
+import { SaberMas } from "@/app/componentes/saber-mas";
+import { leerAjustes } from "@/lib/data/ajustes";
+import { cargarConocerte } from "@/lib/data/conocerte";
+import { diaDeHoy } from "@/lib/data/dia-activo";
+
+export const metadata: Metadata = { title: "Así te conozco" };
+
+// «Así te conozco»: lo que tu asistente ha aprendido de ti en las últimas
+// 4 semanas, en frases sencillas y diciendo de dónde sale cada una.
+// Son cuentas de la app (sin IA) con lo que tú has apuntado.
+export default async function ConocertePage() {
+  const [hoy, ajustes] = await Promise.all([diaDeHoy(), leerAjustes()]);
+  const { rasgos, pendientes } = await cargarConocerte(hoy, ajustes);
+
+  return (
+    <>
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
+        <EnlaceVolver href="/ordenar">Tu asistente</EnlaceVolver>
+        <header className="flex flex-col gap-1">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Así te conozco
+          </h1>
+          <SaberMas resumen="Lo que he aprendido de ti en las últimas 4 semanas.">
+            Son cuentas con lo que tú apuntas (tareas hechas, Foco, «Me voy a
+            dormir», días difíciles). No lo adivina ninguna IA y no sale de tu
+            cuenta. Si algo no encaja, normalmente es porque faltan días por
+            apuntar.
+          </SaberMas>
+        </header>
+
+        {rasgos.length > 0 ? (
+          <ul className="flex flex-col gap-3">
+            {rasgos.map((r) => (
+              <li key={r.id} className="card flex flex-col gap-1 p-4">
+                <h2 className="text-sm text-muted">{r.titulo}</h2>
+                <p className="font-medium">{r.texto}</p>
+                <p className="text-xs text-muted">{r.deDonde}</p>
+                {r.corregir && (
+                  <Link
+                    href={r.corregir.href}
+                    className="enlace self-start text-sm"
+                  >
+                    {r.corregir.texto}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="card text-sm">
+            Aún no te conozco lo bastante para decirte nada con seguridad. Sigue
+            usando la app con normalidad y vuelve en unos días.
+          </p>
+        )}
+
+        {pendientes.length > 0 && (
+          <section className="flex flex-col gap-2">
+            <h2 className="text-lg font-semibold">Aún estoy aprendiendo</h2>
+            <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-muted">
+              {pendientes.map((p) => (
+                <li key={p.id}>{p.texto}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </main>
+      <BarraInferior actual="/" />
+    </>
+  );
+}

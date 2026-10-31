@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  CODIGOS,
   horaOpcional,
   prepararCambioDia,
   textoOpcional,
@@ -8,6 +9,9 @@ import {
 import { prepararProyectoDeTarea } from "./areas";
 import type { Resultado } from "./bandeja";
 import { esFecha } from "./fechas";
+import { prepararHabito, type DatosHabito } from "./habitos";
+import { prepararMeta, type DatosMeta } from "./metas";
+import { prepararRutina, type DatosRutina } from "./rutinas";
 
 // Lo que propone la IA, después de que tú lo revises y lo cambies.
 // Funciones puras, con pruebas en propuestas.test.ts.
@@ -32,10 +36,15 @@ export type ElementoAGuardar =
       start_date: string;
       start_time: string | null;
       end_time: string | null;
-    };
+    }
+  | { tipo: "rutina"; datos: DatosRutina }
+  | { tipo: "habito"; datos: DatosHabito }
+  | { tipo: "meta"; proyectoId: string; datos: DatosMeta };
 
 const esquema = z.object({
-  tipo: z.enum(["tarea", "nota", "cita"], { error: "Elige qué es." }),
+  tipo: z.enum(["tarea", "nota", "cita", "rutina", "habito", "meta"], {
+    error: "Elige qué es.",
+  }),
   titulo: z
     .string()
     .trim()
@@ -91,8 +100,66 @@ export function leerElementos(
     });
     if (!r.success) return { ok: false, error: r.error.issues[0].message };
     const d = r.data;
+    // Qué días toca (rutinas y hábitos): "todos" o los días marcados.
+    const cuando = obtener(`cuando-${i}`);
+    const dias = CODIGOS.filter((c) => obtener(`dia-${i}-${c}`) === "si");
+    const faltanDias = () => ({
+      ok: false as const,
+      error: `«${d.titulo}»: elige qué días toca.`,
+    });
 
-    if (d.tipo === "nota") {
+    if (d.tipo === "rutina") {
+      if (cuando !== "todos" && cuando !== "algunos") return faltanDias();
+      const rutina = prepararRutina({
+        title: d.titulo,
+        notes: d.detalle ?? "",
+        cuando,
+        dias,
+        times_per_day: "1",
+        duration_minutes: d.minutos === null ? "" : String(d.minutos),
+        window_start: d.hora ?? "",
+        window_end: "",
+        part_of_day: "",
+      });
+      if (!rutina.ok)
+        return { ok: false, error: `«${d.titulo}»: ${rutina.error}` };
+      elementos.push({ tipo: "rutina", datos: rutina.valor });
+    } else if (d.tipo === "habito") {
+      if (cuando !== "todos" && cuando !== "algunos") return faltanDias();
+      const habito = prepararHabito({
+        title: d.titulo,
+        notes: d.detalle ?? "",
+        direction: "mas",
+        unit: "",
+        daily_target: "",
+        cuando,
+        dias,
+      });
+      if (!habito.ok)
+        return { ok: false, error: `«${d.titulo}»: ${habito.error}` };
+      elementos.push({ tipo: "habito", datos: habito.valor });
+    } else if (d.tipo === "meta") {
+      const proyecto = prepararProyectoDeTarea(obtener(`proyecto-${i}`));
+      if (!proyecto.ok) return proyecto;
+      if (!proyecto.valor)
+        return {
+          ok: false,
+          error: `«${d.titulo}» es una meta: elige su proyecto o cámbiala a tarea.`,
+        };
+      const meta = prepararMeta({
+        title: d.titulo,
+        kind: obtener(`clase-${i}`),
+        due_date: d.fecha ?? "",
+        aviso_dia: "",
+        aviso_hora: "",
+      });
+      if (!meta.ok) return { ok: false, error: `«${d.titulo}»: ${meta.error}` };
+      elementos.push({
+        tipo: "meta",
+        proyectoId: proyecto.valor,
+        datos: meta.valor,
+      });
+    } else if (d.tipo === "nota") {
       elementos.push({
         tipo: "nota",
         body: d.detalle ? `${d.titulo}\n${d.detalle}` : d.titulo,
@@ -140,6 +207,9 @@ export function textoGuardado(elementos: ElementoAGuardar[]): string {
       [contar("tarea"), "tarea", "tareas"],
       [contar("nota"), "nota", "notas"],
       [contar("cita"), "cita en la agenda", "citas en la agenda"],
+      [contar("rutina"), "rutina", "rutinas"],
+      [contar("habito"), "hábito", "hábitos"],
+      [contar("meta"), "meta", "metas"],
     ] as const
   )
     .filter(([n]) => n > 0)

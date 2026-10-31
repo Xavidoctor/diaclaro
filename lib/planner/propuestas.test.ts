@@ -84,6 +84,85 @@ describe("leerElementos", () => {
     });
   });
 
+  it("guarda una rutina con sus días y su hora", () => {
+    const r = leerElementos(
+      formulario({
+        total: "1",
+        "incluir-0": "si",
+        "tipo-0": "rutina",
+        "titulo-0": "Gimnasio",
+        "cuando-0": "algunos",
+        "dia-0-MO": "si",
+        "dia-0-WE": "si",
+        "hora-0": "07:00",
+        "minutos-0": "60",
+      }),
+    );
+    expect(r.ok && r.valor[0]).toMatchObject({
+      tipo: "rutina",
+      datos: {
+        title: "Gimnasio",
+        repeat_rule: expect.stringContaining("MO,WE"),
+        times_per_day: 1,
+        duration_minutes: 60,
+        window_start: "07:00",
+      },
+    });
+  });
+
+  it("una rutina o un hábito necesitan saber qué días", () => {
+    for (const tipo of ["rutina", "habito"]) {
+      const r = leerElementos(
+        formulario({
+          total: "1",
+          "incluir-0": "si",
+          "tipo-0": tipo,
+          "titulo-0": "Leer",
+        }),
+      );
+      expect(r).toEqual({ ok: false, error: "«Leer»: elige qué días toca." });
+    }
+  });
+
+  it("guarda un hábito de todos los días", () => {
+    const r = leerElementos(
+      formulario({
+        total: "1",
+        "incluir-0": "si",
+        "tipo-0": "habito",
+        "titulo-0": "Leer",
+        "cuando-0": "todos",
+      }),
+    );
+    expect(r.ok && r.valor[0]).toMatchObject({
+      tipo: "habito",
+      datos: { title: "Leer", direction: "mas", repeat_rule: null },
+    });
+  });
+
+  it("una meta necesita proyecto", () => {
+    const base = {
+      total: "1",
+      "incluir-0": "si",
+      "tipo-0": "meta",
+      "titulo-0": "Examen",
+      "clase-0": "examen",
+      "fecha-0": "2026-11-18",
+    };
+    expect(leerElementos(formulario(base)).ok).toBe(false);
+    const r = leerElementos(formulario({ ...base, "proyecto-0": PROYECTO }));
+    expect(r.ok && r.valor[0]).toEqual({
+      tipo: "meta",
+      proyectoId: PROYECTO,
+      datos: {
+        title: "Examen",
+        kind: "examen",
+        due_date: "2026-11-18",
+        remind_at: null,
+      },
+    });
+  });
+
   it("da errores claros", () => {
     const base = { total: "1", "incluir-0": "si", "tipo-0": "tarea" };
     expect(leerElementos(formulario({ ...base, "titulo-0": " " }))).toEqual({

@@ -27,8 +27,8 @@ export default async function OrdenarPage() {
             Tu asistente
           </h1>
           <SaberMas resumen="Escribe todo de golpe, como te salga.">
-            La IA lo separa en tareas, citas y notas, y tú decides qué se
-            guarda.
+            La IA lo separa en tareas, citas, notas, rutinas, hábitos y metas, y
+            tú decides qué se guarda.
           </SaberMas>
         </header>
 
@@ -48,6 +48,18 @@ export default async function OrdenarPage() {
         <section className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold">También te ayudo con</h2>
           <ul className="flex flex-col gap-2 text-sm">
+            <li>
+              <Link href="/organizar" className="enlace">
+                Organízame el día
+              </Link>{" "}
+              <span className="text-muted">(pongo hora a lo importante)</span>
+            </li>
+            <li>
+              <Link href="/conocerte" className="enlace">
+                Así te conozco
+              </Link>{" "}
+              <span className="text-muted">(lo que he aprendido de ti)</span>
+            </li>
             <li>
               <Link href="/cambio" className="enlace">
                 Algo ha cambiado hoy

@@ -46,9 +46,14 @@ export async function PlanDeHoy({ hoy }: { hoy: string }) {
     <section className="flex flex-col gap-3">
       <header className="flex items-baseline justify-between gap-4">
         <h2 className="text-lg font-semibold">Tu plan de hoy</h2>
-        <Link href="/dia-dificil" className="enlace text-sm">
-          Día difícil
-        </Link>
+        <span className="flex gap-3 text-sm">
+          <Link href="/organizar" className="enlace">
+            Organízame el día
+          </Link>
+          <Link href="/dia-dificil" className="enlace">
+            Día difícil
+          </Link>
+        </span>
       </header>
 
       <div className="card flex flex-col gap-3 border-primary p-4">

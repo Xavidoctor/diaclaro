@@ -10,7 +10,9 @@ import {
   type InterpretarState,
 } from "@/app/ordenar/actions";
 import type { Propuesta } from "@/lib/ai/interpretar-texto";
+import { DIAS_SEMANA } from "@/lib/planner/agenda";
 import type { GrupoOpciones } from "@/lib/planner/areas";
+import { NOMBRE_TIPO, TIPOS_META } from "@/lib/planner/metas";
 import { SaberMas } from "@/app/componentes/saber-mas";
 
 // Paso 1: escribes todo lo que tienes en la cabeza.
@@ -98,6 +100,10 @@ function Revision({
           ·{" "}
           <Link href="/agenda" className="enlace">
             Ver la Agenda
+          </Link>{" "}
+          ·{" "}
+          <Link href="/habitos" className="enlace">
+            Ver los Hábitos
           </Link>
         </p>
       </section>
@@ -143,6 +149,14 @@ function Elemento({
   grupos: GrupoOpciones[];
 }) {
   const [tipo, setTipo] = useState(p.tipo);
+  const [cuando, setCuando] = useState(
+    p.dias === null ? "" : p.dias === "todos" ? "todos" : "algunos",
+  );
+  const conFecha = tipo === "tarea" || tipo === "cita" || tipo === "meta";
+  const conHora = tipo === "cita" || tipo === "rutina";
+  const conMinutos = tipo === "tarea" || tipo === "cita" || tipo === "rutina";
+  const conDias = tipo === "rutina" || tipo === "habito";
+  const conProyecto = tipo === "tarea" || tipo === "meta";
 
   return (
     <li className="card flex flex-col gap-3 p-4">
@@ -165,6 +179,9 @@ function Elemento({
           <option value="tarea">Tarea</option>
           <option value="cita">Cita (agenda)</option>
           <option value="nota">Nota</option>
+          <option value="rutina">Rutina (se repite)</option>
+          <option value="habito">Hábito (para seguirlo)</option>
+          <option value="meta">Meta de un proyecto</option>
         </select>
       </div>
       <label className="flex flex-col gap-1 text-sm">
@@ -187,19 +204,81 @@ function Elemento({
           className="input resize-y py-2"
         />
       </label>
-      {tipo !== "nota" && (
+      {tipo === "meta" && (
+        <label className="flex flex-col gap-1 text-sm">
+          Tipo de meta
+          <select
+            name={`clase-${i}`}
+            defaultValue={p.claseMeta ?? "meta"}
+            className="input py-2"
+          >
+            {TIPOS_META.map((t) => (
+              <option key={t} value={t}>
+                {NOMBRE_TIPO[t]}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {conDias && (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-sm">¿Qué días?</legend>
+          <select
+            name={`cuando-${i}`}
+            value={cuando}
+            onChange={(e) => setCuando(e.target.value)}
+            required
+            className="input py-2"
+          >
+            <option value="" disabled>
+              Elige
+            </option>
+            <option value="todos">Todos los días</option>
+            <option value="algunos">Algunos días de la semana</option>
+          </select>
+          {cuando === "algunos" && (
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label="Días de la semana"
+            >
+              {DIAS_SEMANA.map((d) => (
+                <label
+                  key={d.codigo}
+                  className="flex cursor-pointer items-center rounded-xl border border-border px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground"
+                >
+                  <input
+                    type="checkbox"
+                    name={`dia-${i}-${d.codigo}`}
+                    value="si"
+                    defaultChecked={
+                      Array.isArray(p.dias) && p.dias.includes(d.codigo)
+                    }
+                    className="sr-only"
+                  />
+                  <span aria-hidden>{d.corto}</span>
+                  <span className="sr-only">{d.nombre}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </fieldset>
+      )}
+      {(conFecha || conHora || conMinutos) && (
         <div className="flex flex-wrap gap-3">
-          <label className="flex flex-1 flex-col gap-1 text-sm">
-            {tipo === "cita" ? "Día" : "Fecha (opcional)"}
-            <input
-              type="date"
-              name={`fecha-${i}`}
-              defaultValue={p.fecha ?? ""}
-              required={tipo === "cita"}
-              className="input py-2"
-            />
-          </label>
-          {tipo === "cita" && (
+          {conFecha && (
+            <label className="flex flex-1 flex-col gap-1 text-sm">
+              {tipo === "cita" ? "Día" : "Fecha (opcional)"}
+              <input
+                type="date"
+                name={`fecha-${i}`}
+                defaultValue={p.fecha ?? ""}
+                required={tipo === "cita"}
+                className="input py-2"
+              />
+            </label>
+          )}
+          {conHora && (
             <label className="flex flex-1 flex-col gap-1 text-sm">
               Hora (opcional)
               <input
@@ -210,29 +289,34 @@ function Elemento({
               />
             </label>
           )}
-          <label className="flex flex-1 flex-col gap-1 text-sm">
-            Minutos (opcional)
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={1440}
-              name={`minutos-${i}`}
-              defaultValue={p.minutos ?? ""}
-              className="input py-2"
-            />
-          </label>
+          {conMinutos && (
+            <label className="flex flex-1 flex-col gap-1 text-sm">
+              Minutos (opcional)
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={1440}
+                name={`minutos-${i}`}
+                defaultValue={p.minutos ?? ""}
+                className="input py-2"
+              />
+            </label>
+          )}
         </div>
       )}
-      {tipo === "tarea" && grupos.length > 0 && (
+      {conProyecto && grupos.length > 0 && (
         <label className="flex flex-col gap-1 text-sm">
-          Proyecto (opcional)
+          {tipo === "meta" ? "Proyecto" : "Proyecto (opcional)"}
           <select
             name={`proyecto-${i}`}
             defaultValue={p.proyectoId ?? ""}
+            required={tipo === "meta"}
             className="input py-2"
           >
-            <option value="">Sin proyecto</option>
+            <option value="">
+              {tipo === "meta" ? "Elige un proyecto" : "Sin proyecto"}
+            </option>
             {grupos.map((g) => (
               <optgroup key={g.area} label={g.area}>
                 {g.proyectos.map((pr) => (
@@ -244,6 +328,12 @@ function Elemento({
             ))}
           </select>
         </label>
+      )}
+      {tipo === "meta" && grupos.length === 0 && (
+        <p className="text-sm text-muted">
+          Las metas van dentro de un proyecto y aún no tienes ninguno. Cámbiala
+          a tarea o crea un proyecto en Áreas.
+        </p>
       )}
       {p.avisos.length > 0 && (
         <ul className="text-xs text-muted">
