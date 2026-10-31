@@ -1,8 +1,10 @@
 import { borrarTarea, marcarTarea, papeleraTarea } from "@/app/bandeja/actions";
 import { BotonAccion } from "@/app/bandeja/boton-accion";
 import { CasillaHecha } from "@/app/bandeja/casilla-hecha";
+import { DividirTarea } from "@/app/bandeja/dividir-tarea";
 import { FichaTarea } from "@/app/bandeja/ficha-tarea";
 import { AbrirEnlace } from "@/app/componentes/abrir-enlace";
+import { iaDisponible } from "@/lib/ai/groq";
 import type { Tarea } from "@/lib/data/bandeja";
 import { nombreProyecto, type GrupoOpciones } from "@/lib/planner/areas";
 import { textoHoraTarea } from "@/lib/planner/bloques";
@@ -121,6 +123,11 @@ export function TareaItem({
             Editar
           </summary>
           <FichaTarea tarea={tarea} grupos={grupos} />
+          {!hecha && iaDisponible() && (
+            <div className="mt-3">
+              <DividirTarea tareaId={tarea.id} />
+            </div>
+          )}
           <div className="mt-2 text-sm">
             <BotonAccion
               accion={papeleraTarea}
