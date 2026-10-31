@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { FormCierre } from "@/app/cierre/form-cierre";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
-import { leerDiaDeHoy } from "@/lib/data/dia-activo";
+import { leerDiaDeHoy, leerLimitesDelDia } from "@/lib/data/dia-activo";
 import { leerCierre, listarTareasHechasDesde } from "@/lib/data/cierre";
 import { leerDiaDificil, listarTareasPorIds } from "@/lib/data/dia-dificil";
 import { listarSesionesDelDia } from "@/lib/data/foco";
@@ -53,7 +53,9 @@ export default async function CierrePage({
         await listarTareasPorIds(diaDificil.kept_task_ids),
       )
     : null;
-  const hechas = hechasEnDia(tareas, dia, timezone);
+  // Lo que hiciste de madrugada, antes de irte a dormir, cuenta en este día.
+  const limites = await leerLimitesDelDia(dia);
+  const hechas = hechasEnDia(tareas, dia, timezone, limites);
   const minutosFoco = totalMinutos(sesiones);
   const vecesPorRutina = new Map<string, number>();
   for (const r of registros)

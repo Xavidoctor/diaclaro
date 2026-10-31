@@ -48,6 +48,15 @@ describe("hechasEnDia", () => {
       hechasEnDia(tareas, "2026-10-29", "Europe/Madrid").map((t) => t.id),
     ).toEqual(["4"]);
   });
+
+  it("con límites, lo de madrugada cuenta en el día sin cerrar", () => {
+    const limites = { desde: "2026-10-30 08:00", hasta: "2026-10-31 01:30" };
+    expect(
+      hechasEnDia(tareas, "2026-10-30", "Europe/Madrid", limites).map(
+        (t) => t.id,
+      ),
+    ).toEqual(["1", "2"]);
+  });
 });
 
 describe("horaLocal", () => {

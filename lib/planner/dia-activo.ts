@@ -69,3 +69,29 @@ export function diaParaAbrir(activo: DiaActivo, calendario: string): string {
 export function diaVivido(activo: DiaActivo): string {
   return activo.modo === "cerrado" ? sumarDias(activo.dia, -1) : activo.dia;
 }
+
+// ---- Dónde acaba cada día ----
+// Lo que haces de madrugada (por ejemplo, una tarea hecha a la 01:00) cuenta
+// en el día que aún no has cerrado. Los momentos se escriben como
+// "2026-10-30 23:40" (fecha y hora en tu zona horaria), y así se comparan.
+
+export type BotonesDeUnDia = {
+  abierto: boolean; // pulsaste «Despierto» o «Levantado» ese día
+  dormir: string | null; // la hora de «Me voy a dormir» de esa noche
+  abreSiguiente: string | null; // la hora a la que abriste el día siguiente
+};
+
+// El momento en que acaba el día `fecha` (el siguiente empieza justo ahí).
+export function finDelDia(fecha: string, b: BotonesDeUnDia): string {
+  const manana = sumarDias(fecha, 1);
+  // Si no usaste los botones ese día, acaba a medianoche, como siempre.
+  if (!b.abierto) return `${manana} 00:00`;
+  if (b.dormir !== null)
+    return b.dormir >= MEDIODIA
+      ? `${fecha} ${b.dormir}`
+      : `${manana} ${b.dormir}`;
+  // Sin cerrar: acaba al abrir el día siguiente o, como tarde, a las 12:00.
+  if (b.abreSiguiente !== null && b.abreSiguiente < MEDIODIA)
+    return `${manana} ${b.abreSiguiente}`;
+  return `${manana} ${MEDIODIA}`;
+}

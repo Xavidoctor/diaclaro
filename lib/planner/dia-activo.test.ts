@@ -3,6 +3,7 @@ import {
   diaActivo,
   diaParaAbrir,
   diaVivido,
+  finDelDia,
   yaTeAcostaste,
   type DatosDelDia,
 } from "./dia-activo";
@@ -128,5 +129,28 @@ describe("diaParaAbrir y diaVivido", () => {
     const activo = { dia: "2026-11-01", modo: "cerrado" as const };
     expect(diaParaAbrir(activo, "2026-10-31")).toBe("2026-11-01");
     expect(diaVivido(activo)).toBe("2026-10-31");
+  });
+});
+
+describe("finDelDia", () => {
+  const nada = { abierto: true, dormir: null, abreSiguiente: null };
+  it("sin botones, acaba a medianoche", () => {
+    expect(finDelDia("2026-10-30", { ...nada, abierto: false })).toBe(
+      "2026-10-31 00:00",
+    );
+  });
+  it("acaba al pulsar «Me voy a dormir», antes o después de medianoche", () => {
+    expect(finDelDia("2026-10-30", { ...nada, dormir: "23:40" })).toBe(
+      "2026-10-30 23:40",
+    );
+    expect(finDelDia("2026-10-30", { ...nada, dormir: "01:30" })).toBe(
+      "2026-10-31 01:30",
+    );
+  });
+  it("sin cerrar, acaba al abrir el día siguiente o a las 12:00", () => {
+    expect(finDelDia("2026-10-30", { ...nada, abreSiguiente: "09:10" })).toBe(
+      "2026-10-31 09:10",
+    );
+    expect(finDelDia("2026-10-30", nada)).toBe("2026-10-31 12:00");
   });
 });

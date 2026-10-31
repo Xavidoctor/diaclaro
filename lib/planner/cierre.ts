@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Resultado } from "./bandeja";
-import { hoyEn } from "./fechas";
+import { horaEn, hoyEn } from "./fechas";
 
 // Reglas del cierre del día. Funciones puras, con pruebas en cierre.test.ts.
 //
@@ -40,14 +40,23 @@ export function prepararCierre(formulario: {
 // Las tareas que marcaste como hechas ese día (en tu zona horaria).
 // done_at es un momento exacto ("2026-10-30T22:30:00Z"), que en Madrid puede
 // ser ya el día siguiente; por eso se convierte antes de comparar.
+// "limites": dónde empieza y acaba tu día ("2026-10-30 09:10" y
+// "2026-10-31 01:30", ver finDelDia en dia-activo.ts). Así una tarea hecha a
+// la 01:00, antes de irte a dormir, cuenta en tu día. Sin límites, el día va
+// de medianoche a medianoche.
 export function hechasEnDia<T extends { done_at: string | null }>(
   tareas: T[],
   dia: string,
   zona: string,
+  limites?: { desde: string; hasta: string },
 ): T[] {
-  return tareas.filter(
-    (t) => t.done_at !== null && hoyEn(zona, new Date(t.done_at)) === dia,
-  );
+  return tareas.filter((t) => {
+    if (t.done_at === null) return false;
+    const momento = new Date(t.done_at);
+    if (!limites) return hoyEn(zona, momento) === dia;
+    const local = `${hoyEn(zona, momento)} ${horaEn(zona, momento)}`;
+    return local >= limites.desde && local < limites.hasta;
+  });
 }
 
 // La hora (0 a 23) en la zona horaria indicada.
