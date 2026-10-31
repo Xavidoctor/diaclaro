@@ -16,6 +16,7 @@ import { juntarAgendas } from "@/lib/planner/google-calendar";
 import { proponerRecortes } from "@/lib/planner/recortes";
 import { rutinasDelDia, type RutinaDelDia } from "@/lib/planner/rutinas";
 import { factoresPorTipo } from "@/lib/planner/tiempos";
+import { leerUsarRitmo } from "@/lib/data/ritmo";
 import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Junta los datos de hoy y calcula si te pasas y qué se podría recortar.
@@ -36,7 +37,8 @@ export async function calcularSituacion({
   const { atrasadas, deHoy } = tareasParaHoy(tareas, hoy);
   const tareasHoy = [...atrasadas, ...deHoy];
   // Lo que sueles tardar de verdad, aprendido de tus tareas hechas.
-  const factores = factoresPorTipo(tareas);
+  // (Salvo que lo hayas apagado en «Así te conozco».)
+  const factores = (await leerUsarRitmo()) ? factoresPorTipo(tareas) : {};
   const carga = calcularCarga({
     ahora: horaEn(ajustes.timezone),
     horaLevantarse: ajustes.wake_time,

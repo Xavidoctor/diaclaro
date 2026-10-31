@@ -14,7 +14,12 @@ export async function aceptarPlan(formData: FormData) {
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) redirect("/login");
 
-  const bloques = leerBloquesAceptados(formData.getAll("bloque"));
+  // Las marcadas, con la hora que ha quedado en su casilla (la puedes cambiar).
+  const bloques = leerBloquesAceptados(
+    formData
+      .getAll("incluir")
+      .map((id) => `${id}|${formData.get(`hora-${id}`) ?? ""}`),
+  );
   const hoy = await diaDeHoy();
   for (const b of bloques)
     await cambiarTarea(b.id, { due_date: hoy, due_time: b.hora });

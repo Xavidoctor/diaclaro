@@ -90,7 +90,7 @@ export function conocerte(d: {
       id: "ritmo",
       titulo: "Lo que tardas",
       texto: textoFactor(tareas.factor),
-      deDonde: `Según tus últimas ${tareas.muestras} tareas con «¿Cuánto has tardado?». El aviso de «No te cabe» ya lo tiene en cuenta.`,
+      deDonde: `Según tus últimas ${tareas.muestras} tareas con «¿Cuánto has tardado?».`,
     });
   else
     pendientes.push({
