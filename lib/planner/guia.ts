@@ -59,12 +59,14 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
   {
     id: "agenda",
     titulo: "Agenda",
-    resumen: "Tus citas de los próximos días y un calendario del mes.",
+    resumen:
+      "Tu día por horas, un resumen de los dos siguientes y el calendario del mes.",
     pasos: [
       "Pulsa «Añadir» para apuntar una cita. Puede ser de una vez o repetirse cada día o algunos días de la semana.",
-      "Debajo tienes el calendario del mes: toca un día para ver lo que tienes. Un puntito marca los días con algo apuntado.",
+      "Arriba ves el día por horas. Con «Día anterior» y «Día siguiente», debajo del día, cambias de día. En el calendario del mes también puedes tocar un día.",
+      "Lo que tiene el icono de puntos se mueve: mantenlo pulsado y súbelo o bájalo. Si lo sueltas cerca del final de otra cosa, encaja justo después. Lo del candado es fijo.",
       "Toca una cita para cambiarla, o para cambiar solo un día concreto si se repite.",
-      "Si algo se mueve (una cita cancelada, una entrega que cambia), pulsa «¿Algo ha cambiado?» en la Agenda (o en tu asistente) y cuéntalo con tus palabras.",
+      "Si algo se mueve (una cita cancelada, una entrega que cambia), pulsa «¿Algo ha cambiado?» al final de la Agenda (o en tu asistente) y cuéntalo con tus palabras.",
       "Si conectas Google Calendar en Ajustes, sus eventos también salen aquí. DíaClaro solo los lee, nunca los cambia.",
     ],
     enlace: { href: "/agenda", texto: "Ir a la Agenda" },

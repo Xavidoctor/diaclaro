@@ -11,7 +11,6 @@ import { TareaItem } from "@/app/bandeja/tarea-item";
 import { MoverTareas } from "@/app/componentes/mover-tareas";
 import { AvisoGoogle } from "@/app/componentes/aviso-google";
 import { DesplegarAnadir } from "@/app/componentes/desplegar-anadir";
-import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
@@ -44,8 +43,7 @@ import { esFecha, horaEn, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import { claveGoogle, juntarAgendas } from "@/lib/planner/google-calendar";
 import { marcarGrabadas } from "@/lib/planner/dia-por-horas";
 import { metasPorDia } from "@/lib/planner/metas";
-import { sePuedeMover } from "@/lib/planner/mover-dia";
-import { ChevronLeft, ChevronRight, GripVertical, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { enlaceBloque } from "@/app/agenda/lista-del-dia";
 import { diaDeHoy } from "@/lib/data/dia-activo";
 
@@ -161,7 +159,6 @@ export default async function AgendaPage({
   const tareasDia = tareasDelDia(tareas, dia);
   const grupos = opcionesProyecto(areas, proyectos);
   const sePuedeOrdenar = dia >= hoy;
-  const hayMovibles = sePuedeOrdenar && conHora.some(sePuedeMover);
   const cuadros: CuadroDelDia[] = conHora.map((o) => ({
     o,
     clave: `${o.eventoId}|${o.fechaOriginal}`,
@@ -215,8 +212,6 @@ export default async function AgendaPage({
           </Link>
         </header>
 
-        <AyudaPantalla seccion="agenda" />
-
         <AvisoGoogle estado={google.estado} />
 
         {/* 1. El recuadro del día. */}
@@ -225,39 +220,17 @@ export default async function AgendaPage({
           aria-label="El día"
           className="card flex scroll-mt-4 flex-col gap-4 p-4"
         >
-          <nav
-            aria-label="Cambiar de día"
-            className="flex items-center justify-between gap-2"
-          >
-            <Link
-              href={irA(sumarDias(dia, -1))}
-              aria-label="Día anterior"
-              className="enlace inline-flex size-11 items-center justify-center rounded-full hover:bg-secondary"
-            >
-              <ChevronLeft aria-hidden className="size-5" />
-            </Link>
-            <div className="flex flex-col items-center text-center">
-              <h2 className="text-lg font-semibold first-letter:uppercase">
-                {nombreDia(dia)}
-              </h2>
-              {dia === hoy ? (
-                <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                  Hoy
-                </span>
-              ) : (
-                <Link href="/agenda#dia" className="enlace text-xs">
-                  Volver a hoy
-                </Link>
-              )}
-            </div>
-            <Link
-              href={irA(sumarDias(dia, 1))}
-              aria-label="Día siguiente"
-              className="enlace inline-flex size-11 items-center justify-center rounded-full hover:bg-secondary"
-            >
-              <ChevronRight aria-hidden className="size-5" />
-            </Link>
-          </nav>
+          {/* Arriba, el día. Las flechas para cambiar de día van abajo. */}
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold first-letter:uppercase">
+              {nombreDia(dia)}
+            </h2>
+            {dia === hoy && (
+              <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                Hoy
+              </span>
+            )}
+          </div>
 
           <MetasDelDia metas={metasDelDia.get(dia) ?? []} />
 
@@ -279,14 +252,6 @@ export default async function AgendaPage({
                 detallesGoogle={detallesGoogle}
               />
             )
-          )}
-
-          {hayMovibles && (
-            <p className="flex items-center gap-1 text-xs text-muted">
-              <GripVertical aria-hidden className="size-4 shrink-0" />
-              Mantén pulsado lo que tiene este icono y muévelo arriba o abajo.
-              Si lo sueltas cerca del final de otra cosa, encaja justo después.
-            </p>
           )}
 
           <div className="flex flex-col gap-2">
@@ -316,14 +281,32 @@ export default async function AgendaPage({
               </DesplegarAnadir>
             )}
           </div>
-        </section>
 
-        <Link
-          href="/ordenar?modo=cambio"
-          className="self-start text-sm underline"
-        >
-          ¿Algo ha cambiado? Cuéntamelo y lo reorganizo
-        </Link>
+          <nav
+            aria-label="Cambiar de día"
+            className="flex items-center justify-between gap-2 border-t border-border pt-3"
+          >
+            <Link
+              href={irA(sumarDias(dia, -1))}
+              className="enlace inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-sm hover:bg-secondary"
+            >
+              <ChevronLeft aria-hidden className="size-5" />
+              Día anterior
+            </Link>
+            {dia !== hoy && (
+              <Link href="/agenda#dia" className="enlace text-sm">
+                Volver a hoy
+              </Link>
+            )}
+            <Link
+              href={irA(sumarDias(dia, 1))}
+              className="enlace inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-sm hover:bg-secondary"
+            >
+              Día siguiente
+              <ChevronRight aria-hidden className="size-5" />
+            </Link>
+          </nav>
+        </section>
 
         {/* 2. El resumen de los días siguientes. */}
         <section
@@ -352,6 +335,13 @@ export default async function AgendaPage({
           diasConAlgo={diasConAlgo}
           enlace={enlace}
         />
+
+        <Link
+          href="/ordenar?modo=cambio"
+          className="self-start text-sm underline"
+        >
+          ¿Algo ha cambiado? Cuéntamelo y lo reorganizo
+        </Link>
       </main>
       <BarraInferior actual="/agenda" />
     </>
