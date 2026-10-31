@@ -4,8 +4,9 @@ import { supabaseEnv } from "@/lib/supabase/env";
 import { dominioAlQueRedirigir } from "@/lib/auth/dominio";
 
 // Rutas que se pueden abrir sin haber iniciado sesión.
+// /instalar explica cómo instalar la app (para enviársela a un amigo).
 // /api/avisos/enviar la llama Supabase con su propia contraseña (no hay sesión).
-const PUBLIC_PATHS = ["/login", "/auth", "/api/avisos/enviar"];
+const PUBLIC_PATHS = ["/login", "/auth", "/instalar", "/api/avisos/enviar"];
 
 // Se ejecuta antes de cada petición (desde proxy.ts):
 // 1. renueva la sesión si ha caducado y guarda las cookies nuevas;

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { EntrarDemo } from "@/app/login/entrar-demo";
 import { LoginForm } from "@/app/login/login-form";
 
@@ -21,12 +22,15 @@ export default async function LoginPage({
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold tracking-tight">DíaClaro</h1>
         <p className="text-muted">
-          Entra con tu email. Te enviaré un enlace, sin contraseñas.
+          Entra con tu email. Te enviaré un email para entrar, sin contraseñas.
         </p>
       </div>
       <LoginForm errorInicial={errorInicial} />
       {/* Las cuentas de prueba solo salen si Vercel tiene DEMO_PASSWORD. */}
       {process.env.DEMO_PASSWORD && <EntrarDemo />}
+      <Link href="/instalar" className="enlace self-center text-sm">
+        Instalar la app en el móvil o el ordenador
+      </Link>
     </main>
   );
 }

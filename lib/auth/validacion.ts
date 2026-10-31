@@ -19,3 +19,11 @@ export function enlaceDeVuelta(cabeceras: {
     (cabeceras.host ? `${cabeceras.proto ?? "https"}://${cabeceras.host}` : null);
   return base ? `${base}/auth/confirm` : null;
 }
+
+// El código de 6 cifras del email (Supabase puede usar de 6 a 10).
+// Quita los espacios por si lo pegas como «123 456».
+export function normalizarCodigo(valor: unknown): string | null {
+  if (typeof valor !== "string") return null;
+  const codigo = valor.replace(/\s/g, "");
+  return /^\d{6,10}$/.test(codigo) ? codigo : null;
+}

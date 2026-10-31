@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enlaceDeVuelta, normalizarEmail } from "./validacion";
+import { enlaceDeVuelta, normalizarCodigo, normalizarEmail } from "./validacion";
 
 describe("normalizarEmail", () => {
   it("acepta un email y lo pasa a minúsculas sin espacios", () => {
@@ -32,5 +32,18 @@ describe("enlaceDeVuelta", () => {
 
   it("devuelve null si no hay ningún dato", () => {
     expect(enlaceDeVuelta({ origin: null, host: null, proto: null })).toBeNull();
+  });
+});
+
+describe("normalizarCodigo", () => {
+  it("acepta 6 cifras, también con espacios", () => {
+    expect(normalizarCodigo("123456")).toBe("123456");
+    expect(normalizarCodigo(" 123 456 ")).toBe("123456");
+  });
+
+  it("rechaza letras, códigos cortos o nada", () => {
+    expect(normalizarCodigo("12a456")).toBeNull();
+    expect(normalizarCodigo("12345")).toBeNull();
+    expect(normalizarCodigo(null)).toBeNull();
   });
 });
