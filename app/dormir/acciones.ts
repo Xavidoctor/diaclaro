@@ -5,7 +5,7 @@ import { refresh } from "next/cache";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { leerDiaDeHoy } from "@/lib/data/dia-activo";
 import { borrarHoraDormir, guardarHoraDormir } from "@/lib/data/dormir";
-import { leerHoraDormir, nocheDe } from "@/lib/planner/dormir";
+import { leerHoraDormir, leerMotivoTarde, nocheDe } from "@/lib/planner/dormir";
 import { horaEn, hoyEn, sumarDias } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
 
@@ -69,10 +69,16 @@ export async function corregirHoraDeAnoche(
   const hora = leerHoraDormir(formData.get("bed_time"));
   if (!hora.ok) return { error: hora.error, envios: estado.envios };
   const { abrir } = await leerDiaDeHoy();
-  await guardarHoraDormir({
-    on_date: sumarDias(abrir, -1),
-    bed_time: hora.valor,
-  });
+  // El motivo es opcional. Si no lo pones (o la hora ya no es más tarde y
+  // el formulario no lo enseña), se borra el que hubiera.
+  const motivo = leerMotivoTarde(
+    formData.get("late_reason"),
+    formData.get("late_note"),
+  );
+  await guardarHoraDormir(
+    { on_date: sumarDias(abrir, -1), bed_time: hora.valor },
+    motivo,
+  );
   refresh();
   return { envios: estado.envios + 1 };
 }
