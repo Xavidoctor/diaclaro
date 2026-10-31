@@ -52,7 +52,7 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
     pasos: [
       "En Notas puedes buscar, filtrar por etiqueta, fijar arriba lo importante y archivar lo que ya no necesitas.",
       "En Tareas toca una tarea para ponerle fecha, importancia, minutos y proyecto. Cuanto más completes, mejor te ordena el plan.",
-      "Si tienes la cabeza llena, escríbeselo a tu asistente en el cuadro «Pídeselo a tu asistente» de Hoy: escribes todo de golpe y te propone tareas, citas y notas. Tú eliges qué se guarda.",
+      "Si tienes la cabeza llena, escríbelo en «Apunta algo» de Hoy y pulsa ✨ (tu asistente): escribes todo de golpe y te propone tareas, citas y notas. Tú eliges qué se guarda.",
     ],
     enlace: { href: "/bandeja?pestana=tareas", texto: "Ir a Tareas" },
   },

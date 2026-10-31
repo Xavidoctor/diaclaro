@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { CLAVE_TEXTO_ASISTENTE } from "@/app/componentes/pideselo-a-la-ia";
+import { CLAVE_TEXTO_ASISTENTE } from "@/app/componentes/captura-rapida";
 import {
   guardarPropuestas,
   interpretar,
@@ -23,7 +23,7 @@ export function OrdenarConIA({ grupos }: { grupos: GrupoOpciones[] }) {
   const formulario = useRef<HTMLFormElement>(null);
   const caja = useRef<HTMLTextAreaElement>(null);
 
-  // Si vienes del cuadro «Pídeselo a tu asistente» de Hoy, tu texto ya está
+  // Si vienes del botón de tu asistente en Hoy, tu texto ya está
   // escrito: lo ponemos aquí y lo enviamos solo, una vez.
   useEffect(() => {
     const texto = sessionStorage.getItem(CLAVE_TEXTO_ASISTENTE);
