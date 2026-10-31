@@ -86,6 +86,21 @@ describe("encajar justo después de lo anterior", () => {
   it("lejos de todo, va de 15 en 15 minutos", () => {
     expect(encajar(14 * 60 + 7, 45, otros)).toBe(14 * 60);
   });
+
+  it("si lo sueltas encima, se pega antes o después en vez de pisarlo", () => {
+    // Encima, empezando a la vez: se pone justo antes (16:15–17:00).
+    expect(encajar(17 * 60 + 5, 45, otros)).toBe(16 * 60 + 15);
+    // Encima de la segunda mitad: justo después (18:00).
+    expect(encajar(17 * 60 + 40, 45, otros)).toBe(18 * 60);
+  });
+
+  it("si no hay sitio cerca, se queda encima", () => {
+    const lleno = [
+      { inicio: 8 * 60, fin: 12 * 60 },
+      { inicio: 12 * 60, fin: 16 * 60 },
+    ];
+    expect(encajar(10 * 60, 45, lleno)).toBe(10 * 60);
+  });
 });
 
 describe("clases grabadas", () => {

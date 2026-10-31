@@ -7,6 +7,7 @@ import {
   type ValoresFormArea,
 } from "@/app/areas/actions";
 import { minutosAHorasTexto, type Area } from "@/lib/planner/areas";
+import { COLORES_AREA, VERDE_OSCURO } from "@/lib/planner/colores";
 
 // Formulario para crear o cambiar un área. Solo el nombre es obligatorio.
 export function FormArea({ area }: { area?: Area }) {
@@ -18,6 +19,7 @@ export function FormArea({ area }: { area?: Area }) {
     name: area?.name ?? "",
     horas: minutosAHorasTexto(area?.weekly_minutes ?? null),
     personal_time: area?.personal_time ?? false,
+    color: area?.color ?? "",
   };
 
   return (
@@ -51,6 +53,34 @@ export function FormArea({ area }: { area?: Area }) {
           Lo que quieres darle cada semana. Puedes cambiarlo cuando quieras.
         </span>
       </label>
+      <fieldset className="flex flex-col gap-2 text-sm">
+        <legend className="mb-1">Color (opcional)</legend>
+        <div className="flex flex-wrap gap-3">
+          {[
+            { clave: "", nombre: "Sin color (verde)", hex: VERDE_OSCURO },
+            ...COLORES_AREA,
+          ].map((c) => (
+            <label key={c.clave} className="cursor-pointer" title={c.nombre}>
+              <input
+                type="radio"
+                name="color"
+                value={c.clave}
+                defaultChecked={valores.color === c.clave}
+                className="peer sr-only"
+              />
+              <span
+                aria-hidden
+                className="block size-9 rounded-full ring-offset-2 ring-offset-background peer-checked:ring-2 peer-checked:ring-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-primary"
+                style={{ backgroundColor: c.hex }}
+              />
+              <span className="sr-only">{c.nombre}</span>
+            </label>
+          ))}
+        </div>
+        <span className="text-muted">
+          Sus tareas y rutinas salen de este color en la Agenda.
+        </span>
+      </fieldset>
       <label className="flex items-start gap-3 text-sm">
         <input
           type="checkbox"

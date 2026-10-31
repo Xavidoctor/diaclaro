@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { hexDeColor } from "@/lib/planner/colores";
 import { ChevronDown, ChevronRight, ChevronUp, Plus } from "lucide-react";
 import { crearSugeridas, moverArea } from "@/app/areas/actions";
 import { FormHorasLibres } from "@/app/areas/form-horas-libres";
@@ -233,7 +234,14 @@ function ListaAreas({
               href={`/areas/${a.id}`}
               className="flex flex-1 flex-col gap-1"
             >
-              <span className="break-words font-medium">{a.name}</span>
+              <span className="flex items-center gap-2 break-words font-medium">
+                <span
+                  aria-hidden
+                  className="size-3 shrink-0 rounded-full"
+                  style={{ backgroundColor: hexDeColor(a.color) }}
+                />
+                {a.name}
+              </span>
               <span className="text-sm text-muted">
                 {textoPresupuesto(a)} ·{" "}
                 {n === 1 ? "1 proyecto" : `${n} proyectos`}

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Ocurrencia } from "./agenda";
 import { esFecha } from "./fechas";
-import type { Rutina } from "./rutinas";
+import { tocaRutina, type Rutina } from "./rutinas";
 
 // Ordenar el día en la Agenda: lo fijo (clases, trabajo, tus compromisos y
 // lo de Google) se queda quieto; lo flexible (como pasear a la perra) se
@@ -118,7 +118,10 @@ export function rutinaEseDia<R extends RutinaConHora>(
     };
   }
   const m = suyas.find((x) => x.slot === 1);
-  if (!m || !r.window_start) return r;
+  if (!m) return r;
+  // Sin hora propia: ese día va a la hora que elegiste (y dura lo que dure).
+  if (!r.window_start)
+    return { ...r, window_start: m.start_time, window_end: m.end_time ?? null };
   return {
     ...r,
     window_start: m.start_time,
@@ -151,6 +154,69 @@ export function estaMovida(
   return movidas.some(
     (m) => m.routine_id === rutinaId && m.on_date === fecha && m.slot === vez,
   );
+}
+
+// ---- Rutinas sin hora ----
+
+// ¿Esa vez de la rutina tiene su hora de siempre? (Si no, es «sin hora».)
+export function tieneHoraPropia(r: RutinaConHora, vez: number): boolean {
+  if (usaHoraPorVez(r)) return Boolean(r.times_of_day![vez - 1]);
+  return vez === 1 && Boolean(r.window_start);
+}
+
+export type RutinaSinHora = {
+  id: string;
+  titulo: string;
+  vez: number;
+  minutos: number | null; // lo que dura, si lo pusiste
+  project_id: string | null;
+};
+
+// Las rutinas que tocan ese día y no tienen hora (como «Deporte, 60 min»
+// los lunes, miércoles y viernes), y que ese día aún no has puesto a una
+// hora. La app no les inventa hora: las enseña aparte para que elijas.
+export function rutinasSinHora(
+  rutinas: (RutinaConHora &
+    Pick<
+      Rutina,
+      "title" | "repeat_rule" | "active" | "duration_minutes" | "project_id"
+    >)[],
+  fecha: string,
+  movidas: MovidaRutina[],
+): RutinaSinHora[] {
+  return rutinas
+    .filter((r) => r.active && tocaRutina(r, fecha))
+    .flatMap((r) => {
+      // Con una hora por vez, cada vez sin hora va aparte; si no, una sola.
+      const veces = usaHoraPorVez(r)
+        ? Array.from({ length: r.times_per_day }, (_, i) => i + 1)
+        : [1];
+      return veces
+        .filter((vez) => !tieneHoraPropia(r, vez))
+        .filter((vez) => !estaMovida(movidas, r.id, fecha, vez))
+        .map((vez) => ({
+          id: r.id,
+          titulo: r.title,
+          vez,
+          minutos: r.duration_minutes,
+          project_id: r.project_id ?? null,
+        }));
+    });
+}
+
+// Horas para elegir: el principio de cada rato libre donde cabe (con
+// `minutos`; sin duración, basta con 15 min). Los huecos van en minutos
+// desde las 00:00. Solo propone: la hora la eliges tú.
+export function horasParaElegir(
+  huecos: { inicio: number; fin: number }[],
+  minutos: number | null,
+  cuantas = 4,
+): string[] {
+  const hace = minutos ?? PASO_MINUTOS;
+  return huecos
+    .filter((h) => h.fin - h.inicio >= hace && h.inicio + hace <= 24 * 60)
+    .slice(0, cuantas)
+    .map((h) => aHora(h.inicio));
 }
 
 // ---- Choques ----

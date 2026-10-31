@@ -41,6 +41,7 @@ export type CuadroDelDia = {
   o: Ocurrencia;
   clave: string;
   href: string | null; // a dónde lleva un toque (null en lo de Google)
+  color: string; // el de su área (verde oscuro si no tiene), ver colores.ts
 };
 
 const px = (minutos: number) => (minutos / 60) * PX_POR_HORA;
@@ -109,6 +110,7 @@ export function DiaPorHoras({
               esHoy={esHoy}
               desde={desde}
               href={cuadro.href}
+              color={cuadro.color}
               movible={sePuedeOrdenar && sePuedeMover(c.o)}
               otros={colocados.filter((x) => x !== c)}
               fijos={fijos}
@@ -133,6 +135,7 @@ function Cuadro({
   esHoy,
   desde,
   href,
+  color,
   movible,
   otros,
   fijos,
@@ -142,6 +145,7 @@ function Cuadro({
   esHoy: boolean;
   desde: number;
   href: string | null;
+  color: string;
   movible: boolean;
   otros: Colocado<Ocurrencia>[];
   fijos: RatoFijo[];
@@ -221,11 +225,22 @@ function Cuadro({
   const ancho = 100 / c.columnas;
   const bloque = o.bloque;
   const paraOtroMomento = bloque?.aOtraHora && !o.cambiada;
+  // Lo de Google, gris; la clase grabada para otro momento, con puntos;
+  // lo demás, del color de su área más clarito (con una raya del color).
   const estilo = o.google
     ? "bg-secondary"
     : paraOtroMomento
-      ? "border-2 border-dashed border-primary/60 bg-background"
-      : "card";
+      ? "border-2 border-dashed bg-background"
+      : "border-l-4";
+  const colores = o.google
+    ? {}
+    : paraOtroMomento
+      ? { borderColor: color }
+      : {
+          // Opaco, para que no se vean las líneas de las horas por debajo.
+          backgroundColor: `color-mix(in srgb, ${color} 22%, var(--card))`,
+          borderLeftColor: color,
+        };
   const etiqueta = o.google
     ? "Google"
     : paraOtroMomento
@@ -305,6 +320,7 @@ function Cuadro({
         left: `calc(${c.columna * ancho}% + 2px)`,
         width: `calc(${ancho}% - 4px)`,
         transform: conHoraNueva ? `translateY(${dy}px)` : undefined,
+        ...colores,
       }}
     >
       <div className="flex min-h-0 flex-1 items-start gap-2">

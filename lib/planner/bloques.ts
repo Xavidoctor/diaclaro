@@ -5,6 +5,7 @@ import {
   movidaDe,
   rutinaEseDia,
   rutinaFija,
+  tieneHoraPropia,
   type MovidaRutina,
 } from "./mover-dia";
 import { sumarMinutosAHora } from "./propuestas";
@@ -141,7 +142,8 @@ export function bloquesDeRutinas(
               id: r.id,
               hecha: false,
               vez: t.vez,
-              fija: rutinaFija(r),
+              // Sin hora propia no tiene candado: la hora la eliges tú cada día.
+              fija: tieneHoraPropia(original, t.vez) ? rutinaFija(r) : false,
               grabada: Boolean(r.recorded),
             },
           }),

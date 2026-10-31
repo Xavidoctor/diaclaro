@@ -49,8 +49,8 @@ export async function moverEnElDia(datos: unknown): Promise<ResultadoMover> {
         : m.vez === 1
           ? rutina.window_start
           : null;
-      if (!deSiempre)
-        return { ok: false, error: "Esa vez de la rutina no tiene hora." };
+      // Sin hora de siempre (por ejemplo, «Deporte, 60 min»): ese día va a
+      // la hora que elijas.
       if (deSiempre === m.hora) await quitarMovida(m.id, m.fecha, m.vez);
       else
         await guardarMovida({

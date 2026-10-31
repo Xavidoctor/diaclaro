@@ -11,7 +11,10 @@ import {
   ratosFijos,
   rutinaEseDia,
   rutinaFija,
+  rutinasSinHora,
+  horasParaElegir,
   sePuedeMover,
+  tieneHoraPropia,
   type MovidaRutina,
 } from "./mover-dia";
 
@@ -182,5 +185,62 @@ describe("lo que llega al soltar", () => {
       }),
     ).toBeNull();
     expect(leerMovimiento({ tipo: "evento", id })).toBeNull();
+  });
+});
+
+describe("rutinas sin hora", () => {
+  // Una rutina de ejemplo: lunes, miércoles y viernes, 60 min, sin hora.
+  const deporte = {
+    id: "r9",
+    title: "Deporte",
+    times_per_day: 1,
+    times_of_day: null,
+    window_start: null,
+    window_end: null,
+    repeat_rule: "FREQ=WEEKLY;BYDAY=MO,WE,FR",
+    active: true,
+    duration_minutes: 60,
+    project_id: "p1",
+  };
+  const lunes = "2026-11-02";
+  const martes = "2026-11-03";
+
+  it("sale los días que toca, sin hora", () => {
+    expect(rutinasSinHora([deporte], lunes, [])).toEqual([
+      { id: "r9", titulo: "Deporte", vez: 1, minutos: 60, project_id: "p1" },
+    ]);
+    expect(rutinasSinHora([deporte], martes, [])).toEqual([]);
+  });
+
+  it("si ese día le pusiste hora, ya no sale aparte y va a esa hora", () => {
+    const movidas: MovidaRutina[] = [
+      { routine_id: "r9", on_date: lunes, slot: 1, start_time: "19:00" },
+    ];
+    expect(rutinasSinHora([deporte], lunes, movidas)).toEqual([]);
+    expect(rutinaEseDia(deporte, movidas, lunes).window_start).toBe("19:00");
+  });
+
+  it("las que tienen hora no salen", () => {
+    expect(
+      rutinasSinHora([{ ...deporte, window_start: "08:00" }], lunes, []),
+    ).toEqual([]);
+  });
+
+  it("tieneHoraPropia mira cada vez", () => {
+    expect(tieneHoraPropia(deporte, 1)).toBe(false);
+    expect(tieneHoraPropia(paseo, 1)).toBe(true);
+    expect(
+      tieneHoraPropia({ ...pastilla, times_of_day: ["09:00", null] }, 2),
+    ).toBe(false);
+  });
+
+  it("propone el principio de los huecos donde cabe", () => {
+    const huecos = [
+      { inicio: 9 * 60, fin: 9 * 60 + 30 }, // 30 min: no cabe 1 h
+      { inicio: 10 * 60, fin: 17 * 60 },
+      { inicio: 19 * 60, fin: 23 * 60 },
+    ];
+    expect(horasParaElegir(huecos, 60)).toEqual(["10:00", "19:00"]);
+    expect(horasParaElegir(huecos, null, 2)).toEqual(["09:00", "10:00"]);
   });
 });
