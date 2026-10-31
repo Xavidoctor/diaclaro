@@ -13,7 +13,6 @@ import {
   Moon,
   Pin,
   Settings,
-  Smile,
   Sprout,
   StickyNote,
   Sunrise,
@@ -197,18 +196,11 @@ export function PanelEstado() {
             >
               Tu estado
             </h2>
-            {/* Tu perfil, Ajustes y cerrar. */}
+            {/* Tu perfil y tus ajustes (una sola pantalla) y cerrar. */}
             <div className="flex items-center text-muted">
               <Link
-                href="/perfil"
-                aria-label="Tu perfil"
-                className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
-              >
-                <Smile aria-hidden className="size-5" />
-              </Link>
-              <Link
                 href="/ajustes"
-                aria-label="Ajustes"
+                aria-label="Tú y tus ajustes"
                 className="flex size-11 items-center justify-center rounded-full hover:bg-secondary"
               >
                 <Settings aria-hidden className="size-5" />
@@ -342,10 +334,7 @@ function Progreso({
       {datos && (
         <ul className="grid grid-cols-3 gap-2">
           <Cifra nombre="Usado hoy" valor={horas(datos.hoy.usado)} />
-          <Cifra
-            nombre="Sin apuntar hoy"
-            valor={horas(datos.hoy.sinApuntar)}
-          />
+          <Cifra nombre="Sin apuntar hoy" valor={horas(datos.hoy.sinApuntar)} />
           <Cifra nombre="Sueño medio" valor={horas(datos.sueno.media)} />
         </ul>
       )}

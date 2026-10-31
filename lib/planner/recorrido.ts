@@ -81,7 +81,7 @@ export const PASOS: PasoRecorrido[] = [
     objetivo: "panel-estado",
     titulo: "Tu estado, perfil y ajustes",
     texto:
-      "Desliza el dedo desde la derecha (o toca esta pestaña). Ahí tienes tus Áreas, tus notas, tu perfil (la carita) y Ajustes (el engranaje), desde donde puedes repetir este recorrido. ¡Listo!",
+      "Desliza el dedo desde la derecha (o toca esta pestaña). Ahí tienes tus Áreas, tus notas, y el engranaje: tu perfil y tus ajustes, desde donde puedes repetir este recorrido. ¡Listo!",
   },
 ];
 

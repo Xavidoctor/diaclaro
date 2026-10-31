@@ -1,36 +1,55 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { redirect } from "next/navigation";
+import { Download, LogOut, Plus } from "lucide-react";
+import { cerrarSesion } from "@/app/actions";
 import { FormAjustes } from "@/app/ajustes/form-ajustes";
 import { FormSecciones } from "@/app/ajustes/form-secciones";
 import { SeccionGoogle } from "@/app/ajustes/seccion-google";
 import { InterruptorAyuda } from "@/app/componentes/ayuda-guia";
 import { BotonRecorrido } from "@/app/componentes/recorrido-guiado";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { FormPerfil } from "@/app/perfil/form-perfil";
 import { leerAjustes } from "@/lib/data/ajustes";
+import { leerPerfil } from "@/lib/data/perfil";
 import { listarRutinas } from "@/lib/data/rutinas";
 import { leerSecciones } from "@/lib/data/secciones";
 import { describirRepeticion, leerRegla } from "@/lib/planner/agenda";
 import { textoFranja, textoVeces } from "@/lib/planner/rutinas";
 import { SaberMas } from "@/app/componentes/saber-mas";
+import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Ajustes" };
+export const metadata: Metadata = { title: "Tú y tus ajustes" };
 
-// Ajustes: tus horas habituales, la zona horaria, tus rutinas y Google Calendar.
+// Tú y tus ajustes: una sola pantalla para tu perfil (nombre, frase…), tus
+// horas, rutinas, Google, secciones, guía, copia de seguridad y tu cuenta.
+// Antes Perfil y Ajustes eran dos pantallas; /perfil ahora lleva aquí.
 export default async function AjustesPage({
   searchParams,
 }: PageProps<"/ajustes">) {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) redirect("/login");
+
   const { google } = await searchParams;
-  const [ajustes, rutinas, secciones] = await Promise.all([
+  const [ajustes, rutinas, secciones, perfil] = await Promise.all([
     leerAjustes(),
     listarRutinas(),
     leerSecciones(),
+    leerPerfil(),
   ]);
 
   return (
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-6 py-8">
-        <h1 className="text-3xl font-semibold tracking-tight">Ajustes</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Tú y tus ajustes
+        </h1>
+
+        <section id="perfil" className="card flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Sobre ti</h2>
+          <FormPerfil perfil={perfil} />
+        </section>
 
         <section className="card flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Tus horas</h2>
@@ -144,6 +163,29 @@ export default async function AjustesPage({
           <a href="/exportar" download className="button-primary self-start">
             Descargar copia
           </a>
+        </section>
+
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Tu cuenta</h2>
+          <Link
+            href="/instalar"
+            className="card flex min-h-14 items-center gap-3 p-4 font-medium"
+          >
+            <Download aria-hidden className="size-5 text-primary" />
+            Instalar la app en el móvil o el ordenador
+          </Link>
+          <form action={cerrarSesion}>
+            <button
+              type="submit"
+              className="card flex min-h-14 w-full items-center gap-3 p-4 text-left font-medium"
+            >
+              <LogOut aria-hidden className="size-5 text-primary" />
+              Salir de DíaClaro
+            </button>
+          </form>
+          <p className="text-sm text-muted">
+            Has entrado como {data.claims.email}
+          </p>
         </section>
       </main>
       <BarraInferior actual="/ajustes" />
