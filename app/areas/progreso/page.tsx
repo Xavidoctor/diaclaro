@@ -8,8 +8,9 @@ import { cargarProgreso } from "@/lib/data/progreso";
 import { leerFechaParam } from "@/lib/planner/agenda";
 import { textoHoras } from "@/lib/planner/areas";
 import { lunesDe } from "@/lib/planner/candidaturas";
-import { fechaCorta, hoyEn, nombreDia, sumarDias } from "@/lib/planner/fechas";
+import { fechaCorta, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import { reparto, type DiaProgreso, type Media } from "@/lib/planner/progreso";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Tu progreso" };
 
@@ -21,7 +22,7 @@ export default async function ProgresoPage({
 }: PageProps<"/areas/progreso">) {
   const params = await searchParams;
   const ajustes = await leerAjustes();
-  const hoy = hoyEn(ajustes.timezone);
+  const hoy = await diaDeHoy();
   const estaSemana = lunesDe(hoy);
   // Siempre empezamos en lunes y nunca en una semana que aún no ha llegado.
   const pedido = lunesDe(leerFechaParam(params.semana, hoy));

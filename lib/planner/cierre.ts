@@ -50,14 +50,6 @@ export function hechasEnDia<T extends { done_at: string | null }>(
   );
 }
 
-// Si cierras el día de madrugada (antes de las 5), lo normal es que estés
-// cerrando el de ayer. "hora" es la hora local, de 0 a 23.
-export const HORA_CAMBIO_DE_DIA = 5;
-
-export function diaACerrar(hoy: string, ayer: string, hora: number): string {
-  return hora < HORA_CAMBIO_DE_DIA ? ayer : hoy;
-}
-
 // La hora (0 a 23) en la zona horaria indicada.
 export function horaLocal(zona: string, ahora = new Date()): number {
   const h = new Intl.DateTimeFormat("en-GB", {

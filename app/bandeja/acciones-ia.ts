@@ -8,12 +8,11 @@ import {
   leerSugerencia,
   mensajesSugerirProyecto,
 } from "@/lib/ai/sugerir-proyecto";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { cambiarNota, leerNota } from "@/lib/data/bandeja";
 import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
 import { prepararProyectoDeTarea } from "@/lib/planner/areas";
-import { hoyEn } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // «Sugerir proyecto» en una nota de la Bandeja. La IA solo propone
 // (primera acción); la nota cambia cuando tú pulsas «Poner en …» (segunda).
@@ -47,7 +46,7 @@ export async function sugerirProyecto(
   if (proyectos.length === 0)
     return { error: "Aún no tienes proyectos. Créalos en Áreas." };
 
-  const hoy = hoyEn((await leerAjustes()).timezone);
+  const hoy = await diaDeHoy();
   if (!(await apuntarUsoIA(hoy)))
     return {
       error: `Hoy ya has usado la IA ${await topeIA()} veces. Mañana vuelve a estar disponible.`,

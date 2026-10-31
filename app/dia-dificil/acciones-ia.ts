@@ -9,11 +9,10 @@ import {
   mensajesExplicarDia,
 } from "@/lib/ai/dia-dificil";
 import { iaDisponible, pedirTexto } from "@/lib/ai/groq";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
 import { leerMotivo } from "@/lib/planner/dia-dificil";
-import { hoyEn } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // La IA en el Día difícil. Solo elige el motivo o explica con palabras:
 // la propuesta la calcula siempre la app y nada cambia hasta que aceptas.
@@ -23,7 +22,7 @@ async function prepararIA(): Promise<string | null> {
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) redirect("/login");
   if (!iaDisponible()) return "La IA no está configurada.";
-  const hoy = hoyEn((await leerAjustes()).timezone);
+  const hoy = await diaDeHoy();
   if (!(await apuntarUsoIA(hoy)))
     return `Hoy ya has usado la IA ${await topeIA()} veces. Elige el motivo con los botones.`;
   return null;

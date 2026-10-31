@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { FormEvento } from "@/app/agenda/form-evento";
 import { EnlaceVolver } from "@/app/componentes/enlace-volver";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { leerFechaParam } from "@/lib/planner/agenda";
-import { hoyEn } from "@/lib/planner/fechas";
 import { SaberMas } from "@/app/componentes/saber-mas";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Añadir a la agenda" };
 
@@ -13,7 +12,7 @@ export default async function NuevoEventoPage({
   searchParams,
 }: PageProps<"/agenda/nuevo">) {
   const params = await searchParams;
-  const dia = leerFechaParam(params.dia, hoyEn((await leerAjustes()).timezone));
+  const dia = leerFechaParam(params.dia, await diaDeHoy());
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">

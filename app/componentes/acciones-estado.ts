@@ -8,7 +8,7 @@ import { cargarProgreso } from "@/lib/data/progreso";
 import { listarImportantes } from "@/lib/google/api";
 import { leerDocumentoDrive } from "@/lib/planner/documentos-importantes";
 import type { DocumentoImportante } from "@/lib/planner/documentos-importantes";
-import { hoyEn, sumarDias } from "@/lib/planner/fechas";
+import { sumarDias } from "@/lib/planner/fechas";
 import {
   notasFijadas,
   ordenarCartera,
@@ -16,6 +16,7 @@ import {
 } from "@/lib/planner/panel-estado";
 import type { Media } from "@/lib/planner/progreso";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Lo que enseña el panel «Tu estado». Se carga solo cuando lo abres, para
 // que el resto de pantallas no vayan más lentas.
@@ -69,7 +70,7 @@ export async function cargarEstado(): Promise<EstadoPanel | null> {
 // Hoy y la media de los últimos 7 días (hoy incluido).
 async function progresoDeLaSemana(): Promise<EstadoProgreso> {
   const ajustes = await leerAjustes();
-  const hoy = hoyEn(ajustes.timezone);
+  const hoy = await diaDeHoy();
   const { dias, resumen } = await cargarProgreso(
     sumarDias(hoy, -6),
     hoy,

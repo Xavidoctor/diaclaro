@@ -31,12 +31,12 @@ import {
 import {
   diasDesde,
   esFecha,
-  hoyEn,
   nombreDia,
   sumarDias,
 } from "@/lib/planner/fechas";
 import { juntarAgendas } from "@/lib/planner/google-calendar";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Agenda" };
 
@@ -54,7 +54,7 @@ export default async function AgendaPage({
 }: PageProps<"/agenda">) {
   const params = await searchParams;
   const { timezone } = await leerAjustes();
-  const hoy = hoyEn(timezone);
+  const hoy = await diaDeHoy();
   const desde = leerFechaParam(params.desde, hoy);
   const dias = diasDesde(desde, DIAS_VISTA);
   const elegido =

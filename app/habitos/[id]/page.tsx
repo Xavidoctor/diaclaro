@@ -4,14 +4,14 @@ import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { SeccionPausa } from "@/app/componentes/seccion-pausa";
 import { eliminarHabito, pausarHabito } from "@/app/habitos/actions";
 import { FormHabito } from "@/app/habitos/form-habito";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { leerHabito, listarApuntesDeHabito } from "@/lib/data/habitos";
-import { fechaCorta, hoyEn, sumarDias } from "@/lib/planner/fechas";
+import { fechaCorta, sumarDias } from "@/lib/planner/fechas";
 import { textoCantidad } from "@/lib/planner/habitos";
 import { listarRutinas } from "@/lib/data/rutinas";
 import { EnlaceHistorial } from "@/app/habitos/enlace-historial";
 import { Frases } from "@/app/habitos/frases";
 import { iaDisponible } from "@/lib/ai/groq";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Hábito" };
 
@@ -21,10 +21,9 @@ export default async function HabitoPage({
   const { id } = await params;
   const habito = await leerHabito(id);
   if (!habito) notFound();
-  const { timezone } = await leerAjustes();
   const apuntes = await listarApuntesDeHabito(
     id,
-    sumarDias(hoyEn(timezone), -13),
+    sumarDias(await diaDeHoy(), -13),
   );
   const rutinas = await listarRutinas();
 

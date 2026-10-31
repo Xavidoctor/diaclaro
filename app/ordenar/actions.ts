@@ -11,14 +11,13 @@ import {
   type Propuesta,
 } from "@/lib/ai/interpretar-texto";
 import { crearEvento } from "@/lib/data/agenda";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { crearNota, crearTarea } from "@/lib/data/bandeja";
 import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
 import { primerEnlace } from "@/lib/planner/bandeja";
 import { extraerEtiquetas, tipoInicial } from "@/lib/planner/etiquetas";
-import { hoyEn } from "@/lib/planner/fechas";
 import { leerElementos, textoGuardado } from "@/lib/planner/propuestas";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Acciones de «Ordenar con IA». La IA solo propone (primera acción);
 // lo que se guarda es lo que tú revisas y marcas (segunda acción).
@@ -53,7 +52,7 @@ export async function interpretar(
   if (!iaDisponible())
     return { intento, texto, error: "La IA no está configurada." };
 
-  const hoy = hoyEn((await leerAjustes()).timezone);
+  const hoy = await diaDeHoy();
   if (!(await apuntarUsoIA(hoy)))
     return {
       intento,

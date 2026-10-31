@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
 import { leerAjustes } from "@/lib/data/ajustes";
+import { leerDiaDeHoy } from "@/lib/data/dia-activo";
 import { borrarHoraDormir, guardarHoraDormir } from "@/lib/data/dormir";
 import { leerHoraDormir, nocheDe } from "@/lib/planner/dormir";
 import { horaEn, hoyEn, sumarDias } from "@/lib/planner/fechas";
@@ -53,4 +54,25 @@ export async function deshacerHoraDormir(formData: FormData) {
   if (noche !== estaNoche && noche !== anoche) return;
   await borrarHoraDormir(noche);
   refresh();
+}
+
+// «¿No te dormiste al pulsar?», debajo de los botones de la mañana: cambia la
+// hora de la noche anterior al día que empiezas. Así tus horas de sueño son
+// las de verdad. "envios" cuenta los guardados buenos, para cerrar el formulario.
+export type CorregirDormirState = { error?: string; envios: number };
+
+export async function corregirHoraDeAnoche(
+  estado: CorregirDormirState,
+  formData: FormData,
+): Promise<CorregirDormirState> {
+  await exigirSesion();
+  const hora = leerHoraDormir(formData.get("bed_time"));
+  if (!hora.ok) return { error: hora.error, envios: estado.envios };
+  const { abrir } = await leerDiaDeHoy();
+  await guardarHoraDormir({
+    on_date: sumarDias(abrir, -1),
+    bed_time: hora.valor,
+  });
+  refresh();
+  return { envios: estado.envios + 1 };
 }
