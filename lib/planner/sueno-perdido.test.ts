@@ -33,10 +33,14 @@ describe("calcularSuenoPerdido", () => {
     ]);
     expect(r.total).toBe(120 + 60 + 90 + 30);
     expect(r.noches).toBe(4);
-    expect(r.motivos.map((m) => [m.texto, m.minutos, m.noches])).toEqual([
-      ["Trabajo o estudios", 210, 2],
-      ["Móvil, series o juegos", 60, 1],
-      ["Sin motivo", 30, 1],
+    expect(r.aprovechadas.minutos).toBe(210);
+    expect(
+      r.aprovechadas.motivos.map((m) => [m.texto, m.minutos, m.noches]),
+    ).toEqual([["Trabajo o estudios", 210, 2]]);
+    expect(r.aprovechables.minutos).toBe(90);
+    expect(r.aprovechables.motivos.map((m) => m.texto)).toEqual([
+      "Móvil, series o juegos",
+      "Sin motivo",
     ]);
     expect(r.notas).toEqual([
       { on_date: "2026-10-26", minutos: 60, texto: "una serie" },
@@ -48,7 +52,12 @@ describe("calcularSuenoPerdido", () => {
       noche({ bed_time: "22:30", late_reason: "otro" }),
       noche({ bed_time: "23:00" }),
     ]);
-    expect(r).toMatchObject({ total: 0, noches: 0, motivos: [] });
+    expect(r).toMatchObject({
+      total: 0,
+      noches: 0,
+      aprovechadas: { minutos: 0, motivos: [] },
+      aprovechables: { minutos: 0, motivos: [] },
+    });
   });
 
   it("sin hora prevista no se inventa nada", () => {

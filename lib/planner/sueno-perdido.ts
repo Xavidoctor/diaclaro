@@ -1,11 +1,19 @@
-import { minutosTarde, textoMotivo, type MotivoTarde } from "./dormir";
+import {
+  esAprovechada,
+  minutosTarde,
+  textoMotivo,
+  type MotivoTarde,
+} from "./dormir";
 
-// «Sueño perdido» en Tu semana. Funciones puras, con pruebas en
+// «Tus noches» en Tu semana. Funciones puras, con pruebas en
 // sueno-perdido.test.ts.
 //
 // Cada noche comparamos la hora a la que te acostaste de verdad con la que
-// tenías prevista (la de ese día o la de Ajustes). Lo que te pasaste es el
-// sueño perdido, y lo repartimos por el motivo que apuntaste.
+// tenías prevista (la de ese día o la de Ajustes). Lo que te pasaste son
+// horas de noche, y las separamos en dos grupos según el motivo que apuntaste:
+// - aprovechadas: fueron a algo que querías (trabajo o estudios, planes).
+// - aprovechables: la próxima vez podrían ir a dormir (móvil, no podía
+//   dormir, otro o sin motivo).
 // Si no tienes hora prevista, esa noche no se cuenta: la app no se la inventa.
 
 export type NocheDormida = {
@@ -25,10 +33,16 @@ export type MotivoPerdido = {
 
 export type NotaPerdida = { on_date: string; minutos: number; texto: string };
 
+export type GrupoNoches = {
+  minutos: number;
+  motivos: MotivoPerdido[]; // de más a menos tiempo; «Sin motivo» al final
+};
+
 export type SuenoPerdido = {
   total: number; // minutos
   noches: number; // noches que te acostaste más tarde
-  motivos: MotivoPerdido[]; // de más a menos tiempo
+  aprovechadas: GrupoNoches;
+  aprovechables: GrupoNoches;
   notas: NotaPerdida[]; // lo que escribiste, por orden de noche
   sinPrevista: number; // noches que no se pueden contar
 };
@@ -65,10 +79,26 @@ export function calcularSuenoPerdido(noches: NocheDormida[]): SuenoPerdido {
   }
 
   // "Sin motivo" siempre al final; los demás, de más a menos tiempo.
-  const motivos = [...porMotivo.values()].sort((a, b) => {
+  const ordenados = [...porMotivo.values()].sort((a, b) => {
     if ((a.motivo === null) !== (b.motivo === null))
       return a.motivo === null ? 1 : -1;
     return b.minutos - a.minutos;
   });
-  return { total, noches: tarde, motivos, notas, sinPrevista };
+  const grupo = (aprovechada: boolean): GrupoNoches => {
+    const motivos = ordenados.filter(
+      (m) => esAprovechada(m.motivo) === aprovechada,
+    );
+    return {
+      minutos: motivos.reduce((suma, m) => suma + m.minutos, 0),
+      motivos,
+    };
+  };
+  return {
+    total,
+    noches: tarde,
+    aprovechadas: grupo(true),
+    aprovechables: grupo(false),
+    notas,
+    sinPrevista,
+  };
 }

@@ -16,7 +16,11 @@ import {
   textoFila,
   type FilaArea,
 } from "@/lib/planner/resumen-semana";
-import type { SuenoPerdido } from "@/lib/planner/sueno-perdido";
+import { SaberMas } from "@/app/componentes/saber-mas";
+import type {
+  GrupoNoches as GrupoDeNoches,
+  SuenoPerdido,
+} from "@/lib/planner/sueno-perdido";
 import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Tu semana" };
@@ -162,14 +166,15 @@ function FilaResumen({ fila }: { fila: FilaArea }) {
   );
 }
 
-// «Sueño perdido»: cuánto más tarde de lo previsto te acostaste esta semana
-// y en qué se fue ese tiempo (los motivos que apuntaste al corregir la hora).
+// «Tus noches»: cuánto más tarde de lo previsto te acostaste esta semana,
+// separado en horas aprovechadas (trabajo, planes) y aprovechables (lo que
+// la próxima vez podría ir a dormir). Los motivos se apuntan en Hoy.
 function TarjetaSueno({ sueno }: { sueno: SuenoPerdido }) {
   if (sueno.total === 0) {
     if (sueno.sinPrevista === 0) return null;
     return (
       <p className="text-sm text-muted">
-        Para ver el sueño perdido, pon tu hora de acostarte en{" "}
+        Para ver tus noches, pon tu hora de acostarte en{" "}
         <Link href="/ajustes" className="enlace">
           Ajustes
         </Link>
@@ -180,37 +185,73 @@ function TarjetaSueno({ sueno }: { sueno: SuenoPerdido }) {
   return (
     <section className="card flex flex-col gap-3 p-4">
       <div className="flex flex-col gap-1">
-        <h2 className="font-medium">Sueño perdido</h2>
+        <h2 className="font-medium">Tus noches</h2>
         <p className="text-sm">
-          Te acostaste {textoHoras(sueno.total)} más tarde de lo previsto,{" "}
+          Te quedaste {textoHoras(sueno.total)} más de lo previsto,{" "}
           {sueno.noches === 1 ? "en 1 noche" : `en ${sueno.noches} noches`}.
         </p>
       </div>
-      <ul className="flex flex-col gap-1 text-sm">
-        {sueno.motivos.map((m) => (
+      <GrupoNoches
+        titulo="Horas aprovechadas"
+        grupo={sueno.aprovechadas}
+        clase="text-primary"
+      />
+      <GrupoNoches
+        titulo="Horas aprovechables"
+        grupo={sueno.aprovechables}
+        clase="text-muted"
+      />
+      {sueno.notas.length > 0 && (
+        <details className="text-xs text-muted">
+          <summary className="cursor-pointer">Lo que apuntaste</summary>
+          <ul className="mt-1 flex flex-col gap-1">
+            {sueno.notas.map((n) => (
+              <li key={n.on_date} className="break-words">
+                Noche del {nombreDia(n.on_date)}: {n.texto} (
+                {textoHoras(n.minutos)})
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      <SaberMas className="text-xs text-muted">
+        Se compara la hora a la que te acostaste con la prevista. Aprovechadas:
+        trabajo o estudios y planes o amigos. Aprovechables: lo demás, horas que
+        la próxima vez podrían ser de sueño. El motivo se apunta en Hoy, en
+        «Anoche… · cambiar».
+      </SaberMas>
+    </section>
+  );
+}
+
+// Una línea con el total del grupo y, debajo, sus motivos.
+function GrupoNoches({
+  titulo,
+  grupo,
+  clase,
+}: {
+  titulo: string;
+  grupo: GrupoDeNoches;
+  clase: string;
+}) {
+  if (grupo.minutos === 0) return null;
+  return (
+    <div className="flex flex-col gap-1 text-sm">
+      <p className="flex justify-between gap-3 font-medium">
+        <span>{titulo}</span>
+        <span className={`shrink-0 ${clase}`}>{textoHoras(grupo.minutos)}</span>
+      </p>
+      <ul className="flex flex-col gap-0.5 text-xs text-muted">
+        {grupo.motivos.map((m) => (
           <li key={m.motivo ?? "sin"} className="flex justify-between gap-3">
-            <span className={m.motivo ? "" : "text-muted"}>{m.texto}</span>
-            <span className="shrink-0 text-muted">
+            <span>{m.texto}</span>
+            <span className="shrink-0">
               {textoHoras(m.minutos)} ·{" "}
               {m.noches === 1 ? "1 noche" : `${m.noches} noches`}
             </span>
           </li>
         ))}
       </ul>
-      {sueno.notas.length > 0 && (
-        <ul className="flex flex-col gap-1 text-xs text-muted">
-          {sueno.notas.map((n) => (
-            <li key={n.on_date} className="break-words">
-              Noche del {nombreDia(n.on_date)}: {n.texto} (
-              {textoHoras(n.minutos)})
-            </li>
-          ))}
-        </ul>
-      )}
-      <p className="text-xs text-muted">
-        Se compara la hora a la que te acostaste con la prevista. El motivo se
-        apunta en Hoy, en «Anoche… · cambiar».
-      </p>
-    </section>
+    </div>
   );
 }

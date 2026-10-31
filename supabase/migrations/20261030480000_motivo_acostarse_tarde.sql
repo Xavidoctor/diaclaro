@@ -1,6 +1,6 @@
 -- «¿Por qué te acostaste más tarde?»: al corregir la hora a la que te
 -- dormiste anoche, puedes apuntar (si quieres) qué estabas haciendo.
--- Sirve para ver en «Tu semana» cuánto sueño has perdido y en qué.
+-- Sirve para ver en «Tu semana» («Tus noches») en qué se fueron esas horas.
 --
 -- Dos columnas nuevas en bedtimes (la tabla ya tiene user_id y reglas RLS,
 -- así que cada persona sigue viendo solo lo suyo):

@@ -39,12 +39,14 @@ export function textoAcostaste(hora: string): string {
 
 // Los motivos que se pueden elegir. Pocos a propósito: si no encaja ninguno,
 // eliges «Otro» y lo escribes con tus palabras.
+// "aprovechada": ese rato fue a algo que querías (trabajo, planes).
+// Si no, es tiempo "aprovechable": la próxima vez podría ir a dormir.
 export const MOTIVOS_TARDE = [
-  { valor: "pantallas", texto: "Móvil, series o juegos" },
-  { valor: "trabajo", texto: "Trabajo o estudios" },
-  { valor: "planes", texto: "Planes o amigos" },
-  { valor: "no-podia", texto: "No podía dormir" },
-  { valor: "otro", texto: "Otro" },
+  { valor: "pantallas", texto: "Móvil, series o juegos", aprovechada: false },
+  { valor: "trabajo", texto: "Trabajo o estudios", aprovechada: true },
+  { valor: "planes", texto: "Planes o amigos", aprovechada: true },
+  { valor: "no-podia", texto: "No podía dormir", aprovechada: false },
+  { valor: "otro", texto: "Otro", aprovechada: false },
 ] as const;
 
 export type MotivoTarde = (typeof MOTIVOS_TARDE)[number]["valor"];
@@ -58,6 +60,10 @@ export type NocheParaCorregir = {
   late_reason: MotivoTarde | null;
   late_note: string | null;
 };
+
+export function esAprovechada(motivo: MotivoTarde | null): boolean {
+  return MOTIVOS_TARDE.find((m) => m.valor === motivo)?.aprovechada ?? false;
+}
 
 export function textoMotivo(motivo: MotivoTarde | null): string {
   return MOTIVOS_TARDE.find((m) => m.valor === motivo)?.texto ?? "Sin motivo";
