@@ -98,7 +98,12 @@ export async function cargarProgreso(
       ahora: fecha === hoy ? ahora : undefined,
     }),
   );
-  return { dias: resultado, resumen: resumirProgreso(resultado) };
+  return {
+    dias: resultado,
+    resumen: resumirProgreso(resultado),
+    // Las horas de cada día, por si alguien quiere sacar medias (Así te conozco).
+    horas: dias.map(horasDe),
+  };
 }
 
 type Inicio = {

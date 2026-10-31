@@ -49,6 +49,12 @@ export default async function OrdenarPage() {
           <h2 className="text-lg font-semibold">También te ayudo con</h2>
           <ul className="flex flex-col gap-2 text-sm">
             <li>
+              <Link href="/conocerte" className="enlace">
+                Así te conozco
+              </Link>{" "}
+              <span className="text-muted">(lo que he aprendido de ti)</span>
+            </li>
+            <li>
               <Link href="/cambio" className="enlace">
                 Algo ha cambiado hoy
               </Link>{" "}
