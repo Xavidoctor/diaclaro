@@ -119,3 +119,30 @@ describe("bloquesDeRutinas", () => {
     ).toEqual([]);
   });
 });
+
+describe("rutinas movidas de hora un día", () => {
+  const paseo: Rutina = {
+    ...clase,
+    id: "r2",
+    title: "Paseo",
+    project_id: null,
+  };
+
+  it("ese día sale a la hora nueva y marcada como cambiada", () => {
+    const [b] = bloquesDeRutinas([paseo], "2026-11-02", "2026-11-02", [
+      { routine_id: "r2", on_date: "2026-11-02", slot: 1, start_time: "19:00" },
+    ]);
+    expect([b.horaInicio, b.horaFin, b.cambiada]).toEqual([
+      "19:00",
+      "21:00",
+      true,
+    ]);
+    expect(b.bloque).toMatchObject({ vez: 1, fija: false });
+  });
+
+  it("una rutina dentro de un proyecto (una clase) es fija", () => {
+    const [b] = bloquesDeRutinas([clase], "2026-11-02", "2026-11-02");
+    expect(b.bloque?.fija).toBe(true);
+    expect(b.cambiada).toBe(false);
+  });
+});

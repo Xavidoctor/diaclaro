@@ -52,7 +52,15 @@ export type Ocurrencia = {
   google?: { libre: boolean };
   // Solo en las tareas y rutinas con hora que salen en la Agenda
   // (ver bloques.ts). "id" es el de la tarea o la rutina.
-  bloque?: { tipo: "tarea" | "rutina"; id: string; hecha: boolean };
+  // "vez" es qué vez del día es (en las rutinas; las tareas, 1).
+  // "fija": no se puede mover arriba o abajo en la lista (ver mover-dia.ts).
+  bloque?: {
+    tipo: "tarea" | "rutina";
+    id: string;
+    hecha: boolean;
+    vez?: number;
+    fija?: boolean;
+  };
 };
 
 // ---- Repeticiones ----

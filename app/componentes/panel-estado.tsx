@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Briefcase,
   ChartColumn,
+  ListTodo,
   ChevronDown,
   ChevronRight,
   ExternalLink,
@@ -21,11 +22,13 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { CasillaHecha } from "@/app/bandeja/casilla-hecha";
 import {
   cargarEstado,
   type EstadoDocumentos,
   type EstadoPanel,
   type EstadoProgreso,
+  type PorHacer,
 } from "@/app/componentes/acciones-estado";
 import { textoHoras } from "@/lib/planner/areas";
 import {
@@ -229,7 +232,12 @@ export function PanelEstado() {
             </p>
           )}
 
-          {/* Las notas fijadas se ven nada más abrir; lo demás, al tocarlo. */}
+          {/* Lo que tienes por hacer y tus notas se ven nada más abrir;
+              lo demás, al tocarlo. */}
+          <ListaPorHacer
+            datos={datos?.porHacer}
+            cargando={!datos && cargando}
+          />
           <Notas datos={datos?.notas} cargando={!datos && cargando} />
           {/* Áreas, junto a tu Progreso (antes estaba en el menú de abajo). */}
           <Link
@@ -525,6 +533,79 @@ function Notas({
             </li>
           ))}
         </ul>
+      )}
+    </section>
+  );
+}
+
+// Tus tareas pendientes, en una lista: lo atrasado, lo de hoy y lo de esta
+// semana. La casilla la marca como hecha (y la quita de la lista).
+function ListaPorHacer({
+  datos,
+  cargando,
+}: {
+  datos: PorHacer | null | undefined;
+  cargando: boolean;
+}) {
+  const [hechas, setHechas] = useState<string[]>([]);
+  const lista = datos?.lista.filter((t) => !hechas.includes(t.id)) ?? null;
+  return (
+    <section aria-labelledby="estado-por-hacer" className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3
+          id="estado-por-hacer"
+          className="flex items-center gap-2 text-lg font-semibold"
+        >
+          <ListTodo aria-hidden className="size-5 text-primary" />
+          Por hacer
+        </h3>
+        <Link href="/bandeja?pestana=tareas" className="enlace px-2 text-sm">
+          Ver todas
+        </Link>
+      </div>
+      {cargando && <Cargando />}
+      {datos === null && (
+        <p className="text-sm text-muted">Ahora no puedo cargar tus tareas.</p>
+      )}
+      {lista?.length === 0 && (
+        <p className="text-sm text-muted">
+          {datos!.sinDia > 0
+            ? "Nada pendiente para estos días."
+            : "No tienes nada pendiente. ¡Bien!"}
+        </p>
+      )}
+      {lista && lista.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {lista.map((t) => (
+            <li key={t.id} className="card flex items-start gap-3 p-3 text-sm">
+              <CasillaHecha
+                id={t.id}
+                titulo={t.titulo}
+                previstos={t.previstos}
+                alMarcar={() => setHechas((h) => [...h, t.id])}
+              />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="break-words">{t.titulo}</span>
+                <span
+                  className={`text-xs ${t.atrasada ? "text-danger" : "text-muted"}`}
+                >
+                  {t.cuando}
+                  {t.hora && ` · ${t.hora}`}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {datos && (datos.mas > 0 || datos.sinDia > 0) && (
+        <p className="text-xs text-muted">
+          {[
+            datos.mas > 0 && `${datos.mas} más esta semana`,
+            datos.sinDia > 0 && `${datos.sinDia} sin día (en Tareas)`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
       )}
     </section>
   );

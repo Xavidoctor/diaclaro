@@ -26,6 +26,8 @@ import { leerInicio } from "@/lib/data/inicio-dia";
 import { leerPerfil } from "@/lib/data/perfil";
 import { leerSecciones } from "@/lib/data/secciones";
 import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
+import { listarMovidas } from "@/lib/data/mover-dia";
+import { rutinaEseDia } from "@/lib/planner/mover-dia";
 import { ocurrenciasEntre, textoHora } from "@/lib/planner/agenda";
 import { ajustesDelDia } from "@/lib/planner/inicio-dia";
 import { juntarAgendas } from "@/lib/planner/google-calendar";
@@ -53,16 +55,27 @@ export default async function HoyPage() {
   // «Levantado» y acaba al pulsar «Me voy a dormir».
   const diaActivo = await leerDiaDeHoy();
   const hoy = diaActivo.dia;
-  const [eventos, rutinas, registros, inicio, google, perfil, secciones] =
-    await Promise.all([
-      listarEventosHasta(hoy),
-      listarRutinas(),
-      listarRegistrosDelDia(hoy),
-      leerInicio(hoy),
-      cargarAgendaGoogle(hoy, hoy, timezone),
-      leerPerfil(),
-      leerSecciones(),
-    ]);
+  const [
+    eventos,
+    rutinasGuardadas,
+    registros,
+    inicio,
+    google,
+    perfil,
+    secciones,
+    movidas,
+  ] = await Promise.all([
+    listarEventosHasta(hoy),
+    listarRutinas(),
+    listarRegistrosDelDia(hoy),
+    leerInicio(hoy),
+    cargarAgendaGoogle(hoy, hoy, timezone),
+    leerPerfil(),
+    leerSecciones(),
+    // Las rutinas que moviste de hora solo hoy (desde la Agenda).
+    listarMovidas(hoy, hoy).catch(() => []),
+  ]);
+  const rutinas = rutinasGuardadas.map((r) => rutinaEseDia(r, movidas, hoy));
   // La tarjeta de la mañana va con el día que abren sus botones (de
   // trasnoche, el día nuevo) y con la hora a la que te dormiste la noche antes.
   const noche = sumarDias(diaActivo.abrir, -1);

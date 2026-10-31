@@ -16,6 +16,7 @@ import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { listarTareas } from "@/lib/data/bandeja";
 import { listarMetasPendientes } from "@/lib/data/metas";
 import { listarRutinas } from "@/lib/data/rutinas";
+import { leerRutinasFijas, listarMovidas } from "@/lib/data/mover-dia";
 import { tareasDesdeGoogle } from "@/lib/data/google";
 import {
   agruparPorDia,
@@ -35,7 +36,8 @@ import {
 import { diasDesde, esFecha, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import { juntarAgendas } from "@/lib/planner/google-calendar";
 import { metasPorDia } from "@/lib/planner/metas";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { sePuedeMover } from "@/lib/planner/mover-dia";
+import { ChevronLeft, ChevronRight, GripVertical, Plus } from "lucide-react";
 import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Agenda" };
@@ -73,18 +75,34 @@ export default async function AgendaPage({
   ]);
   const hasta = rangos.at(-1)!.hasta;
 
-  const [eventos, googles, tareas, rutinas, { areas, proyectos }, metas] =
-    await Promise.all([
-      listarEventosHasta(hasta),
-      Promise.all(
-        rangos.map((r) => cargarAgendaGoogle(r.desde, r.hasta, timezone)),
-      ),
-      listarTareas(false),
-      listarRutinas(),
-      cargarOpcionesProyecto(),
-      // Entregas, exámenes y metas. Si falta su migración, simplemente no salen.
-      listarMetasPendientes(hasta, rangos[0].desde).catch(() => []),
-    ]);
+  const [
+    eventos,
+    googles,
+    tareas,
+    rutinasGuardadas,
+    { areas, proyectos },
+    metas,
+    fijas,
+    movidas,
+  ] = await Promise.all([
+    listarEventosHasta(hasta),
+    Promise.all(
+      rangos.map((r) => cargarAgendaGoogle(r.desde, r.hasta, timezone)),
+    ),
+    listarTareas(false),
+    listarRutinas(),
+    cargarOpcionesProyecto(),
+    // Entregas, exámenes y metas. Si falta su migración, simplemente no salen.
+    listarMetasPendientes(hasta, rangos[0].desde).catch(() => []),
+    // Qué rutinas tienen hora fija y lo que has movido. Si falta su
+    // migración, todo sale con su hora de siempre (y nada se puede guardar).
+    leerRutinasFijas().catch(() => new Map<string, boolean>()),
+    listarMovidas(rangos[0].desde, hasta).catch(() => []),
+  ]);
+  const rutinas = rutinasGuardadas.map((r) => ({
+    ...r,
+    fixed_time: fijas.get(r.id) ?? null,
+  }));
   const google = {
     estado: googles[0].estado,
     ocurrencias: googles.flatMap((g) => g.ocurrencias),
@@ -109,7 +127,7 @@ export default async function AgendaPage({
     rangos.flatMap((r) => [
       ...ocurrenciasEntre(eventos, excepciones, r.desde, r.hasta),
       ...bloquesDeTareas(tareas, r.desde, r.hasta),
-      ...bloquesDeRutinas(rutinas, r.desde, r.hasta),
+      ...bloquesDeRutinas(rutinas, r.desde, r.hasta, movidas),
     ]),
     google.ocurrencias,
   );
@@ -121,10 +139,13 @@ export default async function AgendaPage({
     ...diasConTareas(tareas),
     ...metasDelDia.keys(),
   ]);
-  // En el día elegido, las tareas ya salen abajo («Tareas de este día»).
-  const delElegido = elegido
-    ? todas.filter((o) => o.fecha === elegido && o.bloque?.tipo !== "tarea")
-    : [];
+  // Lo del día elegido. Las tareas con hora salen también aquí, para poder
+  // moverlas; debajo, en «Tareas de este día», se marcan o se editan.
+  const delElegido = elegido ? todas.filter((o) => o.fecha === elegido) : [];
+  // Si en lo que se ve hay algo que se puede mover, se explica cómo.
+  const hayMovibles = [...porDia.flatMap((d) => d.ocurrencias), ...delElegido]
+    .filter((o) => o.fecha >= hoy)
+    .some(sePuedeMover);
   const tareasElegido = elegido ? tareasDelDia(tareas, elegido) : [];
   const grupos = opcionesProyecto(areas, proyectos);
 
@@ -202,12 +223,24 @@ export default async function AgendaPage({
             </p>
           )}
 
+        {hayMovibles && (
+          <p className="flex items-center gap-1 text-sm text-muted">
+            <GripVertical aria-hidden className="size-4 shrink-0" />
+            Mantén pulsado lo que tiene este icono y muévelo arriba o abajo para
+            cambiarle la hora. Lo demás es fijo.
+          </p>
+        )}
+
         <ol className="flex flex-col gap-5">
           {porDia.map(({ fecha, ocurrencias }) => (
             <li key={fecha} className="flex flex-col gap-2">
               <TituloDia fecha={fecha} hoy={hoy} />
               <MetasDelDia metas={metasDelDia.get(fecha) ?? []} />
-              <ListaDelDia ocurrencias={ocurrencias} importadas={importadas} />
+              <ListaDelDia
+                ocurrencias={ocurrencias}
+                importadas={importadas}
+                sePuedeOrdenar={fecha >= hoy}
+              />
             </li>
           ))}
         </ol>
@@ -228,7 +261,11 @@ export default async function AgendaPage({
           >
             <TituloDia fecha={elegido} hoy={hoy} />
             <MetasDelDia metas={metasDelDia.get(elegido) ?? []} />
-            <ListaDelDia ocurrencias={delElegido} importadas={importadas} />
+            <ListaDelDia
+              ocurrencias={delElegido}
+              importadas={importadas}
+              sePuedeOrdenar={elegido >= hoy}
+            />
             <Link
               href={`/agenda/nuevo?dia=${elegido}`}
               className="enlace inline-flex min-h-11 items-center gap-1 self-start text-sm"
@@ -237,7 +274,10 @@ export default async function AgendaPage({
               Añadir algo este día
             </Link>
 
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            <h3
+              id="tareas-del-dia"
+              className="scroll-mt-4 text-sm font-semibold uppercase tracking-wide text-muted"
+            >
               Tareas de este día
             </h3>
             {tareasElegido.length === 0 ? (

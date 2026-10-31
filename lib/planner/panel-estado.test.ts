@@ -3,9 +3,11 @@ import type { DocumentoImportante } from "./documentos-importantes";
 import {
   abreElPanel,
   cierraElPanel,
+  cuandoToca,
   notasFijadas,
   ordenarCartera,
   resumenNota,
+  tareasPorHacer,
 } from "./panel-estado";
 
 describe("el gesto de deslizar", () => {
@@ -100,5 +102,58 @@ describe("ordenarCartera", () => {
       doc("billete-nuevo", "viajes", "2026-10-20"),
     ]).map((d) => d.id);
     expect(orden).toEqual(["dni", "billete-nuevo", "billete-viejo", "entrada"]);
+  });
+});
+
+describe("por hacer", () => {
+  const hoy = "2026-11-02";
+  const tarea = (titulo: string, due_date: string | null, extra = {}) => ({
+    titulo,
+    due_date,
+    due_time: null as string | null,
+    done_at: null as string | null,
+    created_at: "2026-10-30T10:00:00Z",
+    ...extra,
+  });
+
+  it("primero lo atrasado, luego hoy (por hora) y los próximos días", () => {
+    const r = tareasPorHacer(
+      [
+        tarea("Luego", "2026-11-04"),
+        tarea("Tarde", hoy, { due_time: "18:00" }),
+        tarea("Pronto", hoy, { due_time: "09:00" }),
+        tarea("Atrasada", "2026-11-01"),
+        tarea("Hecha", hoy, { done_at: "2026-11-02T08:00:00Z" }),
+        tarea("Sin día", null),
+        tarea("Muy lejos", "2026-12-01"),
+      ],
+      hoy,
+      10,
+    );
+    expect(r.lista.map((t) => t.titulo)).toEqual([
+      "Atrasada",
+      "Pronto",
+      "Tarde",
+      "Luego",
+    ]);
+    expect(r.sinDia).toBe(1);
+    expect(r.mas).toBe(0);
+  });
+
+  it("si hay muchas, enseña unas pocas y cuenta las demás", () => {
+    const r = tareasPorHacer(
+      [tarea("A", hoy), tarea("B", hoy), tarea("C", hoy)],
+      hoy,
+      2,
+    );
+    expect(r.lista).toHaveLength(2);
+    expect(r.mas).toBe(1);
+  });
+
+  it("dice cuándo toca", () => {
+    expect(cuandoToca(hoy, hoy)).toBe("Hoy");
+    expect(cuandoToca("2026-11-03", hoy)).toBe("Mañana");
+    expect(cuandoToca("2026-11-01", hoy)).toBe("De ayer");
+    expect(cuandoToca("2026-11-06", hoy)).toBe("6 nov");
   });
 });

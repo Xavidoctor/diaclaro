@@ -4,7 +4,10 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { marcarTarea } from "@/app/bandeja/actions";
 import { intentarOGuardar } from "@/app/componentes/cambios-sin-conexion";
-import { leerMinutosReales, opcionesMinutosReales } from "@/lib/planner/tiempos";
+import {
+  leerMinutosReales,
+  opcionesMinutosReales,
+} from "@/lib/planner/tiempos";
 
 // La casilla para marcar una tarea como hecha. Antes de guardarla pregunta
 // "¿cuánto has tardado?": con eso la app aprende tus tiempos reales.
@@ -14,10 +17,12 @@ export function CasillaHecha({
   id,
   titulo,
   previstos,
+  alMarcar,
 }: {
   id: string;
   titulo: string;
   previstos: number | null;
+  alMarcar?: () => void; // por ejemplo, para quitarla de una lista
 }) {
   const [abierta, setAbierta] = useState(false);
   const [esperando, setEsperando] = useState(false);
@@ -34,6 +39,7 @@ export function CasillaHecha({
     });
     setAbierta(false);
     if (r === "guardado") setEsperando(true);
+    alMarcar?.();
   }
 
   // Marcada sin internet: se ve hecha mientras espera a enviarse.
