@@ -233,6 +233,27 @@ export async function leerNota(id: string) {
   return data as { id: string; body: string } | null;
 }
 
+// Lo justo de una tarea para dividirla en pasos (y copiar su día y proyecto).
+export async function leerTarea(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("id, title, details, due_date, project_id, done_at, deleted_at")
+    .eq("id", id)
+    .maybeSingle();
+  comprobar(error, "leer la tarea");
+  return data as Pick<
+    Tarea,
+    | "id"
+    | "title"
+    | "details"
+    | "due_date"
+    | "project_id"
+    | "done_at"
+    | "deleted_at"
+  > | null;
+}
+
 // Borrar para siempre: solo se permite desde la papelera.
 export async function borrarNotaDefinitiva(id: string) {
   const supabase = await createClient();
