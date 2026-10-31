@@ -1,7 +1,9 @@
+import { textoPendienteDesde, tareasParaHoy } from "./bandeja";
 import {
   TIPOS_IMPORTANTES,
   type DocumentoImportante,
 } from "./documentos-importantes";
+import { fechaCorta, sumarDias } from "./fechas";
 
 // Reglas del panel «Tu estado» (el menú que sale al deslizar el dedo
 // de derecha a izquierda).
@@ -52,6 +54,47 @@ export function resumenNota(texto: string, max = 80): string {
   const linea = texto.trim().split("\n")[0].trim();
   if (linea.length <= max) return linea || "Nota sin texto";
   return `${linea.slice(0, max - 1).trimEnd()}…`;
+}
+
+// ---- Por hacer ----
+
+type TareaPendiente = {
+  due_date: string | null;
+  due_time?: string | null;
+  done_at: string | null;
+  created_at: string;
+};
+
+// Lo que tienes por hacer, en una lista: primero lo que se quedó atrás,
+// luego lo de hoy y lo de los próximos días, por día y hora.
+// Lo que no tiene día se cuenta aparte (está en Tareas).
+export function tareasPorHacer<T extends TareaPendiente>(
+  tareas: T[],
+  hoy: string,
+  cuantas: number,
+): { lista: T[]; mas: number; sinDia: number } {
+  const { atrasadas, deHoy, proximas, sinFecha } = tareasParaHoy(
+    tareas,
+    hoy,
+    6,
+  );
+  const todas = [...atrasadas, ...deHoy, ...proximas];
+  return {
+    lista: todas.slice(0, cuantas),
+    mas: Math.max(0, todas.length - cuantas),
+    sinDia: sinFecha,
+  };
+}
+
+// Cuándo toca: "Hoy", "Mañana", "De ayer", "De hace 3 días" o "12 nov.".
+export function cuandoToca(fecha: string, hoy: string): string {
+  if (fecha === hoy) return "Hoy";
+  if (fecha < hoy) {
+    const texto = textoPendienteDesde(fecha, hoy);
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
+  if (fecha === sumarDias(hoy, 1)) return "Mañana";
+  return fechaCorta(fecha);
 }
 
 // ---- El carpetero de documentos ----

@@ -2,7 +2,7 @@
 
 import { paseDrive } from "@/app/documentos/pase-drive";
 import { leerAjustes } from "@/lib/data/ajustes";
-import { listarNotas } from "@/lib/data/bandeja";
+import { listarNotas, listarTareas } from "@/lib/data/bandeja";
 import { leerPerfil } from "@/lib/data/perfil";
 import { leerSecciones } from "@/lib/data/secciones";
 import { cargarProgreso } from "@/lib/data/progreso";
@@ -11,9 +11,11 @@ import { leerDocumentoDrive } from "@/lib/planner/documentos-importantes";
 import type { DocumentoImportante } from "@/lib/planner/documentos-importantes";
 import { sumarDias } from "@/lib/planner/fechas";
 import {
+  cuandoToca,
   notasFijadas,
   ordenarCartera,
   resumenNota,
+  tareasPorHacer,
 } from "@/lib/planner/panel-estado";
 import type { Media } from "@/lib/planner/progreso";
 import { createClient } from "@/lib/supabase/server";
@@ -36,7 +38,25 @@ export type EstadoDocumentos =
 
 export type NotaPanel = { id: string; texto: string; fijada: boolean };
 
+// Una tarea pendiente en el panel: "cuando" es "Hoy", "Mañana", "De ayer"...
+export type TareaPanel = {
+  id: string;
+  titulo: string;
+  cuando: string;
+  hora: string | null;
+  atrasada: boolean;
+  previstos: number | null; // minutos que pensabas tardar
+};
+
+export type PorHacer = {
+  lista: TareaPanel[];
+  mas: number; // las que no caben en el panel
+  sinDia: number; // las que no tienen día (están en Tareas)
+};
+
 export type EstadoPanel = {
+  // Tus tareas pendientes: lo atrasado, lo de hoy y lo de esta semana.
+  porHacer: PorHacer | null;
   progreso: EstadoProgreso | null;
   // Las últimas notas y, aparte, las fijadas (para el botón de la chincheta).
   notas: { ultimas: NotaPanel[]; fijadas: NotaPanel[] } | null;
@@ -49,6 +69,7 @@ export type EstadoPanel = {
 };
 
 const NOTAS_EN_PANEL = 5;
+const TAREAS_EN_PANEL = 8;
 const DOCUMENTOS_EN_PANEL = 6;
 
 export async function cargarEstado(): Promise<EstadoPanel | null> {
@@ -57,7 +78,11 @@ export async function cargarEstado(): Promise<EstadoPanel | null> {
   if (!data?.claims) return null;
 
   const secciones = await leerSecciones();
-  const [progreso, notas, documentos, perfil] = await Promise.all([
+  const [porHacer, progreso, notas, documentos, perfil] = await Promise.all([
+    tareasDelPanel().catch((error) => {
+      console.error(error);
+      return null;
+    }),
     progresoDeLaSemana().catch((error) => {
       console.error(error);
       return null;
@@ -70,6 +95,7 @@ export async function cargarEstado(): Promise<EstadoPanel | null> {
     leerPerfil(),
   ]);
   return {
+    porHacer,
     progreso,
     notas,
     documentos,
@@ -97,6 +123,23 @@ async function progresoDeLaSemana(): Promise<EstadoProgreso> {
     sueno: resumen.sueno,
     usado: resumen.usado,
     sinApuntar: resumen.sinApuntar,
+  };
+}
+
+async function tareasDelPanel(): Promise<PorHacer> {
+  const [tareas, hoy] = await Promise.all([listarTareas(false), diaDeHoy()]);
+  const { lista, mas, sinDia } = tareasPorHacer(tareas, hoy, TAREAS_EN_PANEL);
+  return {
+    lista: lista.map((t) => ({
+      id: t.id,
+      titulo: t.title,
+      cuando: cuandoToca(t.due_date!, hoy),
+      hora: t.due_time,
+      atrasada: t.due_date! < hoy,
+      previstos: t.estimated_minutes,
+    })),
+    mas,
+    sinDia,
   };
 }
 

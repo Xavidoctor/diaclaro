@@ -1,5 +1,11 @@
 import type { Ocurrencia } from "./agenda";
 import { sumarDias } from "./fechas";
+import {
+  estaMovida,
+  rutinaEseDia,
+  rutinaFija,
+  type MovidaRutina,
+} from "./mover-dia";
 import { sumarMinutosAHora } from "./propuestas";
 import { tocaRutina, type Rutina } from "./rutinas";
 
@@ -50,7 +56,14 @@ export function bloquesDeTareas(
       franja: null,
       seRepite: false,
       cambiada: false,
-      bloque: { tipo: "tarea", id: t.id, hecha: Boolean(t.done_at) },
+      // Las tareas con hora siempre se pueden mover.
+      bloque: {
+        tipo: "tarea",
+        id: t.id,
+        hecha: Boolean(t.done_at),
+        vez: 1,
+        fija: false,
+      },
     }));
 }
 
@@ -58,8 +71,9 @@ export function bloquesDeTareas(
 // varias veces al día da un bloque por cada vez que tenga hora. El fin es
 // el «Hasta» o, si no lo hay, la hora más los minutos de cada vez.
 // Las rutinas sin hora no salen: no ocupan un rato fijo.
+// `movidas` son las horas que cambiaste solo un día (ver mover-dia.ts).
 export function bloquesDeRutinas(
-  rutinas: Pick<
+  rutinas: (Pick<
     Rutina,
     | "id"
     | "title"
@@ -70,9 +84,11 @@ export function bloquesDeRutinas(
     | "window_end"
     | "times_of_day"
     | "active"
-  >[],
+    | "project_id"
+  > & { fixed_time?: boolean | null })[],
   desde: string,
   hasta: string,
+  movidas: MovidaRutina[] = [],
 ): Ocurrencia[] {
   const dias: string[] = [];
   for (let d = desde; d <= hasta && dias.length < 400; d = sumarDias(d, 1))
@@ -82,16 +98,25 @@ export function bloquesDeRutinas(
   return dias.flatMap((fecha) =>
     rutinas
       .filter((r) => r.active && tocaRutina(r, fecha))
-      .flatMap((r) => {
-        const tramos: { inicio: string; fin: string | null }[] =
+      .flatMap((original) => {
+        const r = rutinaEseDia(original, movidas, fecha);
+        const tramos: { vez: number; inicio: string; fin: string | null }[] =
           r.times_per_day > 1 && r.times_of_day
             ? r.times_of_day
                 .slice(0, r.times_per_day)
-                .filter((h): h is string => h !== null)
-                .map((h) => ({ inicio: h, fin: fin(h, r.duration_minutes) }))
+                .map((h, i) => ({ vez: i + 1, hora: h }))
+                .filter(
+                  (t): t is { vez: number; hora: string } => t.hora !== null,
+                )
+                .map((t) => ({
+                  vez: t.vez,
+                  inicio: t.hora,
+                  fin: fin(t.hora, r.duration_minutes),
+                }))
             : r.window_start
               ? [
                   {
+                    vez: 1,
                     inicio: r.window_start,
                     fin:
                       r.window_end ?? fin(r.window_start, r.duration_minutes),
@@ -99,8 +124,8 @@ export function bloquesDeRutinas(
                 ]
               : [];
         return tramos.map(
-          (t, i): Ocurrencia => ({
-            eventoId: `rutina-${r.id}-${i + 1}`,
+          (t): Ocurrencia => ({
+            eventoId: `rutina-${r.id}-${t.vez}`,
             titulo: r.title,
             fecha,
             fechaOriginal: fecha,
@@ -108,8 +133,14 @@ export function bloquesDeRutinas(
             horaFin: t.fin,
             franja: null,
             seRepite: true,
-            cambiada: false,
-            bloque: { tipo: "rutina", id: r.id, hecha: false },
+            cambiada: estaMovida(movidas, r.id, fecha, t.vez),
+            bloque: {
+              tipo: "rutina",
+              id: r.id,
+              hecha: false,
+              vez: t.vez,
+              fija: rutinaFija(r),
+            },
           }),
         );
       }),
