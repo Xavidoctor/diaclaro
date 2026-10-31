@@ -19,10 +19,11 @@ import {
 } from "@/lib/data/bandeja";
 import { opcionesProyecto, type GrupoOpciones } from "@/lib/planner/areas";
 import {
-  agruparTareas,
   enlaceNotas,
   limpiarBusqueda,
   ordenarNotas,
+  seccionesTareas,
+  textoPendienteDesde,
 } from "@/lib/planner/bandeja";
 import {
   NOMBRE_TIPO,
@@ -221,7 +222,7 @@ async function PestanaTareas({ papelera }: { papelera: boolean }) {
     cargarOpcionesProyecto(),
     diaDeHoy(),
   ]);
-  const grupos = agruparTareas(tareas);
+  const secciones = seccionesTareas(tareas, hoy);
   const opciones = opcionesProyecto(areas, proyectos);
 
   return (
@@ -249,28 +250,133 @@ async function PestanaTareas({ papelera }: { papelera: boolean }) {
         />
       ) : (
         <>
-          <Grupo
-            titulo="Sin planificar"
-            tareas={grupos.sinPlanificar}
+          <Seccion
+            titulo="Hoy"
+            tono="hoy"
+            tareas={secciones.hoy}
             opciones={opciones}
-            vacio="Ninguna tarea sin fecha."
-            ponerleDia={hoy}
+            vacio="Nada para hoy. Puedes coger algo de «Sin día»."
+            hoy={hoy}
           />
-          <Grupo
-            titulo="Con fecha"
-            tareas={grupos.conFecha}
+          <Seccion
+            titulo="Sin día"
+            tono="general"
+            tareas={secciones.sinDia}
             opciones={opciones}
-            vacio="Ninguna tarea con fecha."
+            vacio="Tu lista general está vacía."
+            hoy={hoy}
+            ponerleDia
           />
-          <Grupo
+          <Plegado
+            titulo="Más adelante"
+            tareas={secciones.masAdelante}
+            opciones={opciones}
+          />
+          <Plegado
             titulo="Hechas"
-            tareas={grupos.hechas}
+            tareas={secciones.hechas}
             opciones={opciones}
-            vacio="Aún no has marcado ninguna."
           />
         </>
       )}
     </section>
+  );
+}
+
+// «Hoy» y «Sin día», las dos listas que importan, cada una en su caja:
+// «Hoy» con fondo verde suave y rayita verde; «Sin día» blanca con el borde normal
+// (sin rayita gris, para no confundirla con el gris de las áreas).
+// Son tonos suaves a propósito: cada tarea ya puede llevar el color de su área.
+function Seccion({
+  titulo,
+  tono,
+  tareas,
+  opciones,
+  vacio,
+  hoy,
+  ponerleDia = false,
+}: {
+  titulo: string;
+  tono: "hoy" | "general";
+  tareas: Awaited<ReturnType<typeof listarTareas>>;
+  opciones: GrupoOpciones[];
+  vacio: string;
+  hoy: string;
+  ponerleDia?: boolean; // con él, cada tarea lleva «Ponerle día»
+}) {
+  const caja =
+    tono === "hoy"
+      ? "border-l-4 border-primary bg-secondary"
+      : "border border-border bg-surface";
+  return (
+    <section
+      aria-label={titulo}
+      className={`flex flex-col gap-3 rounded-2xl p-3 ${caja}`}
+    >
+      <h2
+        className={`px-1 text-lg font-semibold ${
+          tono === "hoy" ? "text-primary" : ""
+        }`}
+      >
+        {titulo}{" "}
+        {tareas.length > 0 && (
+          <span className="text-sm font-normal text-muted">
+            {tareas.length}
+          </span>
+        )}
+      </h2>
+      {tareas.length === 0 ? (
+        <p className="px-1 text-sm text-muted">{vacio}</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {tareas.map((tarea) => (
+            <TareaItem
+              key={tarea.id}
+              tarea={tarea}
+              grupos={opciones}
+              etiqueta={etiquetaDeHoy(tarea, hoy)}
+            >
+              {ponerleDia && <PonerleDia id={tarea.id} hoy={hoy} />}
+            </TareaItem>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// Aviso corto para las tareas que tocaban antes de hoy: «De ayer», «De hace 3 días».
+function etiquetaDeHoy(
+  tarea: { due_date: string | null; due_kind?: string },
+  hoy: string,
+) {
+  if (!tarea.due_date || tarea.due_date >= hoy) return undefined;
+  const desde = textoPendienteDesde(tarea.due_date, hoy);
+  return tarea.due_kind === "limite" ? `Fecha límite ${desde}` : desde;
+}
+
+// «Más adelante» y «Hechas»: cerradas hasta que las tocas, para que no estorben.
+function Plegado({
+  titulo,
+  tareas,
+  opciones,
+}: {
+  titulo: string;
+  tareas: Awaited<ReturnType<typeof listarTareas>>;
+  opciones: GrupoOpciones[];
+}) {
+  if (tareas.length === 0) return null;
+  return (
+    <details>
+      <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wide text-muted">
+        {titulo} ({tareas.length})
+      </summary>
+      <ul className="mt-2 flex flex-col gap-2">
+        {tareas.map((tarea) => (
+          <TareaItem key={tarea.id} tarea={tarea} grupos={opciones} />
+        ))}
+      </ul>
+    </details>
   );
 }
 
@@ -279,13 +385,11 @@ function Grupo({
   tareas,
   opciones,
   vacio,
-  ponerleDia,
 }: {
   titulo: string;
   tareas: Awaited<ReturnType<typeof listarTareas>>;
   opciones: GrupoOpciones[];
   vacio: string;
-  ponerleDia?: string; // hoy: con él, cada tarea lleva «Ponerle día»
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -297,11 +401,7 @@ function Grupo({
       ) : (
         <ul className="flex flex-col gap-2">
           {tareas.map((tarea) => (
-            <TareaItem key={tarea.id} tarea={tarea} grupos={opciones}>
-              {ponerleDia && !tarea.done_at && (
-                <PonerleDia id={tarea.id} hoy={ponerleDia} />
-              )}
-            </TareaItem>
+            <TareaItem key={tarea.id} tarea={tarea} grupos={opciones} />
           ))}
         </ul>
       )}
