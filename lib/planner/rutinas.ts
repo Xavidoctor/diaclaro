@@ -36,6 +36,8 @@ export type Rutina = {
   // Con foco: minutos antes de la hora de inicio para avisarte. null = sin aviso.
   focus_alarm_minutes: number | null;
   active: boolean;
+  // El proyecto (o asignatura) al que pertenece. Vacío = sin proyecto.
+  project_id?: string | null;
 };
 
 // Los minutos que puedes elegir para el aviso antes de empezar.
@@ -268,7 +270,7 @@ const esquemaRutina = z
       ctx.addIssue({ code: "custom", message: "Marca qué días toca." });
   });
 
-export type DatosRutina = Omit<Rutina, "id" | "active">;
+export type DatosRutina = Omit<Rutina, "id" | "active" | "project_id">;
 
 export function prepararRutina(datos: {
   title: unknown;
@@ -339,4 +341,18 @@ export function prepararRutina(datos: {
       focus_alarm_minutes: d.focus ? d.focus_alarm_minutes : null,
     },
   };
+}
+
+// ---- Volver ----
+
+const RUTA_PROYECTO = /^\/areas\/[0-9a-f-]{36}\/proyectos\/[0-9a-f-]{36}$/i;
+
+// A dónde vuelves al guardar o borrar una rutina, según de dónde entraste:
+// "hoy", "agenda" o la página de un proyecto. Si no, a Ajustes.
+// Solo se aceptan esas direcciones (nunca una página de fuera de la app).
+export function destinoRutina(volver: unknown): string {
+  if (volver === "hoy") return "/";
+  if (volver === "agenda") return "/agenda";
+  if (typeof volver === "string" && RUTA_PROYECTO.test(volver)) return volver;
+  return "/ajustes";
 }

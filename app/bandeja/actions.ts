@@ -210,6 +210,7 @@ export async function editarTarea(
   const r = prepararCambiosTarea({
     title: formData.get("title"),
     due_date: formData.get("due_date"),
+    due_time: formData.get("due_time"),
     estimated_minutes: formData.get("estimated_minutes"),
   });
   if (!r.ok) return { error: r.error };
@@ -280,6 +281,7 @@ export async function crearTareaParaDia(
   const r = prepararCambiosTarea({
     title: formData.get("title"),
     due_date: formData.get("due_date"),
+    due_time: formData.get("due_time"),
     estimated_minutes: formData.get("estimated_minutes"),
   });
   if (!r.ok) return { envios, error: r.error };

@@ -13,6 +13,7 @@ import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { listarTareas } from "@/lib/data/bandeja";
+import { listarRutinas } from "@/lib/data/rutinas";
 import { tareasDesdeGoogle } from "@/lib/data/google";
 import {
   agruparPorDia,
@@ -20,6 +21,7 @@ import {
   ocurrenciasEntre,
 } from "@/lib/planner/agenda";
 import { opcionesProyecto } from "@/lib/planner/areas";
+import { bloquesDeRutinas, bloquesDeTareas } from "@/lib/planner/bloques";
 import { diasConTareas, tareasDelDia } from "@/lib/planner/bandeja";
 import {
   juntarRangos,
@@ -28,12 +30,7 @@ import {
   mesInicial,
   semanasDelMes,
 } from "@/lib/planner/calendario";
-import {
-  diasDesde,
-  esFecha,
-  nombreDia,
-  sumarDias,
-} from "@/lib/planner/fechas";
+import { diasDesde, esFecha, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import { juntarAgendas } from "@/lib/planner/google-calendar";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { diaDeHoy } from "@/lib/data/dia-activo";
@@ -73,14 +70,16 @@ export default async function AgendaPage({
   ]);
   const hasta = rangos.at(-1)!.hasta;
 
-  const [eventos, googles, tareas, { areas, proyectos }] = await Promise.all([
-    listarEventosHasta(hasta),
-    Promise.all(
-      rangos.map((r) => cargarAgendaGoogle(r.desde, r.hasta, timezone)),
-    ),
-    listarTareas(false),
-    cargarOpcionesProyecto(),
-  ]);
+  const [eventos, googles, tareas, rutinas, { areas, proyectos }] =
+    await Promise.all([
+      listarEventosHasta(hasta),
+      Promise.all(
+        rangos.map((r) => cargarAgendaGoogle(r.desde, r.hasta, timezone)),
+      ),
+      listarTareas(false),
+      listarRutinas(),
+      cargarOpcionesProyecto(),
+    ]);
   const google = {
     estado: googles[0].estado,
     ocurrencias: googles.flatMap((g) => g.ocurrencias),
@@ -99,10 +98,14 @@ export default async function AgendaPage({
             return null;
           })
       : null;
+  // Tus compromisos, más las tareas y rutinas con hora (los ratos que
+  // tienes reservados, de cualquier proyecto), más lo de Google.
   const todas = juntarAgendas(
-    rangos.flatMap((r) =>
-      ocurrenciasEntre(eventos, excepciones, r.desde, r.hasta),
-    ),
+    rangos.flatMap((r) => [
+      ...ocurrenciasEntre(eventos, excepciones, r.desde, r.hasta),
+      ...bloquesDeTareas(tareas, r.desde, r.hasta),
+      ...bloquesDeRutinas(rutinas, r.desde, r.hasta),
+    ]),
     google.ocurrencias,
   );
   const porDia = agruparPorDia(todas, dias);
@@ -111,7 +114,10 @@ export default async function AgendaPage({
     ...todas.map((o) => o.fecha),
     ...diasConTareas(tareas),
   ]);
-  const delElegido = elegido ? todas.filter((o) => o.fecha === elegido) : [];
+  // En el día elegido, las tareas ya salen abajo («Tareas de este día»).
+  const delElegido = elegido
+    ? todas.filter((o) => o.fecha === elegido && o.bloque?.tipo !== "tarea")
+    : [];
   const tareasElegido = elegido ? tareasDelDia(tareas, elegido) : [];
   const grupos = opcionesProyecto(areas, proyectos);
 
@@ -176,13 +182,15 @@ export default async function AgendaPage({
 
         <AvisoGoogle estado={google.estado} />
 
-        {eventos.length === 0 && google.estado !== "conectado" && (
-          <p className="card text-muted">
-            Aún no hay nada en tu agenda. Pulsa «Añadir» para apuntar tus
-            compromisos, como las tutorías o las clases. Si no sabes la hora
-            exacta, puedes dejarla vacía o elegir solo «por la tarde».
-          </p>
-        )}
+        {eventos.length === 0 &&
+          todas.length === 0 &&
+          google.estado !== "conectado" && (
+            <p className="card text-muted">
+              Aún no hay nada en tu agenda. Pulsa «Añadir» para apuntar tus
+              compromisos, como las tutorías o las clases. Si no sabes la hora
+              exacta, puedes dejarla vacía o elegir solo «por la tarde».
+            </p>
+          )}
 
         <ol className="flex flex-col gap-5">
           {porDia.map(({ fecha, ocurrencias }) => (

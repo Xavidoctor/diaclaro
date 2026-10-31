@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archivarProyecto, eliminarProyecto } from "@/app/areas/actions";
 import { FormProyecto } from "@/app/areas/form-proyecto";
-import { NuevaTarea } from "@/app/areas/nueva-tarea";
+import { AnadirEnProyecto } from "@/app/areas/anadir-en-proyecto";
 import { DocumentosDrive } from "@/app/areas/[id]/proyectos/[proyectoId]/documentos-drive";
 import { ResumirConIA } from "@/app/areas/[id]/proyectos/[proyectoId]/resumir-con-ia";
 import { NotaItem } from "@/app/bandeja/nota-item";
@@ -18,8 +18,11 @@ import {
   listarNotasDeProyecto,
   listarTareasDeProyecto,
 } from "@/lib/data/bandeja";
+import { listarRutinasDeProyecto } from "@/lib/data/rutinas";
+import { describirRepeticion, leerRegla } from "@/lib/planner/agenda";
 import { opcionesProyecto } from "@/lib/planner/areas";
 import { agruparTareas } from "@/lib/planner/bandeja";
+import { textoFranja, textoVeces } from "@/lib/planner/rutinas";
 
 export const metadata: Metadata = { title: "Proyecto" };
 
@@ -30,11 +33,12 @@ export default async function ProyectoPage({
 }: PageProps<"/areas/[id]/proyectos/[proyectoId]">) {
   const { id, proyectoId } = await params;
   const { google } = await searchParams;
-  const [area, proyecto, tareas, notas, { areas, proyectos }] =
+  const [area, proyecto, tareas, rutinas, notas, { areas, proyectos }] =
     await Promise.all([
       leerArea(id),
       leerProyecto(proyectoId),
       listarTareasDeProyecto(proyectoId),
+      listarRutinasDeProyecto(proyectoId),
       listarNotasDeProyecto(proyectoId),
       cargarOpcionesProyecto(),
     ]);
@@ -42,6 +46,7 @@ export default async function ProyectoPage({
   const opciones = opcionesProyecto(areas, proyectos);
   const { sinPlanificar, conFecha, hechas } = agruparTareas(tareas);
   const pendientes = [...conFecha, ...sinPlanificar];
+  const ruta = `/areas/${area.id}/proyectos/${proyecto.id}`;
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
@@ -77,8 +82,44 @@ export default async function ProyectoPage({
       </header>
 
       <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Añadir</h2>
+        <AnadirEnProyecto proyectoId={proyecto.id} ruta={ruta} />
+      </section>
+
+      {rutinas.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Se repite</h2>
+          <ul className="flex flex-col gap-2">
+            {rutinas.map((r) => (
+              <li key={r.id} className={r.active ? "" : "opacity-60"}>
+                <Link
+                  href={`/ajustes/rutinas/${r.id}?proyecto=${proyecto.id}`}
+                  className="card flex flex-col gap-1 p-4"
+                >
+                  <span className="break-words">{r.title}</span>
+                  <span className="text-sm text-muted">
+                    {[
+                      r.repeat_rule
+                        ? describirRepeticion(leerRegla(r.repeat_rule))
+                        : "Cada día",
+                      textoFranja(r),
+                      r.times_per_day > 1 || r.duration_minutes
+                        ? textoVeces(r)
+                        : "",
+                      r.active ? "" : "En pausa",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Tareas</h2>
-        <NuevaTarea proyectoId={proyecto.id} />
         {pendientes.length === 0 ? (
           <p className="text-sm text-muted">No hay tareas pendientes aquí.</p>
         ) : (
@@ -128,7 +169,7 @@ export default async function ProyectoPage({
 
       <DocumentosDrive
         proyectoId={proyecto.id}
-        ruta={`/areas/${area.id}/proyectos/${proyecto.id}`}
+        ruta={ruta}
         mensaje={typeof google === "string" ? google : undefined}
       />
 

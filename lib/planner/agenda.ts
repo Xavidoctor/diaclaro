@@ -50,6 +50,9 @@ export type Ocurrencia = {
   // Solo en lo que viene de tu Google Calendar (ver google-calendar.ts).
   // "libre" es cuando en Google lo marcaste como «Disponible».
   google?: { libre: boolean };
+  // Solo en las tareas y rutinas con hora que salen en la Agenda
+  // (ver bloques.ts). "id" es el de la tarea o la rutina.
+  bloque?: { tipo: "tarea" | "rutina"; id: string; hecha: boolean };
 };
 
 // ---- Repeticiones ----

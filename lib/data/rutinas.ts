@@ -11,7 +11,7 @@ import type {
 // Las reglas RLS ya hacen que cada persona solo vea lo suyo.
 
 const CAMPOS_RUTINA =
-  "id, title, notes, repeat_rule, times_per_day, duration_minutes, window_start, window_end, times_of_day, part_of_day, focus, focus_alarm_minutes, active";
+  "id, title, notes, repeat_rule, times_per_day, duration_minutes, window_start, window_end, times_of_day, part_of_day, focus, focus_alarm_minutes, active, project_id";
 
 function comprobar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`No se ha podido ${que}: ${error.message}`);
@@ -48,7 +48,9 @@ export async function leerRutina(id: string) {
   return data ? limpiar(data as Rutina) : null;
 }
 
-export async function crearRutina(datos: DatosRutina) {
+export async function crearRutina(
+  datos: DatosRutina & { project_id?: string | null },
+) {
   const supabase = await createClient();
   const { error } = await supabase.from("routines").insert(datos);
   comprobar(error, "guardar la rutina");
@@ -56,7 +58,9 @@ export async function crearRutina(datos: DatosRutina) {
 
 export async function cambiarRutina(
   id: string,
-  cambios: Partial<DatosRutina & { active: boolean }>,
+  cambios: Partial<
+    DatosRutina & { active: boolean; project_id: string | null }
+  >,
 ) {
   const supabase = await createClient();
   const { error } = await supabase
@@ -64,6 +68,19 @@ export async function cambiarRutina(
     .update(cambios)
     .eq("id", id);
   comprobar(error, "cambiar la rutina");
+}
+
+// Las rutinas de un proyecto (también las pausadas).
+export async function listarRutinasDeProyecto(proyectoId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("routines")
+    .select(CAMPOS_RUTINA)
+    .eq("project_id", proyectoId)
+    .order("created_at")
+    .limit(200);
+  comprobar(error, "cargar las rutinas del proyecto");
+  return ((data ?? []) as Rutina[]).map(limpiar);
 }
 
 // Borra la rutina y todo su registro (la base de datos lo hace sola).

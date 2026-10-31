@@ -2,31 +2,40 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { eliminarRutina, pausarRutina } from "@/app/ajustes/actions";
 import { FormRutina } from "@/app/ajustes/form-rutina";
+import { deDondeVienes } from "@/app/ajustes/rutinas/volver";
 import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { SeccionPausa } from "@/app/componentes/seccion-pausa";
+import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { leerRutina } from "@/lib/data/rutinas";
+import { opcionesProyecto } from "@/lib/planner/areas";
 
 export const metadata: Metadata = { title: "Rutina" };
 
-// /ajustes/rutinas/<id>?desde=hoy viene de Hoy: al guardar se regresa a Hoy.
+// /ajustes/rutinas/<id>?desde=hoy viene de Hoy, ?desde=agenda de la Agenda
+// y ?proyecto=<id> de un proyecto: al guardar se regresa allí.
 export default async function RutinaPage({
   params,
   searchParams,
 }: PageProps<"/ajustes/rutinas/[id]">) {
   const { id } = await params;
-  const desdeHoy = (await searchParams).desde === "hoy";
-  const rutina = await leerRutina(id);
+  const [rutina, origen, { areas, proyectos }] = await Promise.all([
+    leerRutina(id),
+    searchParams.then(deDondeVienes),
+    cargarOpcionesProyecto(),
+  ]);
   if (!rutina) notFound();
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-      <EnlaceVolver href={desdeHoy ? "/" : "/ajustes"}>
-        {desdeHoy ? "Hoy" : "Ajustes"}
-      </EnlaceVolver>
+      <EnlaceVolver href={origen.href}>{origen.texto}</EnlaceVolver>
       <h1 className="break-words text-3xl font-semibold tracking-tight">
         {rutina.title}
       </h1>
-      <FormRutina rutina={rutina} volver={desdeHoy ? "hoy" : undefined} />
+      <FormRutina
+        rutina={rutina}
+        volver={origen.volver}
+        grupos={opcionesProyecto(areas, proyectos)}
+      />
 
       <SeccionPausa
         accion={pausarRutina}
@@ -38,7 +47,9 @@ export default async function RutinaPage({
 
       <form action={eliminarRutina} className="border-t border-border pt-4">
         <input type="hidden" name="id" value={rutina.id} />
-        {desdeHoy && <input type="hidden" name="volver" value="hoy" />}
+        {origen.volver && (
+          <input type="hidden" name="volver" value={origen.volver} />
+        )}
         <details>
           <summary className="cursor-pointer text-sm text-danger">
             Borrar esta rutina
