@@ -65,7 +65,8 @@ export type ValoresFormRutina = Record<
   | "part_of_day"
   | "focus"
   | "focus_alarm_minutes"
-  | "project_id",
+  | "project_id"
+  | "url",
   string
 > & { dias: string[]; horas: string[] };
 
@@ -91,6 +92,7 @@ function valoresEscritos(formData: FormData): ValoresFormRutina {
     focus: texto("focus"),
     focus_alarm_minutes: texto("focus_alarm_minutes"),
     project_id: texto("project_id"),
+    url: texto("url"),
     dias: formData.getAll("dias").map(String),
     horas: formData.getAll("horas").map(String),
   };

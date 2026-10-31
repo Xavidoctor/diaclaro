@@ -71,6 +71,7 @@ function valoresIniciales(habito?: Habito, idea?: Idea): ValoresFormHabito {
     dias: regla.tipo === "semanal" ? regla.dias : [],
     routine_id: habito?.routine_id ?? "",
     remind_at: habito?.remind_at ? horaCorta(habito.remind_at) : "",
+    url: habito?.url ?? "",
   };
 }
 
@@ -91,6 +92,7 @@ function Campos({
     valores.cuando !== "todos" ||
     valores.remind_at !== "" ||
     valores.routine_id !== "" ||
+    valores.url !== "" ||
     valores.notes !== "";
 
   return (
@@ -236,6 +238,23 @@ function Campos({
               </span>
             </label>
           )}
+
+          <label className="flex flex-col gap-1 text-sm">
+            Enlace
+            <input
+              name="url"
+              inputMode="url"
+              autoCapitalize="none"
+              autoCorrect="off"
+              maxLength={2000}
+              defaultValue={valores.url}
+              placeholder="Un podcast, una clase, un vídeo…"
+              className="input py-2"
+            />
+            <span className="text-muted">
+              En Hoy saldrá un botón para abrirlo con un toque.
+            </span>
+          </label>
 
           <label className="flex flex-col gap-1 text-sm">
             Notas

@@ -15,7 +15,7 @@ import type { RegistroRutina } from "@/lib/planner/rutinas";
 // frases, la IA recibe el nombre del hábito y lo que quieres (más/menos/verlo).
 
 const CAMPOS_HABITO =
-  "id, title, notes, direction, unit, daily_target, repeat_rule, routine_id, remind_at, phrases, active";
+  "id, title, notes, direction, unit, daily_target, repeat_rule, routine_id, remind_at, phrases, url, active";
 
 function comprobar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`No se ha podido ${que}: ${error.message}`);

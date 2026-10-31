@@ -51,7 +51,8 @@ export type ValoresFormHabito = Record<
   | "daily_target"
   | "cuando"
   | "routine_id"
-  | "remind_at",
+  | "remind_at"
+  | "url",
   string
 > & { dias: string[] };
 
@@ -74,6 +75,7 @@ function valoresEscritos(formData: FormData): ValoresFormHabito {
     cuando: texto("cuando"),
     routine_id: texto("routine_id"),
     remind_at: texto("remind_at"),
+    url: texto("url"),
     dias: formData.getAll("dias").map(String),
   };
 }
