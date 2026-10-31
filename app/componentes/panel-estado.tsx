@@ -332,7 +332,7 @@ function Progreso({
     <Plegable
       Icono={ChartColumn}
       titulo="Progreso"
-      href="/areas/progreso"
+      href="/areas/semana#horas"
       enlace="Ver tu progreso completo"
     >
       {cargando && <Cargando />}
@@ -343,7 +343,7 @@ function Progreso({
         <ul className="grid grid-cols-3 gap-2">
           <Cifra nombre="Usado hoy" valor={horas(datos.hoy.usado)} />
           <Cifra
-            nombre="Horas muertas hoy"
+            nombre="Sin apuntar hoy"
             valor={horas(datos.hoy.sinApuntar)}
           />
           <Cifra nombre="Sueño medio" valor={horas(datos.sueno.media)} />

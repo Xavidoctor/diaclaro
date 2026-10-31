@@ -10,6 +10,7 @@ import {
   textoVeces,
   tocaRutina,
   type Rutina,
+  usaMasOpciones,
 } from "./rutinas";
 
 // Datos de ejemplo para las pruebas (no son los horarios reales de nadie).
@@ -246,9 +247,9 @@ describe("prepararRutina", () => {
   it("guarda el enlace de la clase o el podcast", () => {
     const r = prepararRutina({ ...formulario, url: "https://youtu.be/abc" });
     expect(r.ok && r.valor.url).toBe("https://youtu.be/abc");
-    expect(prepararRutina({ ...formulario, url: "javascript:alert(1)" }).ok).toBe(
-      false,
-    );
+    expect(
+      prepararRutina({ ...formulario, url: "javascript:alert(1)" }).ok,
+    ).toBe(false);
   });
 
   it("guarda una hora para cada vez, y la primera como inicio", () => {
@@ -443,5 +444,30 @@ describe("destinoRutina", () => {
     expect(destinoRutina(null)).toBe("/ajustes");
     expect(destinoRutina("https://ejemplo.com")).toBe("/ajustes");
     expect(destinoRutina("//ejemplo.com/areas/x")).toBe("/ajustes");
+  });
+});
+
+describe("usaMasOpciones", () => {
+  const vacia = {
+    times_per_day: "1",
+    duration_minutes: "",
+    window_end: "",
+    part_of_day: "",
+    focus: "",
+    project_id: "",
+    url: "",
+    notes: "",
+  };
+
+  it("una rutina sencilla deja «Más opciones» plegado", () => {
+    expect(usaMasOpciones(vacia)).toBe(false);
+    expect(usaMasOpciones({ ...vacia, notes: "   " })).toBe(false);
+  });
+
+  it("si usa algo de dentro, sale abierto", () => {
+    expect(usaMasOpciones({ ...vacia, times_per_day: "3" })).toBe(true);
+    expect(usaMasOpciones({ ...vacia, focus: "si" })).toBe(true);
+    expect(usaMasOpciones({ ...vacia, window_end: "10:00" })).toBe(true);
+    expect(usaMasOpciones({ ...vacia, url: "https://ejemplo.com" })).toBe(true);
   });
 });
