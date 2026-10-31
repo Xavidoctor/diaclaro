@@ -363,3 +363,29 @@ export function destinoRutina(volver: unknown): string {
   if (typeof volver === "string" && RUTA_PROYECTO.test(volver)) return volver;
   return "/ajustes";
 }
+
+// ¿La rutina usa algo de «Más opciones»? Así, al cambiarla, esa parte del
+// formulario sale abierta solo si hay algo dentro; si no, se queda plegada.
+export function usaMasOpciones(valores: {
+  times_per_day: string;
+  duration_minutes: string;
+  window_end: string;
+  part_of_day: string;
+  focus: string;
+  project_id: string;
+  url: string;
+  notes: string;
+}): boolean {
+  return (
+    Number(valores.times_per_day) > 1 ||
+    [
+      valores.duration_minutes,
+      valores.window_end,
+      valores.part_of_day,
+      valores.focus,
+      valores.project_id,
+      valores.url,
+      valores.notes,
+    ].some((v) => v.trim() !== "")
+  );
+}

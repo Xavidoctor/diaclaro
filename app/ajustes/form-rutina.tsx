@@ -10,11 +10,17 @@ import Link from "next/link";
 import { SaberMas } from "@/app/componentes/saber-mas";
 import { DIAS_SEMANA, FRANJAS, leerRegla } from "@/lib/planner/agenda";
 import { opcionesVisibles, type GrupoOpciones } from "@/lib/planner/areas";
-import { MINUTOS_AVISO, nombreVez, type Rutina } from "@/lib/planner/rutinas";
+import {
+  MINUTOS_AVISO,
+  nombreVez,
+  usaMasOpciones,
+  type Rutina,
+} from "@/lib/planner/rutinas";
 
 // Formulario para crear o cambiar una rutina.
-// Arriba, lo justo para añadirla rápido: nombre, días y hora (si la sabes).
-// El modo foco y el resto («Más opciones») son opcionales.
+// Arriba, solo 3 cosas para añadirla rápido: nombre, días y hora (si la sabes).
+// Todo lo demás (veces, minutos, «Hasta», modo foco, proyecto, enlace y
+// notas) está plegado en «Más opciones».
 // "volver" = de dónde entraste ("hoy", "agenda" o la página de un proyecto):
 // al guardar vuelves allí. "grupos" son tus proyectos, para elegir uno
 // (opcional), y "proyectoId", el que sale ya elegido al crearla.
@@ -39,12 +45,7 @@ export function FormRutina({
     <form action={formAction} className="flex flex-col gap-4">
       {rutina && <input type="hidden" name="id" value={rutina.id} />}
       {volver && <input type="hidden" name="volver" value={volver} />}
-      <Campos
-        key={estado.envios}
-        valores={valores}
-        editando={!!rutina}
-        grupos={grupos}
-      />
+      <Campos key={estado.envios} valores={valores} grupos={grupos} />
       {estado.error && (
         <p role="alert" className="text-sm text-danger">
           {estado.error}
@@ -95,11 +96,9 @@ function valoresIniciales(
 
 function Campos({
   valores,
-  editando,
   grupos,
 }: {
   valores: ValoresFormRutina;
-  editando: boolean;
   grupos: GrupoOpciones[];
 }) {
   const opciones = opcionesVisibles(grupos, valores.project_id || null);
@@ -191,117 +190,121 @@ function Campos({
             ))}
           </div>
         ) : (
-          <div className="flex gap-3">
-            <label className="flex flex-1 flex-col gap-1 text-sm text-muted">
-              Desde
-              <input
-                name="window_start"
-                type="time"
-                value={desde}
-                onChange={(e) => setDesde(e.target.value)}
-                className="input py-2 text-foreground"
-              />
-            </label>
-            <label className="flex flex-1 flex-col gap-1 text-sm text-muted">
-              Hasta
-              <input
-                name="window_end"
-                type="time"
-                defaultValue={valores.window_end}
-                disabled={!desde}
-                className="input py-2 text-foreground disabled:opacity-50"
-              />
-            </label>
-          </div>
-        )}
-        {!inicio && (
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            O solo la parte del día
-            <select
-              name="part_of_day"
-              defaultValue={valores.part_of_day}
-              className="input py-2 text-foreground"
-            >
-              <option value="">Cuando pueda</option>
-              {FRANJAS.map((f) => (
-                <option key={f} value={f}>
-                  Por la {f}
-                </option>
-              ))}
-            </select>
-          </label>
+          <input
+            name="window_start"
+            type="time"
+            aria-label="Hora a la que empieza"
+            value={desde}
+            onChange={(e) => setDesde(e.target.value)}
+            className="input py-2"
+          />
         )}
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
-        <div className="flex flex-col gap-1">
-          <label className="flex items-center gap-3 text-sm font-medium">
-            <input
-              type="checkbox"
-              name="focus"
-              value="si"
-              checked={foco}
-              onChange={(e) => setFoco(e.target.checked)}
-              className="size-4"
-            />
-            Modo foco
-          </label>
-          <SaberMas
-            className="pl-7"
-            resumen="Para concentrarte: estudiar, entrenar, leer…"
-          >
-            Al empezar la rutina, te recordaré que dejes el móvil lejos y podrás
-            poner una cuenta atrás o un cronómetro para medir el tiempo. Al
-            terminar, la rutina se apunta como hecha.
-          </SaberMas>
-        </div>
-
-        {foco && (
-          <div className="flex flex-col gap-1">
-            <label className="flex flex-col gap-1 text-sm">
-              Avisarme antes de empezar
-              <select
-                name="focus_alarm_minutes"
-                defaultValue={valores.focus_alarm_minutes}
-                disabled={!inicio}
-                className="input py-2 disabled:opacity-50"
+      {/* Lo demás, plegado. Al cambiar una rutina sale abierto solo si
+          ya usa algo de aquí dentro. */}
+      <details
+        open={usaMasOpciones(valores)}
+        className="group flex flex-col gap-4"
+      >
+        <summary className="cursor-pointer text-sm text-muted">
+          Más opciones: veces al día, hasta qué hora, modo foco, proyecto…
+        </summary>
+        <div className="mt-4 flex flex-col gap-4">
+          <fieldset className="flex flex-col gap-3 rounded-xl border border-border p-4">
+            <div className="flex flex-col gap-1">
+              <label className="flex items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  name="focus"
+                  value="si"
+                  checked={foco}
+                  onChange={(e) => setFoco(e.target.checked)}
+                  className="size-4"
+                />
+                Modo foco
+              </label>
+              <SaberMas
+                className="pl-7"
+                resumen="Para concentrarte: estudiar, entrenar, leer…"
               >
-                <option value="">Sin aviso</option>
-                {MINUTOS_AVISO.map((m) => (
-                  <option key={m} value={m}>
-                    {m} minutos antes
+                Al empezar la rutina, te recordaré que dejes el móvil lejos y
+                podrás poner una cuenta atrás o un cronómetro para medir el
+                tiempo. Al terminar, la rutina se apunta como hecha.
+              </SaberMas>
+            </div>
+
+            {foco && (
+              <div className="flex flex-col gap-1">
+                <label className="flex flex-col gap-1 text-sm">
+                  Avisarme antes de empezar
+                  <select
+                    name="focus_alarm_minutes"
+                    defaultValue={valores.focus_alarm_minutes}
+                    disabled={!inicio}
+                    className="input py-2 disabled:opacity-50"
+                  >
+                    <option value="">Sin aviso</option>
+                    {MINUTOS_AVISO.map((m) => (
+                      <option key={m} value={m}>
+                        {m} minutos antes
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {inicio ? (
+                  <SaberMas resumen="Por si vienes de comer o de otra cosa.">
+                    <p>
+                      Te llega un aviso al móvil esos minutos antes de las{" "}
+                      {inicio}, para que te dé tiempo a terminar lo que estés
+                      haciendo y prepararte. Hace falta tener los avisos
+                      activados en{" "}
+                      <Link href="/habitos/avisos" className="enlace">
+                        este dispositivo
+                      </Link>
+                      .
+                    </p>
+                  </SaberMas>
+                ) : (
+                  <p className="text-sm text-muted">
+                    {variasVeces
+                      ? "Para el aviso, pon arriba la hora de la 1.ª vez."
+                      : "Para el aviso, pon arriba a qué hora empieza."}
+                  </p>
+                )}
+              </div>
+            )}
+          </fieldset>
+
+          {!inicio && (
+            <label className="flex flex-col gap-1 text-sm text-muted">
+              Sin hora fija: ¿en qué parte del día?
+              <select
+                name="part_of_day"
+                defaultValue={valores.part_of_day}
+                className="input py-2 text-foreground"
+              >
+                <option value="">Cuando pueda</option>
+                {FRANJAS.map((f) => (
+                  <option key={f} value={f}>
+                    Por la {f}
                   </option>
                 ))}
               </select>
             </label>
-            {inicio ? (
-              <SaberMas resumen="Por si vienes de comer o de otra cosa.">
-                <p>
-                  Te llega un aviso al móvil esos minutos antes de las {inicio},
-                  para que te dé tiempo a terminar lo que estés haciendo y
-                  prepararte. Hace falta tener los avisos activados en{" "}
-                  <Link href="/habitos/avisos" className="enlace">
-                    este dispositivo
-                  </Link>
-                  .
-                </p>
-              </SaberMas>
-            ) : (
-              <p className="text-sm text-muted">
-                {variasVeces
-                  ? "Para el aviso, pon arriba la hora de la 1.ª vez."
-                  : "Para el aviso, pon arriba a qué hora empieza («Desde»)."}
-              </p>
-            )}
-          </div>
-        )}
-      </fieldset>
+          )}
+          {!variasVeces && desde && (
+            <label className="flex flex-col gap-1 text-sm">
+              Hasta (opcional)
+              <input
+                name="window_end"
+                type="time"
+                defaultValue={valores.window_end}
+                className="input py-2"
+              />
+            </label>
+          )}
 
-      <details open={editando} className="group flex flex-col gap-4">
-        <summary className="cursor-pointer text-sm text-muted">
-          Más opciones
-        </summary>
-        <div className="mt-4 flex flex-col gap-4">
           <div className="flex gap-3">
             <label className="flex flex-1 flex-col gap-1 text-sm">
               Veces al día
