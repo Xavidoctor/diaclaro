@@ -47,6 +47,7 @@ export type ValoresFormArea = {
   name: string;
   horas: string;
   personal_time: boolean;
+  color: string; // clave de colores.ts, o vacío (verde oscuro)
 };
 
 // Crear o cambiar un área (si el formulario trae "id", es cambiar).
@@ -60,11 +61,13 @@ export async function guardarArea(
     name: String(formData.get("name") ?? ""),
     horas: String(formData.get("horas") ?? ""),
     personal_time: formData.get("personal_time") === "si",
+    color: String(formData.get("color") ?? ""),
   };
   const r = prepararArea({
     name: valores.name,
     horas: valores.horas,
     personal_time: formData.get("personal_time"),
+    color: formData.get("color"),
   });
   if (!r.ok) return { envios, error: r.error, valores };
 

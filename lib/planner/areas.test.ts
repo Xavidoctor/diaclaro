@@ -142,8 +142,19 @@ describe("prepararArea", () => {
       prepararArea({ name: " Estudios ", horas: "1,5", personal_time: null }),
     ).toEqual({
       ok: true,
-      valor: { name: "Estudios", weekly_minutes: 90, personal_time: false },
+      valor: {
+        name: "Estudios",
+        weekly_minutes: 90,
+        personal_time: false,
+        color: null,
+      },
     });
+  });
+  it("guarda el color si es uno de la lista", () => {
+    const con = (color: string) =>
+      prepararArea({ name: "Deporte", horas: "", personal_time: null, color });
+    expect(con("naranja")).toMatchObject({ valor: { color: "naranja" } });
+    expect(con("fucsia")).toMatchObject({ valor: { color: null } });
   });
   it("las horas son opcionales y el tiempo personal se marca con 'si'", () => {
     expect(
@@ -154,6 +165,7 @@ describe("prepararArea", () => {
         name: "Dropshipping",
         weekly_minutes: null,
         personal_time: true,
+        color: null,
       },
     });
   });

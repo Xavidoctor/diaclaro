@@ -120,8 +120,34 @@ export function encajar(
     if (o.fin !== null) probar(o.fin); // empieza cuando el otro acaba
     if (minutos) probar(o.inicio - minutos); // acaba cuando el otro empieza
   }
-  if (mejor !== null) return mejor;
-  return Math.round(inicio / PASO_MINUTOS) * PASO_MINUTOS;
+  const puesto = mejor ?? Math.round(inicio / PASO_MINUTOS) * PASO_MINUTOS;
+  return sinPisar(puesto, minutos, otros);
+}
+
+// Si al soltarlo queda encima de otra cosa, se pega justo antes o justo
+// después (lo que quede más cerca y no pise nada). Si no hay sitio cerca
+// (a más de SEPARAR_MAX minutos), se queda encima: a veces no hay otra.
+export const SEPARAR_MAX = 60;
+
+function sinPisar(
+  inicio: number,
+  minutos: number | null,
+  otros: { inicio: number; fin: number | null }[],
+): number {
+  const dura = minutos ?? PASO_MINUTOS;
+  const pisa = (desde: number) =>
+    otros.some(
+      (o) => o.fin !== null && desde < o.fin && o.inicio < desde + dura,
+    );
+  if (!pisa(inicio)) return inicio;
+  const candidatos = otros
+    .flatMap((o) => (o.fin !== null ? [o.fin, o.inicio - dura] : []))
+    .filter((c) => c >= 0 && c + dura <= 24 * 60 && !pisa(c))
+    .sort((a, b) => Math.abs(a - inicio) - Math.abs(b - inicio));
+  const cerca = candidatos[0];
+  return cerca !== undefined && Math.abs(cerca - inicio) <= SEPARAR_MAX
+    ? cerca
+    : inicio;
 }
 
 // ---- Clases grabadas ----

@@ -15,6 +15,9 @@ import {
 // Las reglas RLS ya hacen que cada persona solo vea lo suyo.
 
 const CAMPOS_AREA =
+  "id, name, weekly_minutes, personal_time, position, archived_at, color";
+// Sin la migración 550000 aún no hay color: se lee sin él.
+const CAMPOS_AREA_ANTES =
   "id, name, weekly_minutes, personal_time, position, archived_at";
 const CAMPOS_PROYECTO =
   "id, area_id, name, kind, label, notes, url, archived_at";
@@ -23,25 +26,41 @@ function comprobar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`No se ha podido ${que}: ${error.message}`);
 }
 
+// ¿Falla porque aún no existe la columna del color (migración 550000)?
+function faltaColor(error: { code?: string; message: string } | null) {
+  return Boolean(
+    error &&
+    (error.code === "42703" ||
+      error.code === "PGRST204" ||
+      error.message.includes("color")),
+  );
+}
+
+// Quita el color de unos cambios (para guardar sin la migración 550000).
+function sinColor<T extends { color?: unknown }>(datos: T): T {
+  const copia = { ...datos };
+  delete copia.color;
+  return copia;
+}
+
 export async function listarAreas() {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("areas")
-    .select(CAMPOS_AREA)
-    .limit(100);
+  const pedir = (campos: string) =>
+    supabase.from("areas").select(campos).limit(100);
+  let { data, error } = await pedir(CAMPOS_AREA);
+  if (faltaColor(error)) ({ data, error } = await pedir(CAMPOS_AREA_ANTES));
   comprobar(error, "cargar las áreas");
-  return ordenarAreas((data ?? []) as Area[]);
+  return ordenarAreas((data ?? []) as unknown as Area[]);
 }
 
 export async function leerArea(id: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("areas")
-    .select(CAMPOS_AREA)
-    .eq("id", id)
-    .maybeSingle();
+  const pedir = (campos: string) =>
+    supabase.from("areas").select(campos).eq("id", id).maybeSingle();
+  let { data, error } = await pedir(CAMPOS_AREA);
+  if (faltaColor(error)) ({ data, error } = await pedir(CAMPOS_AREA_ANTES));
   comprobar(error, "leer el área");
-  return (data as Area | null) ?? null;
+  return (data as unknown as Area | null) ?? null;
 }
 
 // La nueva área va al final de la lista.
@@ -49,7 +68,12 @@ export async function crearArea(datos: DatosArea) {
   const supabase = await createClient();
   const areas = await listarAreas();
   const position = Math.max(-1, ...areas.map((a) => a.position)) + 1;
-  const { error } = await supabase.from("areas").insert({ ...datos, position });
+  const guardar = (fila: DatosArea & { position: number }) =>
+    supabase.from("areas").insert(fila);
+  let { error } = await guardar({ ...datos, position });
+  // Sin la migración 550000: se guarda sin color.
+  if (faltaColor(error))
+    ({ error } = await guardar(sinColor({ ...datos, position })));
   comprobar(error, "guardar el área");
 }
 
@@ -71,7 +95,11 @@ export async function cambiarArea(
   >,
 ) {
   const supabase = await createClient();
-  const { error } = await supabase.from("areas").update(cambios).eq("id", id);
+  const guardar = (c: typeof cambios) =>
+    supabase.from("areas").update(c).eq("id", id);
+  let { error } = await guardar(cambios);
+  if (faltaColor(error) && "color" in cambios)
+    ({ error } = await guardar(sinColor(cambios)));
   comprobar(error, "cambiar el área");
 }
 

@@ -1,3 +1,4 @@
+import { leerColor } from "./colores";
 import { z } from "zod";
 import { textoOpcional } from "./agenda";
 import { primerEnlace, type Resultado } from "./bandeja";
@@ -19,6 +20,8 @@ export type Area = {
   personal_time: boolean;
   position: number;
   archived_at: string | null;
+  // Su color en la Agenda (ver colores.ts). Vacío = verde oscuro.
+  color?: string | null;
 };
 
 export const TIPOS_PROYECTO = ["proyecto", "asignatura"] as const;
@@ -292,12 +295,16 @@ const esquemaArea = z.object({
   personal_time: z.boolean(),
 });
 
-export type DatosArea = Pick<Area, "name" | "weekly_minutes" | "personal_time">;
+export type DatosArea = Pick<
+  Area,
+  "name" | "weekly_minutes" | "personal_time" | "color"
+>;
 
 export function prepararArea(datos: {
   name: unknown;
   horas: unknown;
   personal_time: unknown;
+  color?: unknown;
 }): Resultado<DatosArea> {
   const r = esquemaArea.safeParse({
     name: datos.name ?? "",
@@ -311,6 +318,7 @@ export function prepararArea(datos: {
       name: r.data.name,
       weekly_minutes: r.data.horas,
       personal_time: r.data.personal_time,
+      color: leerColor(datos.color),
     },
   };
 }

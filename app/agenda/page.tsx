@@ -55,6 +55,7 @@ import {
   tareasParaHoy,
 } from "@/lib/planner/bandeja";
 import { areasDelDia, textoDiaDe } from "@/lib/planner/resumen-dias";
+import { colorDeProyecto } from "@/lib/planner/colores";
 import {
   juntarRangos,
   leerMesParam,
@@ -253,8 +254,16 @@ export default async function AgendaPage({
   const grupos = opcionesProyecto(areas, proyectos);
   const sePuedeOrdenar = dia >= hoy;
   const horas = await horasDeEsteDia();
+  // El color de cada cuadro: el del área de su proyecto (verde oscuro si no tiene).
+  const proyectoDe = (o: Ocurrencia) =>
+    o.bloque?.tipo === "tarea"
+      ? proyectoDeTarea.get(o.bloque.id)
+      : o.bloque
+        ? proyectoDeRutina.get(o.bloque.id)
+        : null;
   const cuadros: CuadroDelDia[] = conHora.map((o) => ({
     o,
+    color: colorDeProyecto(proyectoDe(o), proyectos, areas),
     clave: `${o.eventoId}|${o.fechaOriginal}`,
     href: o.google
       ? null
