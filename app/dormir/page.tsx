@@ -96,7 +96,7 @@ export default async function DormirPage() {
         <Link href="/" className="enlace">
           Ir a Hoy
         </Link>
-        <Link href="/areas/progreso" className="enlace">
+        <Link href="/areas/semana#horas" className="enlace">
           Ver mi progreso
         </Link>
       </div>
