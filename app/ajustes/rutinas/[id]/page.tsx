@@ -7,7 +7,7 @@ import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { SeccionHoraFija } from "@/app/componentes/seccion-hora-fija";
 import { SeccionPausa } from "@/app/componentes/seccion-pausa";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
-import { leerRutinasFijas } from "@/lib/data/mover-dia";
+import { leerOpcionesRutinas } from "@/lib/data/mover-dia";
 import { leerRutina } from "@/lib/data/rutinas";
 import { opcionesProyecto } from "@/lib/planner/areas";
 import { rutinaFija } from "@/lib/planner/mover-dia";
@@ -26,7 +26,7 @@ export default async function RutinaPage({
     searchParams.then(deDondeVienes),
     cargarOpcionesProyecto(),
     // Si falta su migración, no sale la sección «Hora fija».
-    leerRutinasFijas().catch(() => null),
+    leerOpcionesRutinas().catch(() => null),
   ]);
   if (!rutina) notFound();
   // Solo tiene sentido si la rutina tiene alguna hora.
@@ -49,7 +49,11 @@ export default async function RutinaPage({
       {fijas && conHora && (
         <SeccionHoraFija
           id={rutina.id}
-          fija={rutinaFija({ ...rutina, fixed_time: fijas.get(rutina.id) })}
+          fija={rutinaFija({
+            ...rutina,
+            fixed_time: fijas.get(rutina.id)?.fija,
+          })}
+          grabada={fijas.get(rutina.id)?.grabada ?? false}
         />
       )}
 

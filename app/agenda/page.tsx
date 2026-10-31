@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { CalendarioMes } from "@/app/agenda/calendario-mes";
+import { DiaPorHoras, type CuadroDelDia } from "@/app/agenda/dia-por-horas";
+import { EventoGoogle } from "@/app/agenda/evento-google";
 import { ListaDelDia } from "@/app/agenda/lista-del-dia";
 import { MetasDelDia } from "@/app/agenda/metas-del-dia";
 import { NuevaTareaDia } from "@/app/agenda/nueva-tarea-dia";
 import { TareaItem } from "@/app/bandeja/tarea-item";
 import { MoverTareas } from "@/app/componentes/mover-tareas";
 import { AvisoGoogle } from "@/app/componentes/aviso-google";
+import { DesplegarAnadir } from "@/app/componentes/desplegar-anadir";
 import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
@@ -16,12 +19,16 @@ import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { listarTareas } from "@/lib/data/bandeja";
 import { listarMetasPendientes } from "@/lib/data/metas";
 import { listarRutinas } from "@/lib/data/rutinas";
-import { leerRutinasFijas, listarMovidas } from "@/lib/data/mover-dia";
+import {
+  leerOpcionesRutinas,
+  listarMovidas,
+  type OpcionesRutina,
+} from "@/lib/data/mover-dia";
 import { tareasDesdeGoogle } from "@/lib/data/google";
 import {
-  agruparPorDia,
-  leerFechaParam,
   ocurrenciasEntre,
+  textoHora,
+  type Ocurrencia,
 } from "@/lib/planner/agenda";
 import { opcionesProyecto } from "@/lib/planner/areas";
 import { bloquesDeRutinas, bloquesDeTareas } from "@/lib/planner/bloques";
@@ -33,45 +40,50 @@ import {
   mesInicial,
   semanasDelMes,
 } from "@/lib/planner/calendario";
-import { diasDesde, esFecha, nombreDia, sumarDias } from "@/lib/planner/fechas";
-import { juntarAgendas } from "@/lib/planner/google-calendar";
+import { esFecha, horaEn, nombreDia, sumarDias } from "@/lib/planner/fechas";
+import { claveGoogle, juntarAgendas } from "@/lib/planner/google-calendar";
+import { marcarGrabadas } from "@/lib/planner/dia-por-horas";
 import { metasPorDia } from "@/lib/planner/metas";
 import { sePuedeMover } from "@/lib/planner/mover-dia";
 import { ChevronLeft, ChevronRight, GripVertical, Plus } from "lucide-react";
+import { enlaceBloque } from "@/app/agenda/lista-del-dia";
 import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Agenda" };
 
-// Los días seguidos que se ven arriba. El resto, en el calendario.
-const DIAS_VISTA = 3;
+// Los días que se resumen debajo del recuadro.
+const DIAS_RESUMEN = 2;
+// Lo que se enseña de cada día del resumen.
+const COSAS_RESUMEN = 4;
 
-// La Agenda: arriba, tus próximos días; debajo, un calendario del mes
-// para elegir cualquier día y ver lo que tienes.
-// /agenda?desde=2026-11-09 enseña los días seguidos desde esa fecha.
-// /agenda?dia=2026-12-03 elige ese día en el calendario (y abre su mes).
-// /agenda?mes=2027-01 enseña ese mes en el calendario. Sin nada, se abre
-// el mes de hoy (o el siguiente si estás en la última semana del mes).
+// La Agenda:
+//   1. Un recuadro con un día entero, por horas (al entrar, hoy). Con las
+//      flechas ‹ › vas al día anterior o al siguiente.
+//   2. Debajo, un resumen de los dos días siguientes (tocarlos los abre arriba).
+//   3. Un calendario del mes para saltar a cualquier día.
+// /agenda?dia=2026-12-03 abre ese día en el recuadro (y su mes).
+// /agenda?mes=2027-01 enseña ese mes en el calendario.
 export default async function AgendaPage({
   searchParams,
 }: PageProps<"/agenda">) {
   const params = await searchParams;
   const { timezone } = await leerAjustes();
   const hoy = await diaDeHoy();
-  const desde = leerFechaParam(params.desde, hoy);
-  const dias = diasDesde(desde, DIAS_VISTA);
-  const elegido =
-    typeof params.dia === "string" && esFecha(params.dia) ? params.dia : null;
+  const dia =
+    typeof params.dia === "string" && esFecha(params.dia) ? params.dia : hoy;
+  const siguientes = Array.from({ length: DIAS_RESUMEN }, (_, i) =>
+    sumarDias(dia, i + 1),
+  );
   const mes = leerMesParam(
     params.mes,
-    elegido ? mesDe(elegido) : mesInicial(hoy),
+    typeof params.dia === "string" ? mesDe(dia) : mesInicial(hoy),
   );
   const diasDelMes = semanasDelMes(mes).flat();
 
-  // Se cargan solo los días que se ven: los de arriba, el mes y el elegido.
+  // Se cargan solo los días que se ven: el recuadro, el resumen y el mes.
   const rangos = juntarRangos([
-    { desde, hasta: dias.at(-1)! },
+    { desde: dia, hasta: siguientes.at(-1)! },
     { desde: diasDelMes[0], hasta: diasDelMes.at(-1)! },
-    ...(elegido ? [{ desde: elegido, hasta: elegido }] : []),
   ]);
   const hasta = rangos.at(-1)!.hasta;
 
@@ -82,7 +94,7 @@ export default async function AgendaPage({
     rutinasGuardadas,
     { areas, proyectos },
     metas,
-    fijas,
+    opciones,
     movidas,
   ] = await Promise.all([
     listarEventosHasta(hasta),
@@ -94,14 +106,15 @@ export default async function AgendaPage({
     cargarOpcionesProyecto(),
     // Entregas, exámenes y metas. Si falta su migración, simplemente no salen.
     listarMetasPendientes(hasta, rangos[0].desde).catch(() => []),
-    // Qué rutinas tienen hora fija y lo que has movido. Si falta su
-    // migración, todo sale con su hora de siempre (y nada se puede guardar).
-    leerRutinasFijas().catch(() => new Map<string, boolean>()),
+    // Qué rutinas tienen hora fija o están grabadas, y lo que has movido.
+    // Si falta su migración, todo sale con su hora de siempre.
+    leerOpcionesRutinas().catch(() => new Map<string, OpcionesRutina>()),
     listarMovidas(rangos[0].desde, hasta).catch(() => []),
   ]);
   const rutinas = rutinasGuardadas.map((r) => ({
     ...r,
-    fixed_time: fijas.get(r.id) ?? null,
+    fixed_time: opciones.get(r.id)?.fija ?? null,
+    recorded: opciones.get(r.id)?.grabada ?? false,
   }));
   const google = {
     estado: googles[0].estado,
@@ -131,7 +144,9 @@ export default async function AgendaPage({
     ]),
     google.ocurrencias,
   );
-  const porDia = agruparPorDia(todas, dias);
+  // Lo de un día, con las clases grabadas que se juntan con otra ya marcadas.
+  const delDia = (fecha: string) =>
+    marcarGrabadas(todas.filter((o) => o.fecha === fecha));
   const metasDelDia = metasPorDia(metas);
   // Un puntito en el calendario si ese día hay algo apuntado o tareas sin hacer.
   const diasConAlgo = new Set([
@@ -139,28 +154,51 @@ export default async function AgendaPage({
     ...diasConTareas(tareas),
     ...metasDelDia.keys(),
   ]);
-  // Lo del día elegido. Las tareas con hora salen también aquí, para poder
-  // moverlas; debajo, en «Tareas de este día», se marcan o se editan.
-  const delElegido = elegido ? todas.filter((o) => o.fecha === elegido) : [];
-  // Si en lo que se ve hay algo que se puede mover, se explica cómo.
-  const hayMovibles = [...porDia.flatMap((d) => d.ocurrencias), ...delElegido]
-    .filter((o) => o.fecha >= hoy)
-    .some(sePuedeMover);
-  const tareasElegido = elegido ? tareasDelDia(tareas, elegido) : [];
+
+  const deEsteDia = delDia(dia);
+  const conHora = deEsteDia.filter((o) => o.horaInicio);
+  const sinHora = deEsteDia.filter((o) => !o.horaInicio);
+  const tareasDia = tareasDelDia(tareas, dia);
   const grupos = opcionesProyecto(areas, proyectos);
+  const sePuedeOrdenar = dia >= hoy;
+  const hayMovibles = sePuedeOrdenar && conHora.some(sePuedeMover);
+  const cuadros: CuadroDelDia[] = conHora.map((o) => ({
+    o,
+    clave: `${o.eventoId}|${o.fechaOriginal}`,
+    href: o.google
+      ? null
+      : o.bloque
+        ? enlaceBloque(o)
+        : `/agenda/${o.eventoId}?dia=${o.fechaOriginal}`,
+  }));
+  // Lo de Google se ve en el día, y al tocarlo salen sus botones.
+  const detallesGoogle = Object.fromEntries(
+    conHora
+      .filter((o) => o.google)
+      .map((o) => [
+        `${o.eventoId}|${o.fechaOriginal}`,
+        <EventoGoogle
+          key={o.eventoId}
+          o={o}
+          tareaId={importadas?.get(claveGoogle(o))}
+          puedeImportar={importadas !== null}
+        />,
+      ]),
+  );
 
   // Dirección para cambiar de mes o elegir un día sin perder lo demás.
   function enlace(cambio: { mes?: string; dia?: string }) {
     const p = new URLSearchParams();
-    if (desde !== hoy) p.set("desde", desde);
     if (cambio.dia) {
       p.set("dia", cambio.dia);
-      return `/agenda?${p}#dia-elegido`;
+      return `/agenda?${p}#dia`;
     }
-    if (elegido) p.set("dia", elegido);
+    if (dia !== hoy) p.set("dia", dia);
     if (cambio.mes) p.set("mes", cambio.mes);
     return `/agenda?${p}#calendario`;
   }
+  const irA = (fecha: string) =>
+    fecha === hoy ? "/agenda#dia" : `/agenda?dia=${fecha}#dia`;
 
   return (
     <>
@@ -168,7 +206,7 @@ export default async function AgendaPage({
         <header className="flex items-center justify-between gap-4">
           <h1 className="text-3xl font-semibold tracking-tight">Agenda</h1>
           <Link
-            href="/agenda/nuevo"
+            href={`/agenda/nuevo?dia=${dia}`}
             data-guia="agenda-anadir"
             className="button-primary gap-1 py-2 text-sm"
           >
@@ -179,30 +217,106 @@ export default async function AgendaPage({
 
         <AyudaPantalla seccion="agenda" />
 
-        <nav aria-label="Cambiar de días" className="flex gap-4 text-sm">
-          <Link
-            href={`/agenda?desde=${sumarDias(desde, -DIAS_VISTA)}`}
-            className="enlace inline-flex min-h-11 items-center gap-0.5"
+        <AvisoGoogle estado={google.estado} />
+
+        {/* 1. El recuadro del día. */}
+        <section
+          id="dia"
+          aria-label="El día"
+          className="card flex scroll-mt-4 flex-col gap-4 p-4"
+        >
+          <nav
+            aria-label="Cambiar de día"
+            className="flex items-center justify-between gap-2"
           >
-            <ChevronLeft aria-hidden className="size-4" />
-            Anteriores
-          </Link>
-          {desde !== hoy && (
             <Link
-              href="/agenda"
-              className="enlace inline-flex min-h-11 items-center"
+              href={irA(sumarDias(dia, -1))}
+              aria-label="Día anterior"
+              className="enlace inline-flex size-11 items-center justify-center rounded-full hover:bg-secondary"
             >
-              Hoy
+              <ChevronLeft aria-hidden className="size-5" />
             </Link>
+            <div className="flex flex-col items-center text-center">
+              <h2 className="text-lg font-semibold first-letter:uppercase">
+                {nombreDia(dia)}
+              </h2>
+              {dia === hoy ? (
+                <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                  Hoy
+                </span>
+              ) : (
+                <Link href="/agenda#dia" className="enlace text-xs">
+                  Volver a hoy
+                </Link>
+              )}
+            </div>
+            <Link
+              href={irA(sumarDias(dia, 1))}
+              aria-label="Día siguiente"
+              className="enlace inline-flex size-11 items-center justify-center rounded-full hover:bg-secondary"
+            >
+              <ChevronRight aria-hidden className="size-5" />
+            </Link>
+          </nav>
+
+          <MetasDelDia metas={metasDelDia.get(dia) ?? []} />
+
+          {sinHora.length > 0 && (
+            <ListaDelDia ocurrencias={sinHora} importadas={importadas} />
           )}
-          <Link
-            href={`/agenda?desde=${sumarDias(desde, DIAS_VISTA)}`}
-            className="enlace ml-auto inline-flex min-h-11 items-center gap-0.5"
-          >
-            Siguientes
-            <ChevronRight aria-hidden className="size-4" />
-          </Link>
-        </nav>
+
+          {conHora.length === 0 && sinHora.length === 0 ? (
+            <p className="text-sm text-muted">
+              Nada apuntado con hora. Pulsa «Añadir» para apuntar tus
+              compromisos, como las clases o el trabajo.
+            </p>
+          ) : (
+            conHora.length > 0 && (
+              <DiaPorHoras
+                cuadros={cuadros}
+                sePuedeOrdenar={sePuedeOrdenar}
+                ahora={dia === hoy ? horaEn(timezone) : null}
+                detallesGoogle={detallesGoogle}
+              />
+            )
+          )}
+
+          {hayMovibles && (
+            <p className="flex items-center gap-1 text-xs text-muted">
+              <GripVertical aria-hidden className="size-4 shrink-0" />
+              Mantén pulsado lo que tiene este icono y muévelo arriba o abajo.
+              Si lo sueltas cerca del final de otra cosa, encaja justo después.
+            </p>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <h3
+              id="tareas-del-dia"
+              className="scroll-mt-4 text-sm font-semibold uppercase tracking-wide text-muted"
+            >
+              Tareas de este día
+            </h3>
+            {tareasDia.length === 0 ? (
+              <p className="text-sm text-muted">Ninguna tarea este día.</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {tareasDia.map((tarea) => (
+                  <TareaItem key={tarea.id} tarea={tarea} grupos={grupos}>
+                    {/* Si ese día ya pasó y no la hiciste, puedes traerla a hoy. */}
+                    {dia < hoy && !tarea.done_at && (
+                      <MoverTareas ids={[tarea.id]} hoy={hoy} />
+                    )}
+                  </TareaItem>
+                ))}
+              </ul>
+            )}
+            {sePuedeOrdenar && (
+              <DesplegarAnadir texto="Añadir tarea a este día">
+                <NuevaTareaDia dia={dia} />
+              </DesplegarAnadir>
+            )}
+          </div>
+        </section>
 
         <Link
           href="/ordenar?modo=cambio"
@@ -211,113 +325,83 @@ export default async function AgendaPage({
           ¿Algo ha cambiado? Cuéntamelo y lo reorganizo
         </Link>
 
-        <AvisoGoogle estado={google.estado} />
-
-        {eventos.length === 0 &&
-          todas.length === 0 &&
-          google.estado !== "conectado" && (
-            <p className="card text-muted">
-              Aún no hay nada en tu agenda. Pulsa «Añadir» para apuntar tus
-              compromisos, como las tutorías o las clases. Si no sabes la hora
-              exacta, puedes dejarla vacía o elegir solo «por la tarde».
-            </p>
-          )}
-
-        {hayMovibles && (
-          <p className="flex items-center gap-1 text-sm text-muted">
-            <GripVertical aria-hidden className="size-4 shrink-0" />
-            Mantén pulsado lo que tiene este icono y muévelo arriba o abajo para
-            cambiarle la hora. Lo demás es fijo.
-          </p>
-        )}
-
-        <ol className="flex flex-col gap-5">
-          {porDia.map(({ fecha, ocurrencias }) => (
-            <li key={fecha} className="flex flex-col gap-2">
-              <TituloDia fecha={fecha} hoy={hoy} />
-              <MetasDelDia metas={metasDelDia.get(fecha) ?? []} />
-              <ListaDelDia
-                ocurrencias={ocurrencias}
-                importadas={importadas}
-                sePuedeOrdenar={fecha >= hoy}
-              />
-            </li>
+        {/* 2. El resumen de los días siguientes. */}
+        <section
+          aria-label="Los días siguientes"
+          className="flex flex-col gap-3"
+        >
+          {siguientes.map((fecha) => (
+            <ResumenDia
+              key={fecha}
+              fecha={fecha}
+              hoy={hoy}
+              href={irA(fecha)}
+              ocurrencias={delDia(fecha)}
+              tareas={
+                tareasDelDia(tareas, fecha).filter((t) => !t.done_at).length
+              }
+            />
           ))}
-        </ol>
+        </section>
 
+        {/* 3. El calendario. */}
         <CalendarioMes
           mes={mes}
           hoy={hoy}
-          elegido={elegido}
+          elegido={dia}
           diasConAlgo={diasConAlgo}
           enlace={enlace}
         />
-
-        {elegido ? (
-          <section
-            id="dia-elegido"
-            aria-label="Día elegido"
-            className="flex scroll-mt-4 flex-col gap-2"
-          >
-            <TituloDia fecha={elegido} hoy={hoy} />
-            <MetasDelDia metas={metasDelDia.get(elegido) ?? []} />
-            <ListaDelDia
-              ocurrencias={delElegido}
-              importadas={importadas}
-              sePuedeOrdenar={elegido >= hoy}
-            />
-            <Link
-              href={`/agenda/nuevo?dia=${elegido}`}
-              className="enlace inline-flex min-h-11 items-center gap-1 self-start text-sm"
-            >
-              <Plus aria-hidden className="size-4" />
-              Añadir algo este día
-            </Link>
-
-            <h3
-              id="tareas-del-dia"
-              className="scroll-mt-4 text-sm font-semibold uppercase tracking-wide text-muted"
-            >
-              Tareas de este día
-            </h3>
-            {tareasElegido.length === 0 ? (
-              <p className="text-sm text-muted">Ninguna tarea este día.</p>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {tareasElegido.map((tarea) => (
-                  <TareaItem key={tarea.id} tarea={tarea} grupos={grupos}>
-                    {/* Si ese día ya pasó y no la hiciste, puedes traerla a hoy. */}
-                    {elegido < hoy && !tarea.done_at && (
-                      <MoverTareas ids={[tarea.id]} hoy={hoy} />
-                    )}
-                  </TareaItem>
-                ))}
-              </ul>
-            )}
-            {elegido >= hoy && <NuevaTareaDia dia={elegido} />}
-          </section>
-        ) : (
-          <p className="text-sm text-muted">
-            Toca un día del calendario para ver lo que tienes ese día y
-            apuntarle tareas.
-          </p>
-        )}
       </main>
       <BarraInferior actual="/agenda" />
     </>
   );
 }
 
-// "Jueves 30 de octubre", con la etiqueta «Hoy» si toca.
-function TituloDia({ fecha, hoy }: { fecha: string; hoy: string }) {
+// Un día del resumen: lo primero que tiene y cuántas tareas. Tocarlo lo
+// abre en el recuadro de arriba.
+function ResumenDia({
+  fecha,
+  hoy,
+  href,
+  ocurrencias,
+  tareas,
+}: {
+  fecha: string;
+  hoy: string;
+  href: string;
+  ocurrencias: Ocurrencia[];
+  tareas: number;
+}) {
+  const vistas = ocurrencias.slice(0, COSAS_RESUMEN);
+  const mas = ocurrencias.length - vistas.length;
   return (
-    <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-      <span className="first-letter:uppercase">{nombreDia(fecha)}</span>
-      {fecha === hoy && (
-        <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs normal-case text-primary-foreground">
-          Hoy
+    <Link href={href} className="card flex flex-col gap-1 p-4">
+      <span className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold uppercase tracking-wide text-muted first-letter:uppercase">
+          {nombreDia(fecha)}
+          {fecha === sumarDias(hoy, 1) && " · mañana"}
         </span>
+        <ChevronRight aria-hidden className="size-4 text-muted" />
+      </span>
+      {vistas.length === 0 && tareas === 0 ? (
+        <span className="text-sm text-muted">Nada apuntado.</span>
+      ) : (
+        <ul className="flex flex-col gap-0.5 text-sm">
+          {vistas.map((o) => (
+            <li key={`${o.eventoId}|${o.fechaOriginal}`} className="flex gap-2">
+              <span className="w-24 shrink-0 text-muted">{textoHora(o)}</span>
+              <span className="min-w-0 flex-1 truncate">{o.titulo}</span>
+            </li>
+          ))}
+          {mas > 0 && <li className="text-xs text-muted">y {mas} más</li>}
+          {tareas > 0 && (
+            <li className="text-xs text-muted">
+              {tareas === 1 ? "1 tarea" : `${tareas} tareas`} para este día
+            </li>
+          )}
+        </ul>
       )}
-    </h2>
+    </Link>
   );
 }

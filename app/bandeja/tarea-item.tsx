@@ -81,7 +81,11 @@ export function TareaItem({
             proyecto) && (
             <p className="text-sm text-muted">
               {[
-                tarea.due_date && verFecha(tarea.due_date),
+                // Con fecha límite: "Hasta mar, 3 nov".
+                tarea.due_date &&
+                  (tarea.due_kind === "limite"
+                    ? `Hasta ${verFecha(tarea.due_date)}`
+                    : verFecha(tarea.due_date)),
                 // "10:00–11:30" si tiene hora; si no, solo los minutos.
                 tarea.due_time
                   ? textoHoraTarea(tarea)

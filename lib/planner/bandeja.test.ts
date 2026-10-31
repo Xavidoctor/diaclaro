@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  cuandoDeTarea,
+  textoFechaLimite,
   agruparTareas,
   porFechaYHora,
   tareasParaHoy,
@@ -380,5 +382,95 @@ describe("porFechaYHora", () => {
       "tarde",
       "sin-hora",
     ]);
+  });
+});
+
+describe("tres formas de poner una tarea", () => {
+  const datos = {
+    title: "Hacer el tema 1",
+    due_date: "2026-11-06",
+    due_time: "10:00",
+    estimated_minutes: "",
+  };
+
+  it("«Con fecha límite» guarda el día sin hora", () => {
+    const r = prepararCambiosTarea({ ...datos, cuando: "limite" });
+    expect(r.ok && r.valor).toMatchObject({
+      due_date: "2026-11-06",
+      due_time: null,
+      due_kind: "limite",
+    });
+  });
+
+  it("«Sin día» quita el día y la hora", () => {
+    const r = prepararCambiosTarea({ ...datos, cuando: "sin" });
+    expect(r.ok && r.valor).toMatchObject({
+      due_date: null,
+      due_time: null,
+      due_kind: "dia",
+    });
+  });
+
+  it("«Un día» y «Con fecha límite» necesitan el día", () => {
+    expect(
+      prepararCambiosTarea({
+        ...datos,
+        due_date: "",
+        due_time: "",
+        cuando: "dia",
+      }).ok,
+    ).toBe(false);
+    expect(
+      prepararCambiosTarea({ ...datos, due_date: "", cuando: "limite" }).ok,
+    ).toBe(false);
+  });
+
+  it("sin «cuando» no toca el tipo", () => {
+    const r = prepararCambiosTarea(datos);
+    expect(r.ok && "due_kind" in r.valor).toBe(false);
+  });
+
+  it("sabe de qué tipo es cada tarea", () => {
+    expect(cuandoDeTarea({ due_date: null, due_kind: "limite" })).toBe("sin");
+    expect(cuandoDeTarea({ due_date: "2026-11-06", due_kind: "limite" })).toBe(
+      "limite",
+    );
+    expect(cuandoDeTarea({ due_date: "2026-11-06" })).toBe("dia");
+  });
+
+  it("las de fecha límite salen «En marcha» hasta ese día", () => {
+    const hoy = "2026-11-02";
+    const t = (
+      title: string,
+      due_date: string | null,
+      due_kind: "dia" | "limite" = "dia",
+    ) => ({
+      title,
+      due_date,
+      due_kind,
+      done_at: null,
+      created_at: "2026-10-30T10:00:00Z",
+    });
+    const r = tareasParaHoy(
+      [
+        t("Tema 1", "2026-11-20", "limite"),
+        t("Acaba hoy", hoy, "limite"),
+        t("Pasado mañana", "2026-11-04"),
+        t("Organizar cosas", null),
+      ],
+      hoy,
+    );
+    expect(r.enMarcha.map((x) => x.title)).toEqual(["Tema 1"]);
+    expect(r.deHoy.map((x) => x.title)).toEqual(["Acaba hoy"]);
+    expect(r.proximas.map((x) => x.title)).toEqual(["Pasado mañana"]);
+    expect(r.sinDia.map((x) => x.title)).toEqual(["Organizar cosas"]);
+  });
+
+  it("dice cuánto queda", () => {
+    expect(textoFechaLimite("2026-11-02", "2026-11-02")).toBe("Hasta hoy");
+    expect(textoFechaLimite("2026-11-03", "2026-11-02")).toBe("Hasta mañana");
+    expect(textoFechaLimite("2026-11-06", "2026-11-02")).toBe(
+      "Hasta el 6 nov · quedan 4 días",
+    );
   });
 });

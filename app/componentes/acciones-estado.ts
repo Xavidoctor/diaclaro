@@ -11,7 +11,7 @@ import { leerDocumentoDrive } from "@/lib/planner/documentos-importantes";
 import type { DocumentoImportante } from "@/lib/planner/documentos-importantes";
 import { sumarDias } from "@/lib/planner/fechas";
 import {
-  cuandoToca,
+  cuandoTocaTarea,
   notasFijadas,
   ordenarCartera,
   resumenNota,
@@ -133,9 +133,9 @@ async function tareasDelPanel(): Promise<PorHacer> {
     lista: lista.map((t) => ({
       id: t.id,
       titulo: t.title,
-      cuando: cuandoToca(t.due_date!, hoy),
+      cuando: cuandoTocaTarea(t, hoy),
       hora: t.due_time,
-      atrasada: t.due_date! < hoy,
+      atrasada: Boolean(t.due_date && t.due_date < hoy),
       previstos: t.estimated_minutes,
     })),
     mas,

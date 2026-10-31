@@ -3,7 +3,9 @@
 import { useActionState } from "react";
 import { type EditarTareaState } from "@/app/bandeja/actions";
 import { editarTareaOGuardar } from "@/app/bandeja/acciones-sin-conexion";
+import { CuandoTarea } from "@/app/bandeja/cuando-tarea";
 import type { Tarea } from "@/lib/data/bandeja";
+import { cuandoDeTarea } from "@/lib/planner/bandeja";
 import { opcionesVisibles, type GrupoOpciones } from "@/lib/planner/areas";
 
 // Formulario para cambiar el título, la fecha, la hora, los minutos, la importancia,
@@ -35,41 +37,12 @@ export function FichaTarea({
           className="input py-2"
         />
       </label>
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          Fecha (opcional)
-          <input
-            name="due_date"
-            type="date"
-            defaultValue={tarea.due_date ?? ""}
-            className="input py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Hora (opcional)
-          <input
-            name="due_time"
-            type="time"
-            defaultValue={tarea.due_time ?? ""}
-            className="input py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Minutos (opcional)
-          <input
-            name="estimated_minutes"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={1440}
-            defaultValue={tarea.estimated_minutes ?? ""}
-            className="input py-2"
-          />
-        </label>
-      </div>
-      <p className="-mt-1 text-xs text-muted">
-        Con hora y minutos, la tarea ocupa ese rato y sale en la Agenda.
-      </p>
+      <CuandoTarea
+        inicial={cuandoDeTarea(tarea)}
+        dia={tarea.due_date}
+        hora={tarea.due_time}
+        minutos={tarea.estimated_minutes}
+      />
       <div className="flex items-end gap-3">
         <label className="flex flex-1 flex-col gap-1 text-sm">
           Importancia

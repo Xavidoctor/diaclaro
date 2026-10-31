@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { FormRutina } from "@/app/ajustes/form-rutina";
 import { NuevaTarea } from "@/app/areas/nueva-tarea";
+import { DesplegarAnadir } from "@/app/componentes/desplegar-anadir";
 
-// «Añadir» dentro de un proyecto: eliges si es algo de una vez (una tarea)
+// «Añadir» dentro de un proyecto: primero solo se ve el botón; al pulsarlo,
+// eliges si es algo de una vez (una tarea)
 // o algo que se repite (una rutina, como una clase cada lunes a las 16:00).
 // "ruta" es la página del proyecto: al guardar la rutina vuelves aquí.
 export function AnadirEnProyecto({
@@ -17,7 +19,7 @@ export function AnadirEnProyecto({
   const [tipo, setTipo] = useState<"una" | "repite">("una");
 
   return (
-    <div className="flex flex-col gap-3">
+    <DesplegarAnadir texto="Añadir tarea o rutina">
       <div
         role="radiogroup"
         aria-label="¿Qué quieres añadir?"
@@ -43,7 +45,7 @@ export function AnadirEnProyecto({
           <FormRutina volver={ruta} proyectoId={proyectoId} />
         </div>
       )}
-    </div>
+    </DesplegarAnadir>
   );
 }
 
