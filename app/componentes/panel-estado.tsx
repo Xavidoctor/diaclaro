@@ -250,10 +250,15 @@ export function PanelEstado() {
           </Link>
 
           <Progreso datos={datos?.progreso} cargando={!datos && cargando} />
-          <Carpetero datos={datos?.documentos} cargando={!datos && cargando} />
+          {/* Documentos y Empleo solo salen si los usas (ver Ajustes). */}
+          {datos?.documentos && (
+            <Carpetero datos={datos.documentos} cargando={false} />
+          )}
           <Plegable Icono={Zap} titulo="Atajos">
             <ul className="grid grid-cols-2 gap-2">
-              {ATAJOS.map(({ href, nombre, Icono }) => (
+              {ATAJOS.filter(
+                ({ href }) => href !== "/empleo" || datos?.empleo,
+              ).map(({ href, nombre, Icono }) => (
                 <li key={href}>
                   <Link
                     href={href}

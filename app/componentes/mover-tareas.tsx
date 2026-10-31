@@ -2,25 +2,33 @@
 
 import { useActionState, useState } from "react";
 import { moverTareasA, type MoverTareasState } from "@/app/bandeja/actions";
+import { soltarTareasA } from "@/app/componentes/acciones-soltar";
 
-// Botones para llevar tareas pendientes a otro día:
-// «Pasar a hoy» de un toque, u «Otro día» para elegirlo en el calendario.
+// Botones para decidir qué hacer con tareas pendientes de otros días:
+// «Hoy» de un toque, «Otro día» para elegirlo en el calendario y, si
+// textoSoltar viene, «Soltar» (le quita la fecha; no se borra).
 // Con varias tareas (ids) se mueven todas juntas.
 export function MoverTareas({
   ids,
   hoy,
   textoHoy = "Pasar a hoy",
   conOtroDia = true,
+  textoSoltar,
 }: {
   ids: string[];
   hoy: string;
   textoHoy?: string;
   conOtroDia?: boolean;
+  textoSoltar?: string;
 }) {
   const [estado, formAction, moviendo] = useActionState<
     MoverTareasState,
     FormData
   >(moverTareasA, {});
+  const [estadoSoltar, soltarAction, soltando] = useActionState<
+    MoverTareasState,
+    FormData
+  >(soltarTareasA, {});
   const [eligiendo, setEligiendo] = useState(false);
   const lista = ids.join(",");
 
@@ -48,6 +56,18 @@ export function MoverTareas({
             Otro día
           </button>
         )}
+        {textoSoltar && (
+          <form action={soltarAction}>
+            <input type="hidden" name="ids" value={lista} />
+            <button
+              type="submit"
+              disabled={soltando}
+              className="py-2 text-muted underline"
+            >
+              {textoSoltar}
+            </button>
+          </form>
+        )}
       </div>
 
       {eligiendo && (
@@ -73,9 +93,9 @@ export function MoverTareas({
         </form>
       )}
 
-      {estado.error && (
+      {(estado.error ?? estadoSoltar.error) && (
         <p role="alert" className="text-danger">
-          {estado.error}
+          {estado.error ?? estadoSoltar.error}
         </p>
       )}
     </div>

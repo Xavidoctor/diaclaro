@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { FormAjustes } from "@/app/ajustes/form-ajustes";
+import { FormSecciones } from "@/app/ajustes/form-secciones";
 import { SeccionGoogle } from "@/app/ajustes/seccion-google";
 import { InterruptorAyuda } from "@/app/componentes/ayuda-guia";
 import { BotonRecorrido } from "@/app/componentes/recorrido-guiado";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarRutinas } from "@/lib/data/rutinas";
+import { leerSecciones } from "@/lib/data/secciones";
 import { describirRepeticion, leerRegla } from "@/lib/planner/agenda";
 import { textoFranja, textoVeces } from "@/lib/planner/rutinas";
 import { SaberMas } from "@/app/componentes/saber-mas";
@@ -19,9 +21,10 @@ export default async function AjustesPage({
   searchParams,
 }: PageProps<"/ajustes">) {
   const { google } = await searchParams;
-  const [ajustes, rutinas] = await Promise.all([
+  const [ajustes, rutinas, secciones] = await Promise.all([
     leerAjustes(),
     listarRutinas(),
+    leerSecciones(),
   ]);
 
   return (
@@ -102,20 +105,10 @@ export default async function AjustesPage({
           </Link>
         </section>
 
-        <section className="card flex items-center justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-lg font-semibold">Documentos importantes</h2>
-            <p className="text-sm text-muted">
-              DNI, billetes, entradas… guardados en tu Google Drive para
-              tenerlos a mano.
-            </p>
-          </div>
-          <Link
-            href="/documentos"
-            className="button-primary shrink-0 py-2 text-sm"
-          >
-            Abrir
-          </Link>
+        {/* Empleo y Documentos: se encienden aquí (a quien empieza no le salen). */}
+        <section className="card flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Secciones de la app</h2>
+          <FormSecciones secciones={secciones} />
         </section>
 
         <section className="card flex flex-col gap-3">

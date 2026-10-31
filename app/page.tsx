@@ -11,7 +11,6 @@ import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { CapturaRapida } from "@/app/componentes/captura-rapida";
 import { CierreDeHoy } from "@/app/componentes/cierre-de-hoy";
 import { EmpiezoElDia } from "@/app/componentes/empiezo-el-dia";
-import { FocoDeHoy } from "@/app/componentes/foco-de-hoy";
 import { HabitosDeHoy } from "@/app/componentes/habitos-de-hoy";
 import { MetasProximas } from "@/app/componentes/metas-proximas";
 import { PlanDeHoy } from "@/app/componentes/plan-de-hoy";
@@ -24,6 +23,7 @@ import { leerAjustes } from "@/lib/data/ajustes";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerInicio } from "@/lib/data/inicio-dia";
 import { leerPerfil } from "@/lib/data/perfil";
+import { leerSecciones } from "@/lib/data/secciones";
 import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
 import { ocurrenciasEntre, textoHora } from "@/lib/planner/agenda";
 import { ajustesDelDia } from "@/lib/planner/inicio-dia";
@@ -52,7 +52,7 @@ export default async function HoyPage() {
   // «Levantado» y acaba al pulsar «Me voy a dormir».
   const diaActivo = await leerDiaDeHoy();
   const hoy = diaActivo.dia;
-  const [eventos, rutinas, registros, inicio, google, perfil] =
+  const [eventos, rutinas, registros, inicio, google, perfil, secciones] =
     await Promise.all([
       listarEventosHasta(hoy),
       listarRutinas(),
@@ -60,6 +60,7 @@ export default async function HoyPage() {
       leerInicio(hoy),
       cargarAgendaGoogle(hoy, hoy, timezone),
       leerPerfil(),
+      leerSecciones(),
     ]);
   // La tarjeta de la mañana va con el día que abren sus botones (de
   // trasnoche, el día nuevo) y con la hora a la que te dormiste la noche antes.
@@ -112,8 +113,11 @@ export default async function HoyPage() {
 
         <RecordatoriosHabitos hoy={hoy} zona={timezone} />
 
-        <div data-guia="plan">
+        {/* Tu plan y tus tareas, juntos: el plan dice por cuál empezar y,
+            debajo, las de otros días para decidir qué hacer con ellas. */}
+        <div data-guia="plan" className="flex flex-col gap-4">
           <PlanDeHoy hoy={hoy} />
+          <TareasDeHoy hoy={hoy} />
         </div>
 
         <section data-guia="captura" className="flex flex-col gap-3">
@@ -162,13 +166,13 @@ export default async function HoyPage() {
           )}
         </section>
 
-        <TareasDeHoy hoy={hoy} />
-
         <MetasProximas hoy={hoy} />
 
-        <SeguimientosEmpleo hoy={hoy} />
+        {/* Solo si usas Empleo (se enciende en Ajustes). */}
+        {secciones.empleo && <SeguimientosEmpleo hoy={hoy} />}
 
-        <FocoDeHoy hoy={hoy} />
+        {/* Foco ya no tiene tarjeta: está en «Concentrarme» del plan, en las
+            rutinas con modo foco y en los atajos del panel «Tu estado». */}
 
         <section className="flex flex-col gap-3">
           <header className="flex items-baseline justify-between gap-4">
@@ -199,10 +203,6 @@ export default async function HoyPage() {
         <HabitosDeHoy hoy={hoy} />
 
         <CierreDeHoy hoy={hoy} />
-
-        <p className="text-sm text-muted">
-          Has entrado como {data.claims.email}
-        </p>
       </main>
       <BarraInferior actual="/" />
     </>

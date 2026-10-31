@@ -4,6 +4,7 @@ import { paseDrive } from "@/app/documentos/pase-drive";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarNotas } from "@/lib/data/bandeja";
 import { leerPerfil } from "@/lib/data/perfil";
+import { leerSecciones } from "@/lib/data/secciones";
 import { cargarProgreso } from "@/lib/data/progreso";
 import { listarImportantes } from "@/lib/google/api";
 import { leerDocumentoDrive } from "@/lib/planner/documentos-importantes";
@@ -39,7 +40,10 @@ export type EstadoPanel = {
   progreso: EstadoProgreso | null;
   // Las últimas notas y, aparte, las fijadas (para el botón de la chincheta).
   notas: { ultimas: NotaPanel[]; fijadas: NotaPanel[] } | null;
-  documentos: EstadoDocumentos;
+  // null si tienes Documentos apagado (ver Ajustes → Secciones de la app).
+  documentos: EstadoDocumentos | null;
+  // Si ves la sección de Empleo (para el atajo).
+  empleo: boolean;
   // Tu frase motivadora del perfil (vacía si no has puesto ninguna).
   frase: string | null;
 };
@@ -52,6 +56,7 @@ export async function cargarEstado(): Promise<EstadoPanel | null> {
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) return null;
 
+  const secciones = await leerSecciones();
   const [progreso, notas, documentos, perfil] = await Promise.all([
     progresoDeLaSemana().catch((error) => {
       console.error(error);
@@ -61,10 +66,16 @@ export async function cargarEstado(): Promise<EstadoPanel | null> {
       console.error(error);
       return null;
     }),
-    documentosDelPanel(),
+    secciones.documentos ? documentosDelPanel() : null,
     leerPerfil(),
   ]);
-  return { progreso, notas, documentos, frase: perfil.motto };
+  return {
+    progreso,
+    notas,
+    documentos,
+    empleo: secciones.empleo,
+    frase: perfil.motto,
+  };
 }
 
 // Hoy y la media de los últimos 7 días (hoy incluido).

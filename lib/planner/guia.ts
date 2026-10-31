@@ -102,10 +102,11 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
   },
   {
     id: "cierre",
-    titulo: "Cierre del día",
-    resumen: "Dos minutos al final del día para mirar atrás.",
+    titulo: "Cerrar el día",
+    resumen: "Dos minutos al final del día para mirar atrás y acostarte.",
     pasos: [
-      "Al final de Hoy, pulsa «Cierre del día» y apunta qué has conseguido y qué cambiarías mañana.",
+      "Al final de Hoy, pulsa «Cerrar el día»: ves lo que has hecho y apuntas qué has conseguido y qué cambiarías mañana (si quieres).",
+      "Abajo del todo está «Me voy a dormir»: púlsalo al meterte en la cama y el día se cierra.",
       "Al día siguiente, Hoy te recuerda lo que dijiste que cambiarías.",
     ],
     enlace: { href: "/cierre", texto: "Ir al cierre" },
@@ -115,6 +116,7 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
     titulo: "Candidaturas de empleo",
     resumen: "A qué ofertas te has presentado y cuándo volver a mirarlas.",
     pasos: [
+      "Si no la ves, enciéndela en Ajustes → Secciones de la app.",
       "Apunta cada oferta con la empresa y el puesto.",
       "Si pones un día de seguimiento, ese día te sale en Hoy para que no se te olvide.",
     ],
@@ -136,7 +138,7 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
     titulo: "Documentos importantes",
     resumen: "DNI, billetes, entradas… a mano sin buscar en la galería.",
     pasos: [
-      "En Ajustes, abre Documentos. Se guardan en una carpeta de tu Google Drive.",
+      "Enciéndelos en Ajustes → Secciones de la app. Se guardan en una carpeta de tu Google Drive.",
       "Búscalos por nombre o por tipo cuando los necesites.",
     ],
     enlace: { href: "/documentos", texto: "Ir a Documentos" },
