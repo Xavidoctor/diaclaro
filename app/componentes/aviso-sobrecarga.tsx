@@ -56,7 +56,7 @@ export async function AvisoSobrecarga({
     );
   }
 
-  const { estado, apuntado, libre, diferencia, sinDuracion, ajuste } = carga;
+  const { estado, apuntado, diferencia, sinDuracion, ajuste } = carga;
   const tePasas = estado === "te-pasas";
   const horas = horasDelDia({
     ahora: horaEn(ajustes.timezone),
@@ -78,10 +78,6 @@ export async function AvisoSobrecarga({
           : `Te cabe lo de hoy (te sobran ${textoDuracion(diferencia)})`}
       </p>
       <BarraHorasDia horas={horas} esHoy />
-      <p className="text-muted">
-        Te quedan {textoDuracion(apuntado)} por hacer y {textoDuracion(libre)}{" "}
-        hasta las {ajustes.sleep_time}.
-      </p>
       {ajuste !== 0 && factores.tarea && (
         <p className="text-muted">
           Ya cuenta que sueles tardar {textoFactor(factores.tarea)} (según tus
