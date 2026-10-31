@@ -9,6 +9,10 @@ import { MetasDelDia } from "@/app/agenda/metas-del-dia";
 import { NuevaTareaDia } from "@/app/agenda/nueva-tarea-dia";
 import { TareaItem } from "@/app/bandeja/tarea-item";
 import { AEsteDia } from "@/app/agenda/a-este-dia";
+import {
+  RutinasSinHora,
+  type RutinaSinHoraVista,
+} from "@/app/agenda/rutinas-sin-hora";
 import { MoverTareas } from "@/app/componentes/mover-tareas";
 import { AvisoGoogle } from "@/app/componentes/aviso-google";
 import { DesplegarAnadir } from "@/app/componentes/desplegar-anadir";
@@ -19,8 +23,13 @@ import { leerHorasSueno } from "@/lib/data/horas-libres";
 import { leerInicio } from "@/lib/data/inicio-dia";
 import { horasDelDia, minutosOcupados } from "@/lib/planner/horas-del-dia";
 import { ajustesDelDia } from "@/lib/planner/inicio-dia";
-import { rutinaEseDia } from "@/lib/planner/mover-dia";
-import { rutinasDelDia } from "@/lib/planner/rutinas";
+import {
+  horasParaElegir,
+  rutinaEseDia,
+  rutinasSinHora,
+} from "@/lib/planner/mover-dia";
+import { huecosLibres } from "@/lib/planner/organizar";
+import { rutinasDelDia, vecesDeRutina } from "@/lib/planner/rutinas";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
@@ -183,8 +192,40 @@ export default async function AgendaPage({
   ]);
 
   const deEsteDia = conRutinasHechas(delDia(dia), rutinas, registrosDia, dia);
-  const cuenta = cuentaHechas(deEsteDia);
   const conHora = deEsteDia.filter((o) => o.horaInicio);
+  // Las rutinas sin hora de ese día (como «Deporte · 60 min»), con los
+  // ratos libres donde caben para que elijas tú la hora.
+  const huecos = huecosLibres({
+    // Hoy, desde ahora. Otro día, desde tu hora de levantarte (si no la
+    // tienes, desde las 08:00: solo sirve para sugerir, no se guarda nada).
+    ahora: dia === hoy ? horaEn(timezone) : (ajustes.wake_time ?? "08:00"),
+    levantarse: ajustes.wake_time,
+    acostarse: ajustes.sleep_time ?? "23:45",
+    ocupado: conHora
+      .filter((o) => !o.google?.libre && !o.bloque?.hecha)
+      .map((o) => ({ inicio: o.horaInicio!, fin: o.horaFin })),
+  });
+  const porId = new Map(rutinas.map((r) => [r.id, r]));
+  const rutinasSinHoraDia: RutinaSinHoraVista[] = rutinasSinHora(
+    rutinas,
+    dia,
+    movidas,
+  ).map((r) => ({
+    id: r.id,
+    titulo: r.titulo,
+    vez: r.vez,
+    minutos: r.minutos,
+    hecha:
+      vecesDeRutina(porId.get(r.id)!, registrosDia, dia)[r.vez - 1]?.hecha ??
+      false,
+    sugerencias: horasParaElegir(huecos, r.minutos),
+  }));
+  const cuentaConHora = cuentaHechas(deEsteDia);
+  const cuenta = {
+    hechas:
+      cuentaConHora.hechas + rutinasSinHoraDia.filter((r) => r.hecha).length,
+    total: cuentaConHora.total + rutinasSinHoraDia.length,
+  };
   const sinHora = deEsteDia.filter((o) => !o.horaInicio);
   const tareasDia = tareasDelDia(tareas, dia);
   // Las tareas abiertas: pendientes y sin día, para ponerlas en este día.
@@ -244,11 +285,15 @@ export default async function AgendaPage({
       const sinHora = tareasDia
         .filter((t) => !t.done_at && !t.due_time)
         .reduce((suma, t) => suma + (t.estimated_minutes ?? 0), 0);
+      // Las rutinas sin hora también ocupan sus minutos.
+      const rutinasSinHoraMin = rutinasSinHoraDia
+        .filter((r) => !r.hecha)
+        .reduce((suma, r) => suma + (r.minutos ?? 0), 0);
       return horasDelDia({
         ahora: null,
         despertar: null,
         acostarse: null,
-        ocupado: minutosOcupados(deEsteDia, null, sinHora),
+        ocupado: minutosOcupados(deEsteDia, null, sinHora + rutinasSinHoraMin),
         horasSueno: sueno,
       });
     }
@@ -342,7 +387,18 @@ export default async function AgendaPage({
             <ListaDelDia ocurrencias={sinHora} importadas={importadas} />
           )}
 
-          {conHora.length === 0 && sinHora.length === 0 ? (
+          {rutinasSinHoraDia.length > 0 && (
+            <RutinasSinHora
+              rutinas={rutinasSinHoraDia}
+              fecha={dia}
+              esHoy={dia === hoy}
+              sePuedeOrdenar={sePuedeOrdenar}
+            />
+          )}
+
+          {conHora.length === 0 &&
+          sinHora.length === 0 &&
+          rutinasSinHoraDia.length === 0 ? (
             <p className="text-sm text-muted">
               Nada apuntado con hora. Pulsa «Añadir» para apuntar tus
               compromisos, como las clases o el trabajo.
