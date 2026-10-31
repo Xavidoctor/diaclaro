@@ -86,18 +86,29 @@ export default async function OrganizarPage({
                   {propuesta.bloques.map((b) => (
                     <li
                       key={b.tarea.id}
-                      className="card flex items-baseline gap-3 p-4"
+                      className="card flex items-center gap-3 p-4"
                     >
                       <input
-                        type="hidden"
-                        name="bloque"
-                        value={`${b.tarea.id}|${b.inicio}`}
+                        type="checkbox"
+                        name="incluir"
+                        value={b.tarea.id}
+                        defaultChecked
+                        aria-label={`Poner hora a «${b.tarea.title}»`}
+                        className="h-5 w-5 shrink-0"
                       />
-                      <span className="w-28 shrink-0 text-sm text-muted">
-                        {b.inicio}–{b.fin}
-                      </span>
-                      <span className="flex flex-1 flex-col">
+                      <span className="flex flex-1 flex-col gap-1">
                         <span className="break-words">{b.tarea.title}</span>
+                        <span className="flex items-center gap-2 text-sm text-muted">
+                          <input
+                            type="time"
+                            name={`hora-${b.tarea.id}`}
+                            defaultValue={b.inicio}
+                            required
+                            aria-label={`Hora de «${b.tarea.title}»`}
+                            className="input w-28 py-1"
+                          />
+                          {textoDuracion(b.minutos)} (hasta las {b.fin})
+                        </span>
                         {b.minutos !== b.previstos && (
                           <span className="text-xs text-muted">
                             Pusiste {textoDuracion(b.previstos)}; reservo{" "}
@@ -112,8 +123,8 @@ export default async function OrganizarPage({
                   Aceptar el plan
                 </button>
                 <p className="text-xs text-muted">
-                  Al aceptar, cada tarea queda con su hora de hoy. Puedes
-                  cambiarla luego en la tarea.
+                  Puedes cambiar la hora o desmarcar una antes de aceptar. Al
+                  aceptar, cada tarea marcada queda con su hora de hoy.
                 </p>
               </form>
             ) : (

@@ -9,6 +9,7 @@ import { proponerDiaDificil, type Motivo } from "@/lib/planner/dia-dificil";
 import { marcarTiempoPersonal } from "@/lib/planner/plan";
 import { rutinasDelDia } from "@/lib/planner/rutinas";
 import { factoresPorTipo } from "@/lib/planner/tiempos";
+import { leerUsarRitmo } from "@/lib/data/ritmo";
 import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Junta todo lo de hoy y calcula la propuesta del Día difícil.
@@ -34,7 +35,8 @@ export async function cargarDiaDificil(motivo: Motivo) {
     marcarTiempoPersonal([...atrasadas, ...deHoy], areas, proyectos),
     hoy,
     motivo,
-    factoresPorTipo(tareas),
+    // Lo que sueles tardar de verdad, si no lo has apagado en «Así te conozco».
+    (await leerUsarRitmo()) ? factoresPorTipo(tareas) : {},
   );
   return { hoy, agenda, pendientes, propuesta };
 }

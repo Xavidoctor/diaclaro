@@ -17,6 +17,7 @@ import { ajustesDelDia } from "@/lib/planner/inicio-dia";
 import { organizarDia } from "@/lib/planner/organizar";
 import { marcarTiempoPersonal } from "@/lib/planner/plan";
 import { factoresPorTipo } from "@/lib/planner/tiempos";
+import { leerUsarRitmo } from "@/lib/data/ritmo";
 
 // Junta lo de hoy y calcula la propuesta de «Organízame el día».
 // Lo ocupado: tu agenda (también Google), las rutinas con hora y las tareas
@@ -36,10 +37,11 @@ export async function cargarOrganizar(ligero: boolean) {
     ]);
   // Si has pulsado «Levantado», el día cuenta desde esa hora (como en Hoy).
   const ajustes = ajustesDelDia(ajustesGuardados, inicio);
-  const [excepciones, progreso] = await Promise.all([
+  const [excepciones, progreso, usarRitmo] = await Promise.all([
     listarExcepciones(eventos.map((e) => e.id)),
     // Para saber cuánto dormiste anoche. Si falla, no se pregunta nada.
     cargarProgreso(hoy, hoy, ajustesGuardados).catch(() => null),
+    leerUsarRitmo(),
   ]);
   const pendientes = tareas.filter((t) => !t.done_at);
   const agenda = juntarAgendas(
@@ -62,7 +64,7 @@ export async function cargarOrganizar(ligero: boolean) {
         levantarse: ajustes.wake_time,
         acostarse: ajustes.sleep_time,
         agenda,
-        factores: factoresPorTipo(tareas),
+        factores: usarRitmo ? factoresPorTipo(tareas) : {},
         ligero,
       })
     : null; // sin hora de acostarte no se sabe cuánto día queda

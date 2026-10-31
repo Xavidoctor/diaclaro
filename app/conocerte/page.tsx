@@ -3,17 +3,26 @@ import Link from "next/link";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { SaberMas } from "@/app/componentes/saber-mas";
+import { cambiarUsarRitmo } from "@/app/conocerte/actions";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { cargarConocerte } from "@/lib/data/conocerte";
 import { diaDeHoy } from "@/lib/data/dia-activo";
+import { leerUsarRitmo } from "@/lib/data/ritmo";
 
 export const metadata: Metadata = { title: "Así te conozco" };
 
 // «Así te conozco»: lo que tu asistente ha aprendido de ti en las últimas
 // 4 semanas, en frases sencillas y diciendo de dónde sale cada una.
 // Son cuentas de la app (sin IA) con lo que tú has apuntado.
-export default async function ConocertePage() {
-  const [hoy, ajustes] = await Promise.all([diaDeHoy(), leerAjustes()]);
+export default async function ConocertePage({
+  searchParams,
+}: PageProps<"/conocerte">) {
+  const error = (await searchParams).error === "ritmo";
+  const [hoy, ajustes, usarRitmo] = await Promise.all([
+    diaDeHoy(),
+    leerAjustes(),
+    leerUsarRitmo(),
+  ]);
   const { rasgos, pendientes } = await cargarConocerte(hoy, ajustes);
 
   return (
@@ -39,6 +48,9 @@ export default async function ConocertePage() {
                 <h2 className="text-sm text-muted">{r.titulo}</h2>
                 <p className="font-medium">{r.texto}</p>
                 <p className="text-xs text-muted">{r.deDonde}</p>
+                {r.id === "ritmo" && (
+                  <UsarRitmo usar={usarRitmo} error={error} />
+                )}
                 {r.corregir && (
                   <Link
                     href={r.corregir.href}
@@ -70,5 +82,32 @@ export default async function ConocertePage() {
       </main>
       <BarraInferior actual="/" />
     </>
+  );
+}
+
+// «¿Lo uso?» debajo de lo que tardas: puedes decirle que cuente solo los
+// minutos que tú pones.
+function UsarRitmo({ usar, error }: { usar: boolean; error: boolean }) {
+  return (
+    <form
+      action={cambiarUsarRitmo}
+      className="mt-1 flex flex-wrap items-center gap-2 text-sm"
+    >
+      <input type="hidden" name="usar" value={usar ? "no" : "si"} />
+      <span>
+        {usar
+          ? "Lo uso al avisarte, en Día difícil y al organizarte el día."
+          : "Ahora no lo uso: cuento solo los minutos que pones tú."}
+      </span>
+      <button type="submit" className="enlace">
+        {usar ? "No lo uses" : "Úsalo"}
+      </button>
+      {error && (
+        <p role="alert" className="w-full text-danger">
+          No se ha podido guardar. Puede que falte un paso en la base de datos
+          (la migración 20261030470000).
+        </p>
+      )}
+    </form>
   );
 }

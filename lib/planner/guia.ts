@@ -64,7 +64,7 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
       "Pulsa «Añadir» para apuntar una cita. Puede ser de una vez o repetirse cada día o algunos días de la semana.",
       "Debajo tienes el calendario del mes: toca un día para ver lo que tienes. Un puntito marca los días con algo apuntado.",
       "Toca una cita para cambiarla, o para cambiar solo un día concreto si se repite.",
-      "Si algo se mueve (una cita cancelada, una entrega que cambia), pulsa «¿Algo ha cambiado?» y cuéntalo con tus palabras.",
+      "Si algo se mueve (una cita cancelada, una entrega que cambia), pulsa «¿Algo ha cambiado?» en la Agenda (o en tu asistente) y cuéntalo con tus palabras.",
       "Si conectas Google Calendar en Ajustes, sus eventos también salen aquí. DíaClaro solo los lee, nunca los cambia.",
     ],
     enlace: { href: "/agenda", texto: "Ir a la Agenda" },

@@ -183,7 +183,10 @@ export default async function AgendaPage({
           </Link>
         </nav>
 
-        <Link href="/cambio" className="self-start text-sm underline">
+        <Link
+          href="/ordenar?modo=cambio"
+          className="self-start text-sm underline"
+        >
           ¿Algo ha cambiado? Cuéntamelo y lo reorganizo
         </Link>
 
