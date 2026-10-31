@@ -12,6 +12,14 @@ import { MoverTareas } from "@/app/componentes/mover-tareas";
 import { AvisoGoogle } from "@/app/componentes/aviso-google";
 import { DesplegarAnadir } from "@/app/componentes/desplegar-anadir";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
+import { BarraHorasDia } from "@/app/componentes/barra-horas-dia";
+import { calcularSituacion } from "@/app/componentes/situacion-hoy";
+import { leerHorasSueno } from "@/lib/data/horas-libres";
+import { leerInicio } from "@/lib/data/inicio-dia";
+import { horasDelDia, minutosOcupados } from "@/lib/planner/horas-del-dia";
+import { ajustesDelDia } from "@/lib/planner/inicio-dia";
+import { rutinaEseDia } from "@/lib/planner/mover-dia";
+import { rutinasDelDia } from "@/lib/planner/rutinas";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
@@ -69,7 +77,8 @@ export default async function AgendaPage({
   searchParams,
 }: PageProps<"/agenda">) {
   const params = await searchParams;
-  const { timezone } = await leerAjustes();
+  const ajustes = await leerAjustes();
+  const { timezone } = ajustes;
   const hoy = await diaDeHoy();
   const dia =
     typeof params.dia === "string" && esFecha(params.dia) ? params.dia : hoy;
@@ -99,6 +108,8 @@ export default async function AgendaPage({
     opciones,
     movidas,
     registrosDia,
+    inicioHoy,
+    { sueno },
   ] = await Promise.all([
     listarEventosHasta(hasta),
     Promise.all(
@@ -115,6 +126,9 @@ export default async function AgendaPage({
     listarMovidas(rangos[0].desde, hasta).catch(() => []),
     // Las rutinas que ya has hecho ese día (para su casilla de «Hecho»).
     listarRegistrosDelDia(dia).catch(() => []),
+    // Cuándo te has despertado hoy (para las horas del día).
+    dia === hoy ? leerInicio(hoy) : Promise.resolve(null),
+    leerHorasSueno(),
   ]);
   const rutinas = rutinasGuardadas.map((r) => ({
     ...r,
@@ -167,6 +181,7 @@ export default async function AgendaPage({
   const tareasDia = tareasDelDia(tareas, dia);
   const grupos = opcionesProyecto(areas, proyectos);
   const sePuedeOrdenar = dia >= hoy;
+  const horas = await horasDeEsteDia();
   const cuadros: CuadroDelDia[] = conHora.map((o) => ({
     o,
     clave: `${o.eventoId}|${o.fechaOriginal}`,
@@ -190,6 +205,50 @@ export default async function AgendaPage({
         />,
       ]),
   );
+
+  // Las horas ocupadas y libres del día del recuadro (lib/planner/horas-del-dia.ts).
+  // Hoy: desde que te despertaste hasta acostarte, y lo ocupado es lo mismo
+  // que cuenta la tarjeta de Hoy. Otro día: 24 h menos tus horas de sueño.
+  async function horasDeEsteDia() {
+    if (dia !== hoy) {
+      const sinHora = tareasDia
+        .filter((t) => !t.done_at && !t.due_time)
+        .reduce((suma, t) => suma + (t.estimated_minutes ?? 0), 0);
+      return horasDelDia({
+        ahora: null,
+        despertar: null,
+        acostarse: null,
+        ocupado: minutosOcupados(deEsteDia, null, sinHora),
+        horasSueno: sueno,
+      });
+    }
+    const ahora = horaEn(timezone);
+    const { carga } = await calcularSituacion({
+      hoy,
+      ajustes: ajustesDelDia(ajustes, inicioHoy),
+      agenda: juntarAgendas(
+        ocurrenciasEntre(eventos, excepciones, hoy, hoy),
+        google.ocurrencias.filter((o) => o.fecha === hoy),
+      ),
+      // Como en Hoy: con las rutinas que moviste de hora solo hoy.
+      rutinas: rutinasDelDia(
+        rutinasGuardadas.map((r) => rutinaEseDia(r, movidas, hoy)),
+        registrosDia,
+        hoy,
+      ),
+    });
+    return horasDelDia({
+      ahora,
+      despertar:
+        inicioHoy?.awake_time ?? inicioHoy?.start_time ?? ajustes.wake_time,
+      acostarse: inicioHoy?.sleep_time ?? ajustes.sleep_time,
+      ocupado:
+        carga.estado === "falta-hora-acostarse"
+          ? minutosOcupados(deEsteDia, ahora)
+          : carga.apuntado,
+      horasSueno: sueno,
+    });
+  }
 
   // Dirección para cambiar de mes o elegir un día sin perder lo demás.
   function enlace(cambio: { mes?: string; dia?: string }) {
@@ -244,6 +303,8 @@ export default async function AgendaPage({
               </span>
             )}
           </div>
+
+          <BarraHorasDia horas={horas} esHoy={dia === hoy} />
 
           <MetasDelDia metas={metasDelDia.get(dia) ?? []} />
 
