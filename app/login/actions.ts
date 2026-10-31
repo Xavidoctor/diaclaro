@@ -3,7 +3,11 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { enlaceDeVuelta, normalizarEmail } from "@/lib/auth/validacion";
+import {
+  enlaceDeVuelta,
+  normalizarCodigo,
+  normalizarEmail,
+} from "@/lib/auth/validacion";
 import { emailDemo, leerNumeroDemo } from "@/lib/planner/demo";
 
 export type LoginState = {
@@ -44,6 +48,32 @@ export async function enviarEnlace(
   }
 
   return { enviado: true, email };
+}
+
+// Entrar escribiendo el código de 6 cifras del email, en lugar de tocar el
+// enlace. Sirve sobre todo en el iPhone: el enlace se abre en Safari y la app
+// instalada no comparte la sesión con Safari.
+// (El código solo llega si la plantilla del email incluye {{ .Token }}.)
+export async function entrarConCodigo(
+  prev: LoginState,
+  formData: FormData,
+): Promise<LoginState> {
+  const email = normalizarEmail(formData.get("email"));
+  if (!email) return { enviado: false, error: "Escribe un email válido." };
+  const token = normalizarCodigo(formData.get("codigo"));
+  if (!token)
+    return { ...prev, enviado: true, email, error: "Escribe las 6 cifras del código." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  if (error) {
+    return {
+      enviado: true,
+      email,
+      error: "El código no es correcto o ha caducado. Revisa el último email o pide otro.",
+    };
+  }
+  redirect("/");
 }
 
 // Botones «Demo 1/2/3»: entra con una cuenta de demostración, sin email.

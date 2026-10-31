@@ -7,10 +7,14 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "DíaClaro",
     description: "Tu centro de organización personal.",
     lang: "es",
+    // id fijo: aunque cambie start_url, el móvil sabe que es la misma app.
+    id: "/",
     start_url: "/",
+    scope: "/",
     display: "standalone",
     background_color: "#f2f5f1",
     theme_color: "#3a7458",
+    categories: ["productivity", "lifestyle"],
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },

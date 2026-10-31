@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { editarTarea, type EditarTareaState } from "@/app/bandeja/actions";
+import { type EditarTareaState } from "@/app/bandeja/actions";
+import { editarTareaOGuardar } from "@/app/bandeja/acciones-sin-conexion";
 import type { Tarea } from "@/lib/data/bandeja";
 import { opcionesVisibles, type GrupoOpciones } from "@/lib/planner/areas";
 
@@ -19,7 +20,7 @@ export function FichaTarea({
   const [estado, formAction, guardando] = useActionState<
     EditarTareaState,
     FormData
-  >(editarTarea, {});
+  >(editarTareaOGuardar, {});
   const opciones = grupos ? opcionesVisibles(grupos, tarea.project_id) : [];
 
   return (

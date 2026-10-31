@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LogOut, Settings } from "lucide-react";
+import { Download, LogOut, Settings } from "lucide-react";
 import { redirect } from "next/navigation";
 import { cerrarSesion } from "@/app/actions";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
@@ -34,6 +34,13 @@ export default async function PerfilPage() {
           >
             <Settings aria-hidden className="size-5 text-primary" />
             Ajustes
+          </Link>
+          <Link
+            href="/instalar"
+            className="card flex min-h-14 items-center gap-3 p-4 font-medium"
+          >
+            <Download aria-hidden className="size-5 text-primary" />
+            Instalar la app en el móvil o el ordenador
           </Link>
           <form action={cerrarSesion}>
             <button

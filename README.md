@@ -72,6 +72,7 @@ npm run build     # compila como en producción
    - En la cuenta de Google que envía los correos, activa la verificación en dos pasos y crea una **contraseña de aplicación**.
    - En **Authentication → Emails → SMTP Settings**, activa *Custom SMTP* con host `smtp.gmail.com`, puerto `465`, tu dirección de Gmail como usuario y la contraseña de aplicación (nunca la contraseña normal).
    - En **Authentication → Emails → Templates**, las plantillas están traducidas al español. El enlace sigue siendo el de siempre: el email trae un enlace para entrar.
+   - En la plantilla **Magic Link**, añade también el código para entrar escribiéndolo (hace falta en el iPhone con la app instalada, porque el enlace se abre en Safari). Por ejemplo: `<p>O escribe este código en DíaClaro: <strong>{{ .Token }}</strong></p>`. Si no lo añades, el enlace sigue funcionando igual.
 4. En **Authentication → URL Configuration**:
    - *Site URL*: la dirección de Vercel, por ejemplo `https://diaclaro.vercel.app`.
    - *Redirect URLs*: añade `https://diaclaro.vercel.app/auth/confirm` (con tu dirección real) y, para probar en tu ordenador, `http://localhost:3000/auth/confirm`.

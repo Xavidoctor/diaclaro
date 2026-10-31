@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { Check } from "lucide-react";
 import { marcarTarea } from "@/app/bandeja/actions";
-import { opcionesMinutosReales } from "@/lib/planner/tiempos";
+import { intentarOGuardar } from "@/app/componentes/cambios-sin-conexion";
+import { leerMinutosReales, opcionesMinutosReales } from "@/lib/planner/tiempos";
 
 // La casilla para marcar una tarea como hecha. Antes de guardarla pregunta
 // "¿cuánto has tardado?": con eso la app aprende tus tiempos reales.
 // Siempre se puede contestar "No lo sé": entonces no se guarda ningún tiempo.
+// Sin internet se guarda en el móvil y se envía al volver la red.
 export function CasillaHecha({
   id,
   titulo,
@@ -17,6 +20,34 @@ export function CasillaHecha({
   previstos: number | null;
 }) {
   const [abierta, setAbierta] = useState(false);
+  const [esperando, setEsperando] = useState(false);
+
+  async function marcar(formData: FormData) {
+    const minutos = formData.get("minutos");
+    const r = await intentarOGuardar(() => marcarTarea(formData), {
+      tipo: "tarea-hecha",
+      tareaId: id,
+      titulo,
+      minutos: leerMinutosReales(
+        minutos === "otros" ? formData.get("otros") : minutos,
+      ),
+    });
+    setAbierta(false);
+    if (r === "guardado") setEsperando(true);
+  }
+
+  // Marcada sin internet: se ve hecha mientras espera a enviarse.
+  if (esperando) {
+    return (
+      <span
+        title="Se enviará al volver internet"
+        className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground"
+      >
+        <Check aria-hidden className="size-4" />
+        <span className="sr-only">Hecha (se enviará al volver internet)</span>
+      </span>
+    );
+  }
 
   return (
     <>
@@ -33,7 +64,7 @@ export function CasillaHecha({
           onClick={() => setAbierta(false)}
         >
           <form
-            action={marcarTarea}
+            action={marcar}
             onClick={(e) => e.stopPropagation()}
             className="flex w-full max-w-xl flex-col gap-4 rounded-t-2xl bg-background p-6"
           >
