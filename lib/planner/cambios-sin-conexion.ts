@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-// Cambios hechos sin internet: marcar una tarea como hecha, editar una nota
-// o apuntar un hábito. Se guardan en el móvil (localStorage) y se envían en
+// Cambios hechos sin internet: marcar una tarea como hecha, editar una
+// tarea o una nota, añadir una tarea a un día o apuntar un hábito. Se guardan en el móvil (localStorage) y se envían en
 // orden al volver la red. Si alguno no se puede aplicar porque esa cosa se
 // cambió en otro aparato mientras tanto, pasa a «Revisa este cambio».
 // Aquí solo están las reglas; guardar y enviar lo hace
@@ -35,6 +35,19 @@ export const esquemaCambio = z.discriminatedUnion("tipo", [
     texto: z.string().min(1).max(10000),
     tipoNota: z.string().max(40).optional(),
     etiquetas: z.string().max(500).optional(),
+  }),
+  z.object({
+    ...base,
+    tipo: z.literal("editar-tarea"),
+    tareaId: z.string().min(1),
+    // Los campos del formulario tal cual (título, fecha, hora...): al volver
+    // la red se guardan con la misma acción que con internet.
+    campos: z.record(z.string(), z.string().max(10000)),
+  }),
+  z.object({
+    ...base,
+    tipo: z.literal("nueva-tarea"),
+    campos: z.record(z.string(), z.string().max(10000)),
   }),
   z.object({
     ...base,
@@ -90,6 +103,12 @@ export function anadirCambio(lista: Cambio[], nuevo: Cambio): Cambio[] {
       nuevo,
     ];
   }
+  if (nuevo.tipo === "editar-tarea") {
+    return [
+      ...lista.filter((c) => !(c.tipo === "editar-tarea" && c.tareaId === nuevo.tareaId)),
+      nuevo,
+    ];
+  }
   if (nuevo.tipo === "tarea-hecha") {
     return [
       ...lista.filter((c) => !(c.tipo === "tarea-hecha" && c.tareaId === nuevo.tareaId)),
@@ -129,9 +148,22 @@ export function describirCambio(c: Cambio): string {
       return `Marcar como hecha: «${c.titulo}»`;
     case "editar-nota":
       return "Cambiar el texto de una nota";
+    case "editar-tarea":
+      return `Cambiar la tarea «${c.campos.title ?? ""}»`;
+    case "nueva-tarea":
+      return `Añadir la tarea «${c.campos.title ?? ""}»`;
     case "apunte-habito":
       return "Apuntar un hábito";
   }
+}
+
+// Los campos de texto de un formulario (los archivos no se guardan).
+export function camposDeFormulario(entradas: Iterable<[string, unknown]>): Record<string, string> {
+  const campos: Record<string, string> = {};
+  for (const [clave, valor] of entradas) {
+    if (typeof valor === "string" && !clave.startsWith("$ACTION")) campos[clave] = valor;
+  }
+  return campos;
 }
 
 // Fecha del móvil (AAAA-MM-DD), en su zona horaria.

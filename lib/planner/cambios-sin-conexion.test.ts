@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   anadirCambio,
+  camposDeFormulario,
   cambiadoDespues,
   diaDelApunte,
   leerCambios,
@@ -72,5 +73,32 @@ describe("diaDelApunte", () => {
     expect(diaDelApunte("2026-11-01", hoy)).toBeNull();
     expect(diaDelApunte("2026-10-27", hoy)).toBeNull();
     expect(diaDelApunte("2026-10-28", hoy)).toBe("2026-10-28");
+  });
+});
+
+describe("camposDeFormulario", () => {
+  it("guarda solo los textos y no los campos internos de Next", () => {
+    expect(
+      camposDeFormulario([
+        ["title", "Llamar"],
+        ["$ACTION_ID_abc", ""],
+        ["foto", { size: 1 }],
+      ]),
+    ).toEqual({ title: "Llamar" });
+  });
+});
+
+describe("anadirCambio con tareas", () => {
+  it("si editas la misma tarea dos veces, se queda solo la última", () => {
+    const editar = (id: string, title: string): Cambio => ({
+      ...base,
+      id,
+      tipo: "editar-tarea",
+      tareaId: "t1",
+      campos: { title },
+    });
+    const lista = anadirCambio([editar("1", "a")], editar("2", "b"));
+    expect(lista).toHaveLength(1);
+    expect(lista[0].id).toBe("2");
   });
 });

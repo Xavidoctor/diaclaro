@@ -11,7 +11,9 @@ import { esTipoNota, leerCampoEtiquetas } from "@/lib/planner/etiquetas";
 import { prepararApunte } from "@/lib/planner/habitos";
 import { createClient } from "@/lib/supabase/server";
 
-// Aplica en Supabase un cambio hecho sin internet (las reglas están en
+// Aplica en Supabase un cambio hecho sin internet (editar o añadir tareas
+// lo hace app/componentes/acciones-sin-conexion.ts con las acciones de
+// siempre) (las reglas están en
 // lib/planner/cambios-sin-conexion.ts). Antes de guardar mira si esa cosa
 // se cambió en otro aparato mientras tanto: entonces no la pisa y contesta
 // «cambiado», salvo que tú hayas elegido «Guardar el mío» (forzar).
@@ -69,6 +71,8 @@ export async function aplicarCambio(
     return e ? { estado: "error" } : { estado: "ok" };
   }
 
+  if (cambio.tipo !== "apunte-habito") return { estado: "error" };
+
   // Apuntar un hábito: se suma, así que no hay nada que se pueda pisar.
   const r = prepararApunte({ amount: cambio.cantidad, note: cambio.nota });
   if (!r.ok) return { estado: "ok" };
@@ -85,4 +89,19 @@ export async function aplicarCambio(
     .from("habit_logs")
     .insert({ habit_id: cambio.habitoId, on_date: dia, ...r.valor });
   return e ? { estado: "error" } : { estado: "ok" };
+}
+
+// Cómo está una tarea ahora, para saber si se cambió en otro aparato.
+export async function leerVersionTarea(
+  id: string,
+): Promise<{ title: string; updated_at: string } | null | "error"> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("title, deleted_at, updated_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) return "error";
+  if (!data || data.deleted_at) return null;
+  return { title: data.title, updated_at: data.updated_at };
 }

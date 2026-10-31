@@ -162,10 +162,12 @@ function ListaRevisar({
                 </p>
               ) : (
                 <>
-                  {r.cambio.tipo === "editar-nota" && (
+                  {(r.cambio.tipo === "editar-nota" || r.cambio.tipo === "editar-tarea") && (
                     <div className="flex flex-col gap-1 text-sm">
                       <p className="text-muted">Lo tuyo:</p>
-                      <p className="whitespace-pre-wrap break-words">{r.cambio.texto}</p>
+                      <p className="whitespace-pre-wrap break-words">
+                        {r.cambio.tipo === "editar-nota" ? r.cambio.texto : r.cambio.campos.title}
+                      </p>
                     </div>
                   )}
                   <div className="flex flex-col gap-1 text-sm">

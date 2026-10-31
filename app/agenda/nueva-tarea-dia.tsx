@@ -1,10 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import {
-  crearTareaParaDia,
-  type TareaParaDiaState,
-} from "@/app/bandeja/actions";
+import { type TareaParaDiaState } from "@/app/bandeja/actions";
+import { crearTareaParaDiaOGuardar } from "@/app/bandeja/acciones-sin-conexion";
 
 // Formulario corto para apuntar una tarea en el día elegido del calendario.
 // Hora y minutos son opcionales: si no los sabes, déjalos vacíos.
@@ -13,7 +11,7 @@ export function NuevaTareaDia({ dia }: { dia: string }) {
   const [estado, formAction, guardando] = useActionState<
     TareaParaDiaState,
     FormData
-  >(crearTareaParaDia, { envios: 0 });
+  >(crearTareaParaDiaOGuardar, { envios: 0 });
 
   return (
     // "key" vacía el formulario después de cada envío.
