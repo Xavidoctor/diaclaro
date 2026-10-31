@@ -8,10 +8,11 @@ import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { opcionesProyecto, opcionesVisibles } from "@/lib/planner/areas";
 import { SaberMas } from "@/app/componentes/saber-mas";
 
-export const metadata: Metadata = { title: "Ordenar con IA" };
+export const metadata: Metadata = { title: "Tu asistente" };
 
-// Ordenar con IA: escribes lo que tienes en la cabeza, de golpe, y la IA te
-// propone notas, tareas y citas. Tú lo revisas y guardas lo que quieras.
+// Tu asistente personal: escribes lo que tienes en la cabeza, de golpe, y la
+// IA te propone notas, tareas y citas. Tú lo revisas y guardas lo que quieras.
+// Abajo están las otras ayudas de la app, para tenerlas todas en un sitio.
 export default async function OrdenarPage() {
   const disponible = iaDisponible();
   const { areas, proyectos } = await cargarOpcionesProyecto();
@@ -20,10 +21,10 @@ export default async function OrdenarPage() {
   return (
     <>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-8">
-        <EnlaceVolver href="/bandeja">Notas</EnlaceVolver>
+        <EnlaceVolver href="/">Hoy</EnlaceVolver>
         <header className="flex flex-col gap-1">
           <h1 className="text-3xl font-semibold tracking-tight">
-            Ordenar con IA
+            Tu asistente
           </h1>
           <SaberMas resumen="Escribe todo de golpe, como te salga.">
             La IA lo separa en tareas, citas y notas, y tú decides qué se
@@ -44,6 +45,24 @@ export default async function OrdenarPage() {
           </p>
         )}
 
+        <section className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">También te ayudo con</h2>
+          <ul className="flex flex-col gap-2 text-sm">
+            <li>
+              <Link href="/cambio" className="enlace">
+                Algo ha cambiado hoy
+              </Link>{" "}
+              <span className="text-muted">(muevo tus planes)</span>
+            </li>
+            <li>
+              <Link href="/dia-dificil" className="enlace">
+                Tengo un día difícil
+              </Link>{" "}
+              <span className="text-muted">(me quedo con lo importante)</span>
+            </li>
+          </ul>
+        </section>
+
         <details className="text-sm">
           <summary className="cursor-pointer text-muted">
             ¿Qué se envía a la IA?
@@ -56,7 +75,7 @@ export default async function OrdenarPage() {
           </p>
         </details>
       </main>
-      <BarraInferior actual="/bandeja" />
+      <BarraInferior actual="/" />
     </>
   );
 }

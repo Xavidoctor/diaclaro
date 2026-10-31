@@ -3,7 +3,7 @@ import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { opcionesProyecto } from "@/lib/planner/areas";
 
 // Tus proyectos activos, con su área, para que la IA pueda sugerir uno.
-// Lo usan «Ordenar con IA» y «Sugerir proyecto» de la Bandeja.
+// Lo usan «Tu asistente» y «Sugerir proyecto» de la Bandeja.
 export async function proyectosParaIA(): Promise<ProyectoParaIA[]> {
   const { areas, proyectos } = await cargarOpcionesProyecto();
   return opcionesProyecto(areas, proyectos).flatMap((g) =>

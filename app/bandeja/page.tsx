@@ -101,7 +101,7 @@ async function PestanaNotas({
         <>
           <CapturaRapida />
           <Link href="/ordenar" className="enlace self-start text-sm">
-            ¿Mucho en la cabeza? Ordénalo con IA
+            ¿Mucho en la cabeza? Pídeselo a tu asistente
           </Link>
         </>
       )}

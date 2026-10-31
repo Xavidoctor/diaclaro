@@ -14,6 +14,8 @@ import { FocoDeHoy } from "@/app/componentes/foco-de-hoy";
 import { HabitosDeHoy } from "@/app/componentes/habitos-de-hoy";
 import { MetasProximas } from "@/app/componentes/metas-proximas";
 import { PlanDeHoy } from "@/app/componentes/plan-de-hoy";
+import { PideseloALaIA } from "@/app/componentes/pideselo-a-la-ia";
+import { iaDisponible } from "@/lib/ai/groq";
 import { RecordatoriosHabitos } from "@/app/componentes/recordatorios-habitos";
 import { SeguimientosEmpleo } from "@/app/componentes/seguimientos-empleo";
 import { TareasDeHoy } from "@/app/componentes/tareas-de-hoy";
@@ -85,6 +87,9 @@ export default async function HoyPage() {
             <SaludoLocal nombre={perfil.display_name} />
           </h1>
         </header>
+
+        {/* La puerta de tu asistente personal (solo si la IA está configurada). */}
+        {iaDisponible() && <PideseloALaIA />}
 
         <AvisoDemo />
 

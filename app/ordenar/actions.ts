@@ -19,7 +19,7 @@ import { leerElementos, textoGuardado } from "@/lib/planner/propuestas";
 import { createClient } from "@/lib/supabase/server";
 import { diaDeHoy } from "@/lib/data/dia-activo";
 
-// Acciones de «Ordenar con IA». La IA solo propone (primera acción);
+// Acciones de «Tu asistente» (antes «Ordenar con IA»). La IA solo propone (primera acción);
 // lo que se guarda es lo que tú revisas y marcas (segunda acción).
 
 async function exigirSesion() {

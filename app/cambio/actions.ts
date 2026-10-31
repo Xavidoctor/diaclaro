@@ -116,7 +116,7 @@ export async function interpretarCambio(
       intento,
       texto,
       error:
-        "No he encontrado nada de tu agenda o tus tareas que cambiar. Si es algo nuevo, apúntalo con «Ordenar con IA».",
+        "No he encontrado nada de tu agenda o tus tareas que cambiar. Si es algo nuevo, pídeselo a tu asistente en Hoy.",
     };
   return {
     intento,
