@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { borrarSesionFoco } from "@/app/foco/actions";
 import { Temporizador } from "@/app/foco/temporizador";
+import { AbrirEnlace } from "@/app/componentes/abrir-enlace";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarTareas } from "@/lib/data/bandeja";
@@ -32,6 +33,12 @@ export default async function FocoPage({ searchParams }: PageProps<"/foco">) {
     listarSesionesDelDia(hoy),
     rutinaId ? leerRutina(rutinaId).catch(() => null) : null,
   ]);
+  // Si la rutina o la tarea tiene enlace (una clase, un podcast…), sale aquí
+  // para abrirlo sin salir del rato de foco.
+  const enlace =
+    rutina?.url ??
+    tareas.find((t) => t.id === tareaInicial && !t.done_at)?.url ??
+    null;
   const pendientes = tareas
     .filter((t) => !t.done_at)
     .map(({ id, title, estimated_minutes }) => ({
@@ -69,6 +76,8 @@ export default async function FocoPage({ searchParams }: PageProps<"/foco">) {
               : null
           }
         />
+
+        {enlace && <AbrirEnlace url={enlace} conSitio />}
 
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">

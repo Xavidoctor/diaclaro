@@ -89,6 +89,7 @@ function valoresIniciales(
       ? String(rutina.focus_alarm_minutes)
       : "",
     project_id: rutina ? (rutina.project_id ?? "") : (proyectoId ?? ""),
+    url: rutina?.url ?? "",
   };
 }
 
@@ -358,6 +359,23 @@ function Campos({
           ) : (
             <input type="hidden" name="project_id" value={valores.project_id} />
           )}
+
+          <label className="flex flex-col gap-1 text-sm">
+            Enlace (opcional)
+            <input
+              name="url"
+              inputMode="url"
+              autoCapitalize="none"
+              autoCorrect="off"
+              maxLength={2000}
+              defaultValue={valores.url}
+              placeholder="Un podcast, una clase, un vídeo…"
+              className="input py-2"
+            />
+            <span className="text-muted">
+              En Hoy saldrá un botón para abrirlo con un toque.
+            </span>
+          </label>
 
           <label className="flex flex-col gap-1 text-sm">
             Notas (opcional)

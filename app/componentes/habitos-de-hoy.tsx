@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { deshacerApunte } from "@/app/habitos/actions";
 import { Apuntar } from "@/app/habitos/apuntar";
+import { AbrirEnlace } from "@/app/componentes/abrir-enlace";
 import { listarHabitos, listarRegistrosEntre } from "@/lib/data/habitos";
 import { habitosDelDia, textoHoy } from "@/lib/planner/habitos";
 
@@ -33,6 +34,7 @@ export async function HabitosDeHoy({ hoy }: { hoy: string }) {
               <span className="text-sm text-muted">
                 {textoHoy(total, habito.unit)}
               </span>
+              {habito.url && <AbrirEnlace url={habito.url} />}
             </div>
             {total !== null && (
               <form action={deshacerApunte}>

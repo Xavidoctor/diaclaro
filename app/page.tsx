@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { deshacerRutinaHecha, marcarRutinaHecha } from "@/app/actions";
+import { AbrirEnlace } from "@/app/componentes/abrir-enlace";
 import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
 import { AvisoDemo } from "@/app/componentes/aviso-demo";
@@ -233,6 +234,7 @@ function FilaRutina({ fila }: { fila: FilaRutinaHoy }) {
           {rutina.title}
         </Link>
         <span className="text-sm text-muted">{detalle}</span>
+        {rutina.url && <AbrirEnlace url={rutina.url} />}
       </div>
       {puedeDeshacer && (
         <form action={deshacerRutinaHecha}>

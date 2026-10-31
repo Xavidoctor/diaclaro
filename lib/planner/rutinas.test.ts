@@ -238,8 +238,17 @@ describe("prepararRutina", () => {
         part_of_day: null,
         focus: false,
         focus_alarm_minutes: null,
+        url: null,
       },
     });
+  });
+
+  it("guarda el enlace de la clase o el podcast", () => {
+    const r = prepararRutina({ ...formulario, url: "https://youtu.be/abc" });
+    expect(r.ok && r.valor.url).toBe("https://youtu.be/abc");
+    expect(prepararRutina({ ...formulario, url: "javascript:alert(1)" }).ok).toBe(
+      false,
+    );
   });
 
   it("guarda una hora para cada vez, y la primera como inicio", () => {
