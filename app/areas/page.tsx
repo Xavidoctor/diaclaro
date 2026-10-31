@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, ChevronUp, Plus } from "lucide-react";
 import { crearSugeridas, moverArea } from "@/app/areas/actions";
+import { FormHorasLibres } from "@/app/areas/form-horas-libres";
 import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { contarProyectosPorArea, listarAreas } from "@/lib/data/areas";
+import { leerHorasSueno } from "@/lib/data/horas-libres";
 import { cargarResumenSemana } from "@/lib/data/resumen-semana";
 import { leerSecciones } from "@/lib/data/secciones";
 import {
@@ -16,6 +18,11 @@ import {
   type Area,
 } from "@/lib/planner/areas";
 import { lunesDe } from "@/lib/planner/candidaturas";
+import {
+  barraHoras,
+  minutosLibresSemana,
+  type HorasSueno,
+} from "@/lib/planner/horas-libres";
 import {
   porcentaje,
   textoFila,
@@ -28,16 +35,20 @@ export const metadata: Metadata = { title: "Áreas" };
 // Áreas: las grandes partes de tu vida, con sus proyectos y sus horas.
 export default async function AreasPage() {
   const { timezone } = await leerAjustes();
-  const [areas, proyectos, secciones, estaSemana] = await Promise.all([
-    listarAreas(),
-    contarProyectosPorArea(),
-    leerSecciones(),
-    // Lo que llevas esta semana en cada área. Si falla, la lista sale igual.
-    cargarResumenSemana(lunesDe(await diaDeHoy()), timezone).catch((error) => {
-      console.error(error);
-      return null;
-    }),
-  ]);
+  const [areas, proyectos, secciones, horasSueno, estaSemana] =
+    await Promise.all([
+      listarAreas(),
+      contarProyectosPorArea(),
+      leerSecciones(),
+      leerHorasSueno(),
+      // Lo que llevas esta semana en cada área. Si falla, la lista sale igual.
+      cargarResumenSemana(lunesDe(await diaDeHoy()), timezone).catch(
+        (error) => {
+          console.error(error);
+          return null;
+        },
+      ),
+    ]);
   const filas = new Map(estaSemana?.filas.map((f) => [f.area.id, f]));
   const activas = areas.filter((a) => !a.archived_at);
   const archivadas = areas.filter((a) => a.archived_at);
@@ -96,14 +107,11 @@ export default async function AreasPage() {
           </section>
         ) : (
           <>
-            <p className="text-sm text-muted">
-              {semana.compromiso > 0
-                ? `Te has propuesto ${textoHoras(semana.compromiso)} a la semana`
-                : "Aún no has puesto horas a ninguna área"}
-              {semana.personal > 0 &&
-                `, más hasta ${textoHoras(semana.personal)} de tiempo personal`}
-              .
-            </p>
+            <HorasLibres
+              horas={horasSueno}
+              compromiso={semana.compromiso}
+              personal={semana.personal}
+            />
             <Link
               href="/areas/semana"
               className="card flex items-center justify-between gap-3 p-4"
@@ -140,6 +148,63 @@ export default async function AreasPage() {
       </main>
       <BarraInferior actual="/areas" />
     </>
+  );
+}
+
+// Barra «Horas libres a la semana»: lo que has repartido entre tus áreas
+// frente a las horas que tienes despierto (24 h − sueño, por 7).
+function HorasLibres({
+  horas,
+  compromiso,
+  personal,
+}: {
+  horas: HorasSueno;
+  compromiso: number;
+  personal: number;
+}) {
+  const barra = barraHoras(minutosLibresSemana(horas), compromiso + personal);
+  const numero = (h: number) => String(h).replace(".", ",");
+  return (
+    <section className="card flex flex-col gap-2 p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-medium">Horas libres a la semana</h2>
+        <span className="text-sm text-muted">
+          {textoHoras(barra.repartidas)} de {textoHoras(barra.libres)}
+        </span>
+      </div>
+      <div
+        role="progressbar"
+        aria-label="Horas repartidas entre tus áreas"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={barra.porcentaje}
+        className="h-2.5 overflow-hidden rounded-full bg-secondary"
+      >
+        <div
+          className={`h-full rounded-full ${barra.teHasPasado > 0 || barra.casiLleno ? "bg-danger/60" : "bg-primary"}`}
+          style={{ width: `${barra.porcentaje}%` }}
+        />
+      </div>
+      <p className="text-sm">
+        {barra.repartidas === 0
+          ? "Aún no has puesto horas a ninguna área."
+          : barra.teHasPasado > 0
+            ? `Te has pasado ${textoHoras(barra.teHasPasado)}.`
+            : `Te quedan ${textoHoras(barra.quedan)} sin repartir.`}
+      </p>
+      {personal > 0 && (
+        <p className="text-sm text-muted">
+          {textoHoras(compromiso)} de compromiso y hasta {textoHoras(personal)}{" "}
+          de tiempo personal.
+        </p>
+      )}
+      <details className="text-sm text-muted">
+        <summary className="cursor-pointer">
+          Cuento {numero(horas.sueno)} h de sueño al día · Cambiar
+        </summary>
+        <FormHorasLibres inicial={{ sueno: numero(horas.sueno) }} />
+      </details>
+    </section>
   );
 }
 

@@ -16,7 +16,8 @@ import {
 
 const CAMPOS_AREA =
   "id, name, weekly_minutes, personal_time, position, archived_at";
-const CAMPOS_PROYECTO = "id, area_id, name, kind, notes, url, archived_at";
+const CAMPOS_PROYECTO =
+  "id, area_id, name, kind, label, notes, url, archived_at";
 
 function comprobar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`No se ha podido ${que}: ${error.message}`);

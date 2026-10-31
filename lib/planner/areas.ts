@@ -5,7 +5,9 @@ import { primerEnlace, type Resultado } from "./bandeja";
 // Reglas de las Áreas y los Proyectos. Funciones puras, con pruebas en areas.test.ts.
 //
 // Un área es una gran parte de tu vida (Estudios, Empleo...). Dentro tiene
-// proyectos; una asignatura es un proyecto de tipo "asignatura".
+// proyectos. Cada proyecto puede tener un tipo que escribes tú («Asignatura»,
+// «Deporte»...). Si el tipo es «Asignatura» (o «Materia»), el proyecto
+// funciona como asignatura: sus metas pueden ser entregas y exámenes.
 // Cada área puede tener un presupuesto: las horas a la semana que quieres darle.
 // Un área de "tiempo personal" (un hobby) no tiene objetivo obligatorio y no
 // cuenta como compromiso.
@@ -27,6 +29,7 @@ export type Proyecto = {
   area_id: string;
   name: string;
   kind: TipoProyecto;
+  label: string | null; // el tipo que escribes tú; vacío = «Proyecto»
   notes: string | null;
   url: string | null;
   archived_at: string | null;
@@ -106,14 +109,82 @@ export function ordenarAreas<T extends Area>(areas: T[]): T[] {
   );
 }
 
-// Asignaturas primero, luego el resto; dentro, por nombre. Archivados al final.
+// Asignaturas primero, luego el resto juntos por tipo; dentro, por nombre.
+// Archivados al final.
 export function ordenarProyectos<T extends Proyecto>(proyectos: T[]): T[] {
   return [...proyectos].sort(
     (a, b) =>
       Number(a.archived_at !== null) - Number(b.archived_at !== null) ||
       Number(a.kind !== "asignatura") - Number(b.kind !== "asignatura") ||
+      (a.label ?? "").localeCompare(b.label ?? "", "es") ||
       a.name.localeCompare(b.name, "es"),
   );
+}
+
+// ---- Tipo de proyecto ----
+
+// Para comparar tipos sin que importen mayúsculas, tildes ni espacios.
+function normalizar(texto: string): string {
+  return texto
+    .trim()
+    .toLocaleLowerCase("es")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+// Los tipos que hacen que un proyecto funcione como asignatura.
+const TIPOS_ASIGNATURA = ["asignatura", "materia"];
+
+// Del tipo que escribes sale cómo funciona el proyecto por dentro.
+export function tipoDesdeEtiqueta(label: string | null): TipoProyecto {
+  return label !== null && TIPOS_ASIGNATURA.includes(normalizar(label))
+    ? "asignatura"
+    : "proyecto";
+}
+
+// El nombre del tipo que se enseña: el tuyo, o «Proyecto» si lo dejas vacío.
+export function nombreTipoProyecto(
+  p: Pick<Proyecto, "label" | "kind">,
+): string {
+  if (p.label) return p.label;
+  return p.kind === "asignatura" ? "Asignatura" : "Proyecto";
+}
+
+// Los tipos que se sugieren al escribir: primero los que ya usas en esta
+// área (los más usados antes), luego los de otras áreas y, al final,
+// «Proyecto» y «Asignatura» si aún no los has usado. Sin repetir.
+export function sugerenciasTipo(
+  proyectos: Pick<Proyecto, "area_id" | "label">[],
+  areaId: string,
+): string[] {
+  const cuenta = new Map<
+    string,
+    { texto: string; aqui: number; total: number }
+  >();
+  for (const p of proyectos) {
+    if (!p.label || normalizar(p.label) === "") continue;
+    const clave = normalizar(p.label);
+    const actual = cuenta.get(clave) ?? {
+      texto: p.label.trim(),
+      aqui: 0,
+      total: 0,
+    };
+    actual.total += 1;
+    if (p.area_id === areaId) actual.aqui += 1;
+    cuenta.set(clave, actual);
+  }
+  const usados = [...cuenta.values()]
+    .sort(
+      (a, b) =>
+        b.aqui - a.aqui ||
+        b.total - a.total ||
+        a.texto.localeCompare(b.texto, "es"),
+    )
+    .map((t) => t.texto);
+  for (const base of ["Proyecto", "Asignatura"])
+    if (!cuenta.has(normalizar(base))) usados.push(base);
+  return usados;
 }
 
 // Sube (-1) o baja (+1) un elemento un puesto. Devuelve la lista nueva de ids.
@@ -250,7 +321,9 @@ const esquemaProyecto = z.object({
     .trim()
     .min(1, "Ponle un nombre.")
     .max(120, "Como mucho 120 caracteres."),
-  kind: z.enum(TIPOS_PROYECTO, { error: "Elige si es proyecto o asignatura." }),
+  label: textoOpcional.pipe(
+    z.string().max(40, "El tipo admite 40 caracteres.").nullable(),
+  ),
   notes: textoOpcional.pipe(
     z.string().max(5000, "Las notas admiten 5000 caracteres.").nullable(),
   ),
@@ -259,20 +332,26 @@ const esquemaProyecto = z.object({
   }),
 });
 
-export type DatosProyecto = Pick<Proyecto, "name" | "kind" | "notes" | "url">;
+export type DatosProyecto = Pick<
+  Proyecto,
+  "name" | "kind" | "label" | "notes" | "url"
+>;
 
 export function prepararProyecto(datos: {
   name: unknown;
-  kind: unknown;
+  label: unknown;
   notes: unknown;
   url: unknown;
 }): Resultado<DatosProyecto> {
   const r = esquemaProyecto.safeParse({
     name: datos.name ?? "",
-    kind: datos.kind ?? "proyecto",
+    label: datos.label ?? "",
     notes: datos.notes ?? "",
     url: datos.url ?? "",
   });
   if (!r.success) return { ok: false, error: r.error.issues[0].message };
-  return { ok: true, valor: r.data };
+  return {
+    ok: true,
+    valor: { ...r.data, kind: tipoDesdeEtiqueta(r.data.label) },
+  };
 }

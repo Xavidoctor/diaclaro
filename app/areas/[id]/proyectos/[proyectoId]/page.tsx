@@ -21,13 +21,17 @@ import {
 } from "@/lib/data/bandeja";
 import { listarRutinasDeProyecto } from "@/lib/data/rutinas";
 import { describirRepeticion, leerRegla } from "@/lib/planner/agenda";
-import { opcionesProyecto } from "@/lib/planner/areas";
+import {
+  nombreTipoProyecto,
+  opcionesProyecto,
+  sugerenciasTipo,
+} from "@/lib/planner/areas";
 import { agruparTareas } from "@/lib/planner/bandeja";
 import { textoFranja, textoVeces } from "@/lib/planner/rutinas";
 
 export const metadata: Metadata = { title: "Proyecto" };
 
-// Un proyecto (o asignatura) por dentro: sus tareas y sus datos.
+// Un proyecto por dentro (una asignatura, un deporte...): sus tareas y sus datos.
 export default async function ProyectoPage({
   params,
   searchParams,
@@ -59,7 +63,7 @@ export default async function ProyectoPage({
           {proyecto.name}
         </h1>
         <p className="text-sm text-muted">
-          {proyecto.kind === "asignatura" ? "Asignatura" : "Proyecto"}
+          {nombreTipoProyecto(proyecto)}
           {proyecto.archived_at && " · Archivado"}
           {proyecto.url && (
             <>
@@ -180,7 +184,11 @@ export default async function ProyectoPage({
           Cambiar nombre, tipo, enlace o notas
         </summary>
         <div className="mt-4">
-          <FormProyecto areaId={area.id} proyecto={proyecto} />
+          <FormProyecto
+            areaId={area.id}
+            proyecto={proyecto}
+            sugerencias={sugerenciasTipo(proyectos, area.id)}
+          />
         </div>
       </details>
 

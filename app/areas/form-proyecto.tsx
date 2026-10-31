@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useId, useState } from "react";
 import {
   guardarProyecto,
   type FormState,
@@ -8,13 +8,17 @@ import {
 } from "@/app/areas/actions";
 import type { Proyecto } from "@/lib/planner/areas";
 
-// Formulario para crear o cambiar un proyecto (o una asignatura) de un área.
+// Formulario para crear o cambiar un proyecto de un área.
+// El «Tipo» lo escribes tú (Asignatura, Deporte...). Debajo salen como
+// botones los que ya usas en esta área, para no tener que escribirlos.
 export function FormProyecto({
   areaId,
   proyecto,
+  sugerencias,
 }: {
   areaId: string;
   proyecto?: Proyecto;
+  sugerencias: string[];
 }) {
   const [estado, formAction, guardando] = useActionState<
     FormState<ValoresFormProyecto>,
@@ -22,17 +26,55 @@ export function FormProyecto({
   >(guardarProyecto, { envios: 0 });
   const valores = estado.valores ?? {
     name: proyecto?.name ?? "",
-    kind: proyecto?.kind ?? "proyecto",
+    label:
+      proyecto?.label ?? (proyecto?.kind === "asignatura" ? "Asignatura" : ""),
     notes: proyecto?.notes ?? "",
     url: proyecto?.url ?? "",
   };
 
   return (
-    <form
+    <FormularioProyecto
+      // Al volver con un error, el campo «Tipo» empieza con lo que escribiste.
       key={estado.envios}
-      action={formAction}
-      className="flex flex-col gap-4"
-    >
+      areaId={areaId}
+      proyecto={proyecto}
+      sugerencias={sugerencias}
+      valores={valores}
+      error={estado.error}
+      guardando={guardando}
+      formAction={formAction}
+    />
+  );
+}
+
+function FormularioProyecto({
+  areaId,
+  proyecto,
+  sugerencias,
+  valores,
+  error,
+  guardando,
+  formAction,
+}: {
+  areaId: string;
+  proyecto?: Proyecto;
+  sugerencias: string[];
+  valores: ValoresFormProyecto;
+  error?: string;
+  guardando: boolean;
+  formAction: (formData: FormData) => void;
+}) {
+  const idLista = useId();
+  const [tipo, setTipo] = useState(valores.label);
+  // Botones rápidos: como mucho 4, sin el que ya está escrito.
+  const rapidos = sugerencias
+    .filter(
+      (s) => s.toLocaleLowerCase("es") !== tipo.trim().toLocaleLowerCase("es"),
+    )
+    .slice(0, 4);
+
+  return (
+    <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="area_id" value={areaId} />
       {proyecto && <input type="hidden" name="id" value={proyecto.id} />}
       <label className="flex flex-col gap-1 text-sm">
@@ -45,13 +87,40 @@ export function FormProyecto({
           className="input py-2"
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Tipo
-        <select name="kind" defaultValue={valores.kind} className="input py-2">
-          <option value="proyecto">Proyecto</option>
-          <option value="asignatura">Asignatura</option>
-        </select>
-      </label>
+      <div className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1">
+          Tipo (opcional)
+          <input
+            name="label"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value)}
+            list={idLista}
+            maxLength={40}
+            autoComplete="off"
+            placeholder="Asignatura, Deporte…"
+            className="input py-2"
+          />
+        </label>
+        <datalist id={idLista}>
+          {sugerencias.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
+        {rapidos.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {rapidos.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setTipo(s)}
+                className="rounded-full bg-secondary px-3 py-1 text-sm"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <label className="flex flex-col gap-1 text-sm">
         Enlace (opcional)
         <input
@@ -74,9 +143,9 @@ export function FormProyecto({
           className="input py-2"
         />
       </label>
-      {estado.error && (
+      {error && (
         <p role="alert" className="text-sm text-danger">
-          {estado.error}
+          {error}
         </p>
       )}
       <button type="submit" disabled={guardando} className="button-primary">

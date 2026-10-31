@@ -13,6 +13,8 @@ import {
   moverArea as moverAreaEnLista,
 } from "@/lib/data/areas";
 import { crearTarea } from "@/lib/data/bandeja";
+import { guardarHorasSueno } from "@/lib/data/horas-libres";
+import { prepararHorasSueno } from "@/lib/planner/horas-libres";
 import { prepararArea, prepararProyecto } from "@/lib/planner/areas";
 import { prepararCambiosTarea } from "@/lib/planner/bandeja";
 import { createClient } from "@/lib/supabase/server";
@@ -107,10 +109,33 @@ export async function moverArea(formData: FormData) {
   refresh();
 }
 
+// ---- Horas libres a la semana ----
+
+export type ValoresHorasSueno = { sueno: string };
+
+// Guarda las horas de sueño de la barra de Áreas.
+export async function guardarHorasLibres(
+  prev: FormState<ValoresHorasSueno>,
+  formData: FormData,
+): Promise<FormState<ValoresHorasSueno>> {
+  await exigirSesion();
+  const envios = prev.envios + 1;
+  const valores = { sueno: String(formData.get("sueno") ?? "") };
+  const r = prepararHorasSueno(valores);
+  if (!r.ok) return { envios, error: r.error, valores };
+  try {
+    await guardarHorasSueno(r.valor);
+  } catch {
+    return { envios, error: ERROR_CONEXION, valores };
+  }
+  refresh();
+  return { envios };
+}
+
 // ---- Proyectos ----
 
 export type ValoresFormProyecto = Record<
-  "name" | "kind" | "notes" | "url",
+  "name" | "label" | "notes" | "url",
   string
 >;
 
@@ -124,7 +149,7 @@ export async function guardarProyecto(
   const texto = (campo: string) => String(formData.get(campo) ?? "");
   const valores = {
     name: texto("name"),
-    kind: texto("kind"),
+    label: texto("label"),
     notes: texto("notes"),
     url: texto("url"),
   };

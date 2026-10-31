@@ -8,7 +8,7 @@ import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { leerArea, listarProyectos } from "@/lib/data/areas";
 import { minutosDeCandidaturasPorArea } from "@/lib/data/candidaturas";
-import { textoPresupuesto } from "@/lib/planner/areas";
+import { nombreTipoProyecto, textoPresupuesto } from "@/lib/planner/areas";
 import { lunesDe, textoSemanaCandidaturas } from "@/lib/planner/candidaturas";
 import { diaDeHoy } from "@/lib/data/dia-activo";
 
@@ -64,8 +64,8 @@ export default async function AreaPage({ params }: PageProps<"/areas/[id]">) {
           </header>
           {activos.length === 0 ? (
             <p className="text-sm text-muted">
-              Aún no hay proyectos aquí. Una asignatura también es un proyecto:
-              elige «Asignatura» al añadirla.
+              Aún no hay proyectos aquí. Al añadir uno puedes ponerle un tipo,
+              como «Asignatura» o «Deporte».
             </p>
           ) : (
             <ListaProyectos areaId={area.id} proyectos={activos} />
@@ -154,8 +154,10 @@ function ListaProyectos({
             className="flex flex-1 flex-col gap-1"
           >
             <span className="break-words">{p.name}</span>
-            {p.kind === "asignatura" && (
-              <span className="text-sm text-muted">Asignatura</span>
+            {(p.label || p.kind === "asignatura") && (
+              <span className="break-words text-sm text-muted">
+                {nombreTipoProyecto(p)}
+              </span>
             )}
           </Link>
           {p.url && (
