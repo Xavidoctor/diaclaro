@@ -105,6 +105,55 @@ describe("avisos de rutinas con foco", () => {
   });
 });
 
+describe("avisos de metas de proyectos", () => {
+  const { habito: _sinHabito, ...base } = peticion;
+  void _sinHabito;
+  const meta = "8c3d4e5f-1234-4abc-8def-0123456789ab";
+  const ruta =
+    "/areas/9d4e5f60-1234-4abc-8def-0123456789ab/proyectos/0e5f6071-1234-4abc-8def-0123456789ab";
+  const deMeta = {
+    ...base,
+    meta,
+    titulo: "Parcial",
+    hora: "09:00",
+    tipo: "examen" as const,
+    proyecto: "Asignatura de ejemplo",
+    ruta,
+    dias: 3,
+  };
+
+  it("acepta un aviso de meta, y pide la ruta del proyecto", () => {
+    expect(leerPeticionAviso(deMeta)).toEqual({ ok: true, valor: deMeta });
+    expect(leerPeticionAviso({ ...deMeta, ruta: undefined }).ok).toBe(false);
+    expect(leerPeticionAviso({ ...deMeta, ruta: "https://otra.web" }).ok).toBe(
+      false,
+    );
+  });
+
+  it("no puede ser a la vez de una meta y de un hábito", () => {
+    expect(leerPeticionAviso({ ...deMeta, habito: peticion.habito }).ok).toBe(
+      false,
+    );
+  });
+
+  it("dice el tipo, el proyecto y cuánto falta, y abre el proyecto", () => {
+    expect(contenidoAviso(deMeta)).toEqual({
+      title: "Examen: Parcial",
+      body: "Asignatura de ejemplo · Faltan 3 días.",
+      tag: `meta-${meta}`,
+      url: `${ruta}#meta-${meta}`,
+    });
+    expect(contenidoAviso({ ...deMeta, dias: 1 }).body).toContain("mañana");
+    expect(contenidoAviso({ ...deMeta, dias: 0 }).body).toContain("hoy");
+    expect(
+      contenidoAviso({ ...deMeta, tipo: "entrega", dias: null }),
+    ).toMatchObject({
+      title: "Entrega: Parcial",
+      body: "Asignatura de ejemplo",
+    });
+  });
+});
+
 describe("leerSuscripcion", () => {
   it("convierte lo que da el navegador", () => {
     expect(

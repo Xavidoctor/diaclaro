@@ -12,7 +12,7 @@ const esquemaPeticion = z.object({
   endpoint: z.url().max(1000),
   p256dh: z.string().min(1).max(200),
   auth: z.string().min(1).max(100),
-  // Cada aviso es de un hábito o de una rutina (nunca de los dos).
+  // Cada aviso es de un hábito, de una rutina o de una meta (solo de uno).
   habito: z.uuid().optional(),
   // Aviso antes de empezar una rutina con foco (migración 20261030380000).
   rutina: z.uuid().optional(),
@@ -23,13 +23,28 @@ const esquemaPeticion = z.object({
   frase: z.string().min(1).max(200).nullish(),
   // Rutina: cuántos minutos antes de empezar llega el aviso.
   minutos: z.number().int().min(1).max(120).optional(),
+  // Aviso de una meta de un proyecto (migración 20261030450000).
+  meta: z.uuid().optional(),
+  tipo: z.enum(["meta", "entrega", "examen"]).optional(),
+  proyecto: z.string().min(1).max(100).optional(),
+  // La página del proyecto, para abrirla al tocar el aviso.
+  ruta: z
+    .string()
+    .regex(/^\/areas\/[0-9a-f-]{36}\/proyectos\/[0-9a-f-]{36}$/i)
+    .optional(),
+  // Días que faltan hasta la fecha de la meta. null = la meta no tiene fecha.
+  dias: z.number().int().nullish(),
 });
 
 export type PeticionAviso = z.infer<typeof esquemaPeticion>;
 
 export function leerPeticionAviso(datos: unknown): Resultado<PeticionAviso> {
   const r = esquemaPeticion.safeParse(datos);
-  if (!r.success || !r.data.habito === !r.data.rutina)
+  // Cada aviso es de una sola cosa: un hábito, una rutina o una meta.
+  const deQue = r.success
+    ? [r.data.habito, r.data.rutina, r.data.meta].filter(Boolean).length
+    : 0;
+  if (!r.success || deQue !== 1 || (r.data.meta && !r.data.ruta))
     return { ok: false, error: "Petición no válida." };
   return { ok: true, valor: r.data };
 }
@@ -45,9 +60,34 @@ export type ContenidoAviso = {
 export function contenidoAviso(
   p: Pick<
     PeticionAviso,
-    "habito" | "rutina" | "titulo" | "hora" | "frase" | "minutos"
+    | "habito"
+    | "rutina"
+    | "titulo"
+    | "hora"
+    | "frase"
+    | "minutos"
+    | "meta"
+    | "tipo"
+    | "proyecto"
+    | "ruta"
+    | "dias"
   >,
 ): ContenidoAviso {
+  if (p.meta) {
+    const tipo =
+      p.tipo === "examen"
+        ? "Examen"
+        : p.tipo === "entrega"
+          ? "Entrega"
+          : "Meta";
+    return {
+      title: `${tipo}: ${p.titulo}`,
+      body: [p.proyecto, textoDiasAviso(p.dias)].filter(Boolean).join(" · "),
+      tag: `meta-${p.meta}`,
+      // Al tocarlo, se abre el proyecto justo en esa meta.
+      url: `${p.ruta}#meta-${p.meta}`,
+    };
+  }
   if (p.rutina) {
     const cuando = p.minutos ? `En ${p.minutos} min` : "Dentro de poco";
     return {
@@ -68,6 +108,15 @@ export function contenidoAviso(
     // Al tocarlo, se abre Hábitos justo en ese hábito.
     url: `/habitos#habito-${p.habito}`,
   };
+}
+
+// Cuánto falta, dicho en corto para el aviso.
+function textoDiasAviso(dias: number | null | undefined): string | null {
+  if (dias === null || dias === undefined) return null;
+  if (dias === 0) return "Es hoy.";
+  if (dias === 1) return "Es mañana.";
+  if (dias > 1) return `Faltan ${dias} días.`;
+  return "Ya ha pasado la fecha.";
 }
 
 // El aviso de prueba que mandas tú desde la pantalla de avisos.
