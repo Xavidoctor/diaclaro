@@ -7,7 +7,13 @@ import { crearTareaParaDiaOGuardar } from "@/app/bandeja/acciones-sin-conexion";
 // Formulario corto para apuntar una tarea en el día elegido del calendario.
 // Hora y minutos son opcionales: si no los sabes, déjalos vacíos.
 // Con hora y minutos, la tarea ocupa ese rato y sale en la Agenda.
-export function NuevaTareaDia({ dia }: { dia: string }) {
+export function NuevaTareaDia({
+  dia,
+  titulo = "Nueva tarea para este día",
+}: {
+  dia: string;
+  titulo?: string; // en Hoy: «Nueva tarea para hoy»
+}) {
   const [estado, formAction, guardando] = useActionState<
     TareaParaDiaState,
     FormData
@@ -22,7 +28,7 @@ export function NuevaTareaDia({ dia }: { dia: string }) {
     >
       <input type="hidden" name="due_date" value={dia} />
       <label className="flex flex-col gap-1">
-        Nueva tarea para este día
+        {titulo}
         <input
           name="title"
           required

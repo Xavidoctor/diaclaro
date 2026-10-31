@@ -1,46 +1,50 @@
 import Link from "next/link";
-import { CasillaHecha } from "@/app/bandeja/casilla-hecha";
 import { AbrirEnlace } from "@/app/componentes/abrir-enlace";
+import { PendientesDeHoy } from "@/app/componentes/pendientes-de-hoy";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { listarTareas } from "@/lib/data/bandeja";
 import { tareasParaHoy } from "@/lib/planner/bandeja";
 import { textoDuracion } from "@/lib/planner/carga";
+import { listaDeHoy, tareasHechasHoy } from "@/lib/planner/pendientes-hoy";
 import {
   marcarTiempoPersonal,
   motivoOrden,
-  planDelDia,
+  ordenarTareas,
   type TareaParaPlan,
 } from "@/lib/planner/plan";
+import { filasDeHoy, type RutinaDelDia } from "@/lib/planner/rutinas";
 
-// Tarjeta de Hoy con tu plan: la siguiente tarea, tus 3 prioridades y el resto
-// en orden. El orden se calcula en lib/planner/plan.ts (sin IA).
-export async function PlanDeHoy({ hoy }: { hoy: string }) {
+// Tarjeta de Hoy con tu plan: la siguiente tarea y, debajo, todo lo que te
+// queda hoy en una lista para ir tachando (tus 3 prioridades primero), con
+// el contador «1/2 pendientes» y el botón «Añadir tarea».
+// El orden se calcula en lib/planner/plan.ts (sin IA).
+export async function PlanDeHoy({
+  hoy,
+  rutinas,
+  zona,
+}: {
+  hoy: string;
+  rutinas: RutinaDelDia[];
+  zona: string;
+}) {
   const [tareas, { areas, proyectos }] = await Promise.all([
     listarTareas(false),
     cargarOpcionesProyecto(),
   ]);
-  const { atrasadas, deHoy } = tareasParaHoy(tareas, hoy);
-  const plan = planDelDia(
+  const { atrasadas, deHoy, enMarcha, sinDia } = tareasParaHoy(tareas, hoy);
+  const ordenadas = ordenarTareas(
     marcarTiempoPersonal([...atrasadas, ...deHoy], areas, proyectos),
     hoy,
   );
-
-  if (!plan.siguiente) {
-    return (
-      <section className="card flex flex-col gap-1 p-4 text-sm">
-        <h2 className="text-lg font-semibold">Tu plan de hoy</h2>
-        <p className="text-muted">
-          No tienes tareas para hoy. Ponle la fecha de hoy a alguna en la{" "}
-          <Link href="/bandeja?pestana=tareas" className="enlace">
-            Tareas
-          </Link>{" "}
-          y aquí verás por cuál empezar.
-        </p>
-      </section>
-    );
-  }
-
-  const { siguiente, prioridades, resto } = plan;
+  const siguiente = ordenadas[0] ?? null;
+  const lista = listaDeHoy({
+    plan: ordenadas,
+    rutinas: filasDeHoy(rutinas),
+    enMarcha,
+    sinDia,
+    hechas: tareasHechasHoy(tareas, hoy, zona),
+    hoy,
+  });
 
   return (
     <section className="flex flex-col gap-3">
@@ -56,49 +60,26 @@ export async function PlanDeHoy({ hoy }: { hoy: string }) {
         </span>
       </header>
 
-      <div className="card flex flex-col gap-3 border-primary p-4">
-        <p className="text-sm font-semibold uppercase tracking-wide text-primary">
-          Siguiente tarea
-        </p>
-        <p className="text-xl font-semibold break-words">{siguiente.title}</p>
-        <p className="text-sm text-muted">{detalle(siguiente, hoy)}</p>
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={`/foco?tarea=${siguiente.id}`}
-            className="button-primary py-2 text-sm"
-          >
-            Concentrarme
-          </Link>
-          {siguiente.url && <AbrirEnlace url={siguiente.url} />}
+      {siguiente && (
+        <div className="card flex flex-col gap-3 border-primary p-4">
+          <p className="text-sm font-semibold uppercase tracking-wide text-primary">
+            Siguiente tarea
+          </p>
+          <p className="text-xl font-semibold break-words">{siguiente.title}</p>
+          <p className="text-sm text-muted">{detalle(siguiente, hoy)}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href={`/foco?tarea=${siguiente.id}`}
+              className="button-primary py-2 text-sm"
+            >
+              Concentrarme
+            </Link>
+            {siguiente.url && <AbrirEnlace url={siguiente.url} />}
+          </div>
         </div>
-      </div>
-
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
-        Tus 3 prioridades
-      </h3>
-      <ol className="flex flex-col gap-2">
-        {prioridades.map((t, i) => (
-          <Fila key={t.id} tarea={t} numero={i + 1} hoy={hoy} />
-        ))}
-      </ol>
-
-      {resto.length > 0 && (
-        <details className="flex flex-col gap-2">
-          <summary className="cursor-pointer text-sm text-muted">
-            Después, en este orden ({resto.length})
-          </summary>
-          <ol className="mt-2 flex flex-col gap-2">
-            {resto.map((t, i) => (
-              <Fila
-                key={t.id}
-                tarea={t}
-                numero={prioridades.length + i + 1}
-                hoy={hoy}
-              />
-            ))}
-          </ol>
-        </details>
       )}
+
+      <PendientesDeHoy lista={lista} hoy={hoy} />
     </section>
   );
 }
@@ -109,35 +90,4 @@ function detalle(t: TareaParaPlan, hoy: string) {
   return t.estimated_minutes
     ? `${motivo} · ${textoDuracion(t.estimated_minutes)}`
     : motivo;
-}
-
-function Fila({
-  tarea,
-  numero,
-  hoy,
-}: {
-  tarea: TareaParaPlan & { url: string | null };
-  numero: number;
-  hoy: string;
-}) {
-  return (
-    <li className="card flex items-start gap-3 p-3">
-      <CasillaHecha
-        id={tarea.id}
-        titulo={tarea.title}
-        previstos={tarea.estimated_minutes}
-      />
-      <div className="flex flex-1 flex-col">
-        <span className="break-words">
-          {numero}. {tarea.title}
-        </span>
-        <span className="text-sm text-muted">{detalle(tarea, hoy)}</span>
-        {tarea.url && (
-          <span className="mt-1">
-            <AbrirEnlace url={tarea.url} />
-          </span>
-        )}
-      </div>
-    </li>
-  );
 }

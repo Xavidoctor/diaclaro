@@ -39,7 +39,7 @@ export const PASOS: PasoRecorrido[] = [
     objetivo: "plan",
     titulo: "Tu plan de hoy",
     texto:
-      "Aquí verás por qué tarea empezar. Salen las tareas con fecha de hoy, ordenadas por importancia.",
+      "Aquí verás por qué tarea empezar y, en «Pendientes», todo lo de hoy para ir tachando. El contador baja cada vez que marcas algo.",
   },
   {
     ruta: "/",
