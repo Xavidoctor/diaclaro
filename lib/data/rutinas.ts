@@ -11,7 +11,7 @@ import type {
 // Las reglas RLS ya hacen que cada persona solo vea lo suyo.
 
 const CAMPOS_RUTINA =
-  "id, title, notes, repeat_rule, times_per_day, duration_minutes, window_start, window_end, part_of_day, focus, focus_alarm_minutes, active";
+  "id, title, notes, repeat_rule, times_per_day, duration_minutes, window_start, window_end, times_of_day, part_of_day, focus, focus_alarm_minutes, active";
 
 function comprobar(error: { message: string } | null, que: string) {
   if (error) throw new Error(`No se ha podido ${que}: ${error.message}`);
@@ -22,6 +22,7 @@ function limpiar(r: Rutina): Rutina {
     ...r,
     window_start: horaCorta(r.window_start),
     window_end: horaCorta(r.window_end),
+    times_of_day: r.times_of_day?.map(horaCorta) ?? null,
   };
 }
 
@@ -76,37 +77,60 @@ export async function listarRegistrosDelDia(fecha: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("routine_logs")
-    .select("routine_id, on_date")
+    .select("routine_id, on_date, slot")
     .eq("on_date", fecha)
     .limit(500);
   comprobar(error, "cargar las rutinas hechas");
   return (data ?? []) as RegistroRutina[];
 }
 
-export async function apuntarHecha(rutinaId: string, fecha: string) {
+// "vez" = qué vez del día (1, 2...). Sin vez, cuenta como la primera que quedaba.
+export async function apuntarHecha(
+  rutinaId: string,
+  fecha: string,
+  vez: number | null = null,
+) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("routine_logs")
-    .insert({ routine_id: rutinaId, on_date: fecha });
+    .insert({ routine_id: rutinaId, on_date: fecha, slot: vez });
   comprobar(error, "apuntar la rutina");
 }
 
-// Deshace la última vez apuntada ese día (por si pulsas «Hecho» sin querer).
-export async function quitarUltimaHecha(rutinaId: string, fecha: string) {
+// Deshace una vez apuntada ese día (por si pulsas «Hecho» sin querer).
+// Con "vez", quita esa vez; si se apuntó sin vez, o no dices cuál,
+// quita la última apuntada sin vez (o la última, si no hay ninguna así).
+export async function quitarHecha(
+  rutinaId: string,
+  fecha: string,
+  vez: number | null = null,
+) {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("routine_logs")
-    .select("id")
-    .eq("routine_id", rutinaId)
-    .eq("on_date", fecha)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  comprobar(error, "buscar la última vez");
-  if (!data) return;
+  const base = () =>
+    supabase
+      .from("routine_logs")
+      .select("id")
+      .eq("routine_id", rutinaId)
+      .eq("on_date", fecha)
+      .order("created_at", { ascending: false })
+      .limit(1);
+  const conVez = vez ? await base().eq("slot", vez).maybeSingle() : null;
+  comprobar(conVez?.error ?? null, "buscar esa vez");
+  let borrar = conVez?.data ?? null;
+  if (!borrar) {
+    const sinVez = await base().is("slot", null).maybeSingle();
+    comprobar(sinVez.error, "buscar la última vez");
+    borrar = sinVez.data;
+  }
+  if (!borrar && !vez) {
+    const ultima = await base().maybeSingle();
+    comprobar(ultima.error, "buscar la última vez");
+    borrar = ultima.data;
+  }
+  if (!borrar) return;
   const { error: errorBorrar } = await supabase
     .from("routine_logs")
     .delete()
-    .eq("id", data.id);
+    .eq("id", borrar.id);
   comprobar(errorBorrar, "deshacer");
 }

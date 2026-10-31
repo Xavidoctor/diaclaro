@@ -43,12 +43,13 @@ function rutina(
     duration_minutes: minutos,
     window_start: null,
     window_end: null,
+    times_of_day: null,
     part_of_day: null,
     focus: false,
     focus_alarm_minutes: null,
     active: true,
   };
-  return { rutina: r, hechas, completa: hechas >= veces };
+  return { rutina: r, hechas, completa: hechas >= veces, veces: [] };
 }
 
 const base: EntradaCarga = {

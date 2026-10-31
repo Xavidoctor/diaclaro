@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { leerAjustes } from "@/lib/data/ajustes";
-import { apuntarHecha, quitarUltimaHecha } from "@/lib/data/rutinas";
+import { apuntarHecha, quitarHecha } from "@/lib/data/rutinas";
 import { hoyEn } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,21 +24,25 @@ async function datosRutina(formData: FormData) {
   const id = formData.get("id");
   if (typeof id !== "string" || id === "") throw new Error("Falta el id.");
   const { timezone } = await leerAjustes();
-  return { id, hoy: hoyEn(timezone) };
+  // Qué vez del día (1, 2...), si la rutina se hace varias veces.
+  const numero = Number(formData.get("vez"));
+  const vez =
+    Number.isInteger(numero) && numero >= 1 && numero <= 20 ? numero : null;
+  return { id, vez, hoy: hoyEn(timezone) };
 }
 
-// Botón «Hecho» de una rutina en Hoy: apunta una vez más.
+// Botón «Hecho» de una rutina en Hoy: apunta una vez más (o esa vez).
 export async function marcarRutinaHecha(formData: FormData) {
   await exigirSesion();
-  const { id, hoy } = await datosRutina(formData);
-  await apuntarHecha(id, hoy);
+  const { id, vez, hoy } = await datosRutina(formData);
+  await apuntarHecha(id, hoy, vez);
   refresh();
 }
 
-// «Deshacer»: quita la última vez apuntada hoy.
+// «Deshacer»: quita la última vez apuntada hoy (o esa vez).
 export async function deshacerRutinaHecha(formData: FormData) {
   await exigirSesion();
-  const { id, hoy } = await datosRutina(formData);
-  await quitarUltimaHecha(id, hoy);
+  const { id, vez, hoy } = await datosRutina(formData);
+  await quitarHecha(id, hoy, vez);
   refresh();
 }
