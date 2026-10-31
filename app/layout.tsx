@@ -3,6 +3,7 @@ import { Nunito } from "next/font/google";
 import { RecorridoGuiado } from "@/app/componentes/recorrido-guiado";
 import "./globals.css";
 import { RegistrarSW } from "@/app/componentes/registrar-sw";
+import { AvisoSinConexion } from "@/app/componentes/aviso-sin-conexion";
 
 // Letra de la app (estilo "Calma"): Nunito, redondeada y fácil de leer.
 const nunito = Nunito({
@@ -27,6 +28,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className={`${nunito.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
+        {/* Solo se ve sin internet. */}
+        <AvisoSinConexion />
         {children}
         {/* El recorrido de bienvenida: se abre solo la primera vez. */}
         <RecorridoGuiado />

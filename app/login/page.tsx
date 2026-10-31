@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BorrarCopias } from "@/app/login/borrar-copias";
 import { EntrarDemo } from "@/app/login/entrar-demo";
 import { LoginForm } from "@/app/login/login-form";
 
@@ -25,6 +26,7 @@ export default async function LoginPage({
           Entra con tu email. Te enviaré un email para entrar, sin contraseñas.
         </p>
       </div>
+      <BorrarCopias />
       <LoginForm errorInicial={errorInicial} />
       {/* Las cuentas de prueba solo salen si Vercel tiene DEMO_PASSWORD. */}
       {process.env.DEMO_PASSWORD && <EntrarDemo />}
