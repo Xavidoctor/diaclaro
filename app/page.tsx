@@ -23,7 +23,6 @@ import { leerInicio } from "@/lib/data/inicio-dia";
 import { leerPerfil } from "@/lib/data/perfil";
 import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
 import { ocurrenciasEntre, textoHora } from "@/lib/planner/agenda";
-import { hoyEn } from "@/lib/planner/fechas";
 import { ajustesDelDia } from "@/lib/planner/inicio-dia";
 import { juntarAgendas } from "@/lib/planner/google-calendar";
 import {
@@ -34,6 +33,9 @@ import {
   type FilaRutinaHoy,
 } from "@/lib/planner/rutinas";
 import { createClient } from "@/lib/supabase/server";
+import { leerDiaDeHoy } from "@/lib/data/dia-activo";
+import { listarHorasDormir } from "@/lib/data/dormir";
+import { sumarDias } from "@/lib/planner/fechas";
 
 export default async function HoyPage() {
   const supabase = await createClient();
@@ -43,7 +45,10 @@ export default async function HoyPage() {
   // Hoy: tu agenda, tus tareas y tus rutinas del día.
   const ajustes = await leerAjustes();
   const { timezone } = ajustes;
-  const hoy = hoyEn(timezone);
+  // El día no cambia a medianoche: empieza al pulsar «Despierto» o
+  // «Levantado» y acaba al pulsar «Me voy a dormir».
+  const diaActivo = await leerDiaDeHoy();
+  const hoy = diaActivo.dia;
   const [eventos, rutinas, registros, inicio, google, perfil] =
     await Promise.all([
       listarEventosHasta(hoy),
@@ -53,6 +58,13 @@ export default async function HoyPage() {
       cargarAgendaGoogle(hoy, hoy, timezone),
       leerPerfil(),
     ]);
+  // La tarjeta de la mañana va con el día que abren sus botones (de
+  // trasnoche, el día nuevo) y con la hora a la que te dormiste la noche antes.
+  const noche = sumarDias(diaActivo.abrir, -1);
+  const [inicioAbrir, dormirAnoche] = await Promise.all([
+    diaActivo.abrir === hoy ? inicio : leerInicio(diaActivo.abrir),
+    listarHorasDormir(noche, noche).catch(() => []),
+  ]);
   // Si has pulsado "Empiezo el día", el día cuenta desde esa hora.
   const ajustesHoy = ajustesDelDia(ajustes, inicio);
   const excepciones = await listarExcepciones(eventos.map((e) => e.id));
@@ -78,7 +90,14 @@ export default async function HoyPage() {
         <AyudaPantalla seccion="hoy" />
 
         <div data-guia="despertar">
-          <EmpiezoElDia inicio={inicio} ajustes={ajustesHoy} rutinas={deHoy} />
+          <EmpiezoElDia
+            inicio={inicioAbrir}
+            ajustes={ajustesDelDia(ajustes, inicioAbrir)}
+            rutinas={deHoy}
+            modo={diaActivo.modo}
+            dia={hoy}
+            anoche={dormirAnoche[0]?.bed_time ?? null}
+          />
         </div>
 
         <AvisoSobrecarga

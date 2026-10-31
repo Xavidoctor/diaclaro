@@ -10,12 +10,13 @@ import { ocurrenciasEntre, type Ocurrencia } from "@/lib/planner/agenda";
 import type { Ajustes } from "@/lib/planner/ajustes";
 import { tareasParaHoy } from "@/lib/planner/bandeja";
 import { calcularCarga } from "@/lib/planner/carga";
-import { hoyEn, horaEn } from "@/lib/planner/fechas";
+import { horaEn } from "@/lib/planner/fechas";
 import { ajustesDelDia } from "@/lib/planner/inicio-dia";
 import { juntarAgendas } from "@/lib/planner/google-calendar";
 import { proponerRecortes } from "@/lib/planner/recortes";
 import { rutinasDelDia, type RutinaDelDia } from "@/lib/planner/rutinas";
 import { factoresPorTipo } from "@/lib/planner/tiempos";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Junta los datos de hoy y calcula si te pasas y qué se podría recortar.
 // La usan la tarjeta de Hoy y el botón de la IA, para que los dos vean lo mismo.
@@ -60,7 +61,7 @@ export async function calcularSituacion({
 // Lo mismo, cargando antes la agenda y las rutinas de hoy (para el botón de la IA).
 export async function cargarSituacion() {
   const ajustesGuardados = await leerAjustes();
-  const hoy = hoyEn(ajustesGuardados.timezone);
+  const hoy = await diaDeHoy();
   const [eventos, rutinas, registros, inicio, google] = await Promise.all([
     listarEventosHasta(hoy),
     listarRutinas(),

@@ -2,10 +2,9 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { apuntarHecha, quitarHecha } from "@/lib/data/rutinas";
-import { hoyEn } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export async function cerrarSesion() {
   const supabase = await createClient();
@@ -23,12 +22,11 @@ async function exigirSesion() {
 async function datosRutina(formData: FormData) {
   const id = formData.get("id");
   if (typeof id !== "string" || id === "") throw new Error("Falta el id.");
-  const { timezone } = await leerAjustes();
   // Qué vez del día (1, 2...), si la rutina se hace varias veces.
   const numero = Number(formData.get("vez"));
   const vez =
     Number.isInteger(numero) && numero >= 1 && numero <= 20 ? numero : null;
-  return { id, vez, hoy: hoyEn(timezone) };
+  return { id, vez, hoy: await diaDeHoy() };
 }
 
 // Botón «Hecho» de una rutina en Hoy: apunta una vez más (o esa vez).

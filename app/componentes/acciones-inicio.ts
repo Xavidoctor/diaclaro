@@ -3,8 +3,9 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { leerAjustes } from "@/lib/data/ajustes";
+import { leerDiaDeHoy } from "@/lib/data/dia-activo";
 import { borrarInicio, guardarInicio } from "@/lib/data/inicio-dia";
-import { hoyEn, horaEn } from "@/lib/planner/fechas";
+import { horaEn } from "@/lib/planner/fechas";
 import {
   leerHoraAcostarse,
   leerHorasDespertar,
@@ -13,6 +14,12 @@ import { createClient } from "@/lib/supabase/server";
 
 // Acciones de los botones "Despierto" y "Levantado" (antes "Empiezo el día").
 // El día y la hora se calculan aquí, en tu zona horaria; no los manda el navegador.
+// El día es el que abren los botones: si sigues en el de ayer (de madrugada,
+// sin haber pulsado «Me voy a dormir»), es el día nuevo del reloj.
+
+async function diaQueAbres() {
+  return (await leerDiaDeHoy()).abrir;
+}
 
 async function exigirSesion() {
   const supabase = await createClient();
@@ -25,7 +32,7 @@ export async function marcarDespierto() {
   await exigirSesion();
   const { timezone } = await leerAjustes();
   await guardarInicio({
-    on_date: hoyEn(timezone),
+    on_date: await diaQueAbres(),
     awake_time: horaEn(timezone),
   });
   refresh();
@@ -38,7 +45,7 @@ export async function empezarDia(formData: FormData) {
   const { timezone } = await leerAjustes();
   const acostarse = leerHoraAcostarse(formData.get("sleep_time"));
   await guardarInicio({
-    on_date: hoyEn(timezone),
+    on_date: await diaQueAbres(),
     start_time: horaEn(timezone),
     // Si la hora no es válida, se queda vacía (la app no se la inventa).
     sleep_time: acostarse.ok ? acostarse.valor : null,
@@ -65,7 +72,7 @@ export async function corregirHoras(
   );
   if (!horas.ok) return { error: horas.error, envios: estado.envios };
   await guardarInicio({
-    on_date: hoyEn(timezone),
+    on_date: await diaQueAbres(),
     awake_time: horas.awake_time,
     start_time: horas.start_time,
   });
@@ -75,7 +82,6 @@ export async function corregirHoras(
 
 export async function deshacerInicioDia() {
   await exigirSesion();
-  const { timezone } = await leerAjustes();
-  await borrarInicio(hoyEn(timezone));
+  await borrarInicio(await diaQueAbres());
   refresh();
 }

@@ -11,7 +11,6 @@ import {
 } from "@/app/empleo/actions";
 import { FormCandidatura } from "@/app/empleo/form-candidatura";
 import { FormNotaHistorial } from "@/app/empleo/historial";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { listarAreas } from "@/lib/data/areas";
 import { leerCandidatura, listarHistorial } from "@/lib/data/candidaturas";
 import {
@@ -22,7 +21,8 @@ import {
   textoSeguimiento,
 } from "@/lib/planner/candidaturas";
 import { textoHoras } from "@/lib/planner/areas";
-import { fechaCorta, hoyEn } from "@/lib/planner/fechas";
+import { fechaCorta } from "@/lib/planner/fechas";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Candidatura" };
 
@@ -31,14 +31,13 @@ export default async function CandidaturaPage({
   params,
 }: PageProps<"/empleo/[id]">) {
   const { id } = await params;
-  const [candidatura, historial, areas, { timezone }] = await Promise.all([
+  const [candidatura, historial, areas, hoy] = await Promise.all([
     leerCandidatura(id),
     listarHistorial(id),
     listarAreas(),
-    leerAjustes(),
+    diaDeHoy(),
   ]);
   if (!candidatura) notFound();
-  const hoy = hoyEn(timezone);
   const c = candidatura;
   const area = areas.find((a) => a.id === c.area_id);
   // En el selector: las áreas activas y, si está en una archivada, también esa.

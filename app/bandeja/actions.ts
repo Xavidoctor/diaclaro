@@ -2,7 +2,6 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { leerAjustes } from "@/lib/data/ajustes";
 import {
   borrarNotaDefinitiva,
   borrarTareaDefinitiva,
@@ -14,7 +13,6 @@ import {
   moverTareas,
 } from "@/lib/data/bandeja";
 import { prepararProyectoDeTarea } from "@/lib/planner/areas";
-import { hoyEn } from "@/lib/planner/fechas";
 import {
   leerDiaParaMover,
   leerIds,
@@ -32,6 +30,7 @@ import {
 import { leerImportancia } from "@/lib/planner/recortes";
 import { leerMinutosReales } from "@/lib/planner/tiempos";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Acciones de la Bandeja. Se ejecutan en el servidor cuando pulsas un botón.
 // Cada una comprueba primero que hay sesión: se pueden llamar desde fuera de la app.
@@ -257,8 +256,7 @@ export async function moverTareasA(
   await exigirSesion();
   const ids = leerIds(formData.get("ids"));
   if (ids.length === 0) return { error: "No hay ninguna tarea que mover." };
-  const { timezone } = await leerAjustes();
-  const dia = leerDiaParaMover(formData.get("dia"), hoyEn(timezone));
+  const dia = leerDiaParaMover(formData.get("dia"), await diaDeHoy());
   if (!dia.ok) return { error: dia.error };
   try {
     await moverTareas(ids, dia.valor);
