@@ -2,11 +2,11 @@ import {
   archivarNota,
   borrarNota,
   convertirEnTarea,
-  editarNota,
   fijarNota,
   papeleraNota,
 } from "@/app/bandeja/actions";
 import { BotonAccion as Boton } from "@/app/bandeja/boton-accion";
+import { FormEditarNota } from "@/app/bandeja/form-editar-nota";
 import { SugerirProyecto } from "@/app/bandeja/sugerir-proyecto";
 import Link from "next/link";
 import { badgeVariants } from "@/components/ui/badge";
@@ -148,7 +148,7 @@ export function NotaItem({
           <summary className="cursor-pointer text-sm text-muted">
             Editar
           </summary>
-          <form action={editarNota} className="mt-2 flex flex-col gap-2">
+          <FormEditarNota id={nota.id} className="mt-2 flex flex-col gap-2">
             <input type="hidden" name="id" value={nota.id} />
             <label htmlFor={`editar-${nota.id}`} className="sr-only">
               Texto de la nota
@@ -210,7 +210,7 @@ export function NotaItem({
             <button type="submit" className="button-primary self-start py-2">
               Guardar cambios
             </button>
-          </form>
+          </FormEditarNota>
         </details>
       )}
     </li>

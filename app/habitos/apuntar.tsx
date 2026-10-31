@@ -3,6 +3,28 @@
 import { useActionState } from "react";
 import { Check } from "lucide-react";
 import { apuntar, type ApunteState } from "@/app/habitos/actions";
+import { intentarOGuardar } from "@/app/componentes/cambios-sin-conexion";
+import { fechaLocal } from "@/lib/planner/cambios-sin-conexion";
+
+// «sinRed»: se ha guardado en el móvil y se enviará al volver internet.
+type Estado = ApunteState & { sinRed?: boolean };
+
+async function apuntarOGuardar(prev: Estado, formData: FormData): Promise<Estado> {
+  let resultado: ApunteState = prev;
+  const r = await intentarOGuardar(
+    async () => {
+      resultado = await apuntar(prev, formData);
+    },
+    {
+      tipo: "apunte-habito",
+      habitoId: String(formData.get("id") ?? ""),
+      dia: fechaLocal(new Date()),
+      cantidad: String(formData.get("amount") ?? ""),
+      nota: String(formData.get("note") ?? ""),
+    },
+  );
+  return r === "guardado" ? { envios: prev.envios + 1, sinRed: true } : resultado;
+}
 
 // Botón «+1» y, desplegando, otra cantidad con una nota opcional.
 // Si el hábito no tiene unidad, el botón es «Hecho» (y, ya hecho, solo
@@ -22,13 +44,13 @@ export function Apuntar({
   // Hoy ya apuntaste algo (para mostrar «Hecho» en los hábitos sin unidad).
   hecho?: boolean;
 }) {
-  const [estado, formAction, guardando] = useActionState<ApunteState, FormData>(
-    apuntar,
+  const [estado, formAction, guardando] = useActionState<Estado, FormData>(
+    apuntarOGuardar,
     { envios: 0 },
   );
 
   const deMarcar = !unidad;
-  if (deMarcar && hecho) {
+  if (deMarcar && (hecho || estado.sinRed)) {
     return (
       <span className="flex items-center gap-1 py-2 text-sm font-medium text-primary">
         <Check aria-hidden className="size-4" />
@@ -107,6 +129,11 @@ export function Apuntar({
       {estado.error && (
         <p role="alert" className="text-sm text-danger">
           {estado.error}
+        </p>
+      )}
+      {estado.sinRed && (
+        <p role="status" className="text-right text-xs text-muted">
+          Apuntado en el móvil. Se enviará al volver internet.
         </p>
       )}
     </div>
