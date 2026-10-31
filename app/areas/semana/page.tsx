@@ -17,6 +17,7 @@ import {
   type FilaArea,
 } from "@/lib/planner/resumen-semana";
 import { SaberMas } from "@/app/componentes/saber-mas";
+import { HorasDeLaSemana } from "@/app/areas/semana/horas-de-la-semana";
 import type {
   GrupoNoches as GrupoDeNoches,
   SuenoPerdido,
@@ -25,8 +26,9 @@ import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Tu semana" };
 
-// Tu semana por áreas: el tiempo que has dado a cada una frente a las horas
-// que te propusiste. /areas/semana?semana=2026-10-19 enseña otra semana.
+// Tu semana, todo junto: el tiempo que has dado a cada área frente a las horas
+// que te propusiste, cómo se reparten tus horas cada día y tus noches.
+// /areas/semana?semana=2026-10-19 enseña otra semana.
 export default async function SemanaPage({
   searchParams,
 }: PageProps<"/areas/semana">) {
@@ -79,6 +81,7 @@ export default async function SemanaPage({
           )}
         </nav>
 
+        <h2 className="text-lg font-semibold">Tus áreas</h2>
         {resumen.filas.length === 0 ? (
           <p className="card text-sm">
             Aún no tienes áreas.{" "}
@@ -101,6 +104,8 @@ export default async function SemanaPage({
             están en ningún proyecto. Ponles proyecto para que cuenten.
           </p>
         )}
+
+        <HorasDeLaSemana desde={desde} hasta={hasta} />
 
         {sueno && <TarjetaSueno sueno={sueno} />}
 
