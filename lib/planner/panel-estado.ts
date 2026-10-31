@@ -9,6 +9,12 @@ import {
   type DocumentoImportante,
 } from "./documentos-importantes";
 import { fechaCorta, sumarDias } from "./fechas";
+import {
+  filasDeHoy,
+  rutinasDelDia,
+  type RegistroRutina,
+  type Rutina,
+} from "./rutinas";
 
 // Reglas del panel «Tu estado» (el menú que sale al deslizar el dedo
 // de derecha a izquierda).
@@ -90,6 +96,33 @@ export function tareasPorHacer<T extends TareaPendiente>(
     mas: Math.max(0, todas.length - cuantas),
     sinDia: sinDia.length,
   };
+}
+
+// Las rutinas que tocan hoy, una fila por cada vez: primero lo que queda y
+// al final lo ya hecho (se ve tachado). "vez" solo si se hace varias veces.
+export type RutinaPorHacer = {
+  id: string;
+  titulo: string;
+  vez: number | null;
+  hora: string | null;
+  hecha: boolean;
+};
+
+export function rutinasPorHacer(
+  rutinas: Rutina[],
+  registros: RegistroRutina[],
+  hoy: string,
+  cuantas: number,
+): RutinaPorHacer[] {
+  return filasDeHoy(rutinasDelDia(rutinas, registros, hoy))
+    .slice(0, cuantas)
+    .map((f) => ({
+      id: f.item.rutina.id,
+      titulo: f.item.rutina.title,
+      vez: f.vez?.numero ?? null,
+      hora: f.vez?.hora ?? f.item.rutina.window_start,
+      hecha: f.hecha,
+    }));
 }
 
 // Cuándo toca una tarea, sea del tipo que sea: "Hoy", "Hasta el 6 nov ·

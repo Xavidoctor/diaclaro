@@ -130,7 +130,7 @@ export default async function HoyPage() {
         {/* Tu plan y tus tareas, juntos: el plan dice por cuál empezar y,
             debajo, las de otros días para decidir qué hacer con ellas. */}
         <div data-guia="plan" className="flex flex-col gap-4">
-          <PlanDeHoy hoy={hoy} />
+          <PlanDeHoy hoy={hoy} rutinas={deHoy} zona={timezone} />
           <TareasDeHoy hoy={hoy} />
         </div>
 

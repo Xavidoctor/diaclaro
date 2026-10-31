@@ -1,5 +1,6 @@
 import type { Ocurrencia } from "./agenda";
 import { PASO_MINUTOS } from "./mover-dia";
+import { vecesDeRutina, type RegistroRutina, type Rutina } from "./rutinas";
 
 // El día por horas de la Agenda: cada cosa es un cuadro, alto según lo que
 // dura, colocado a su hora. Funciones puras, con pruebas en dia-por-horas.test.ts.
@@ -204,4 +205,38 @@ export function siguienteParaAdelantar(
       .sort((a, b) => aMinutos(a.horaInicio!) - aMinutos(b.horaInicio!))[0] ??
     null
   );
+}
+
+// ---- Hecho / por hacer ----
+
+// Marca como hechas las rutinas de ese día que ya apuntaste (cada vez por
+// separado, si se hace varias veces). Las tareas ya traen si están hechas.
+export function conRutinasHechas(
+  ocurrencias: Ocurrencia[],
+  rutinas: Pick<Rutina, "id" | "times_per_day" | "times_of_day">[],
+  registros: RegistroRutina[],
+  fecha: string,
+): Ocurrencia[] {
+  const porId = new Map(rutinas.map((r) => [r.id, r]));
+  return ocurrencias.map((o) => {
+    if (o.bloque?.tipo !== "rutina" || o.fecha !== fecha) return o;
+    const rutina = porId.get(o.bloque.id);
+    if (!rutina) return o;
+    const vez = vecesDeRutina(rutina, registros, fecha)[
+      (o.bloque.vez ?? 1) - 1
+    ];
+    return vez?.hecha ? { ...o, bloque: { ...o.bloque, hecha: true } } : o;
+  });
+}
+
+// Cuántas cosas tuyas (tareas y rutinas) hay ese día y cuántas están hechas.
+export function cuentaHechas(ocurrencias: Ocurrencia[]): {
+  hechas: number;
+  total: number;
+} {
+  const tuyas = ocurrencias.filter((o) => o.bloque);
+  return {
+    hechas: tuyas.filter((o) => o.bloque!.hecha).length,
+    total: tuyas.length,
+  };
 }

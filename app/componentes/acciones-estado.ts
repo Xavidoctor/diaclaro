@@ -3,6 +3,7 @@
 import { paseDrive } from "@/app/documentos/pase-drive";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { listarNotas, listarTareas } from "@/lib/data/bandeja";
+import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
 import { leerPerfil } from "@/lib/data/perfil";
 import { leerSecciones } from "@/lib/data/secciones";
 import { cargarProgreso } from "@/lib/data/progreso";
@@ -15,7 +16,9 @@ import {
   notasFijadas,
   ordenarCartera,
   resumenNota,
+  rutinasPorHacer,
   tareasPorHacer,
+  type RutinaPorHacer,
 } from "@/lib/planner/panel-estado";
 import type { Media } from "@/lib/planner/progreso";
 import { createClient } from "@/lib/supabase/server";
@@ -52,6 +55,8 @@ export type PorHacer = {
   lista: TareaPanel[];
   mas: number; // las que no caben en el panel
   sinDia: number; // las que no tienen día (están en Tareas)
+  // Las rutinas de hoy: lo que queda y, tachado, lo ya hecho.
+  rutinas: RutinaPorHacer[];
 };
 
 export type EstadoPanel = {
@@ -70,6 +75,7 @@ export type EstadoPanel = {
 
 const NOTAS_EN_PANEL = 5;
 const TAREAS_EN_PANEL = 8;
+const RUTINAS_EN_PANEL = 8;
 const DOCUMENTOS_EN_PANEL = 6;
 
 export async function cargarEstado(): Promise<EstadoPanel | null> {
@@ -127,7 +133,19 @@ async function progresoDeLaSemana(): Promise<EstadoProgreso> {
 }
 
 async function tareasDelPanel(): Promise<PorHacer> {
-  const [tareas, hoy] = await Promise.all([listarTareas(false), diaDeHoy()]);
+  const hoy = await diaDeHoy();
+  const [tareas, rutinas] = await Promise.all([
+    listarTareas(false),
+    // Si fallan las rutinas, se ven las tareas igual.
+    Promise.all([listarRutinas(), listarRegistrosDelDia(hoy)])
+      .then(([lista, registros]) =>
+        rutinasPorHacer(lista, registros, hoy, RUTINAS_EN_PANEL),
+      )
+      .catch((error) => {
+        console.error(error);
+        return [];
+      }),
+  ]);
   const { lista, mas, sinDia } = tareasPorHacer(tareas, hoy, TAREAS_EN_PANEL);
   return {
     lista: lista.map((t) => ({
@@ -140,6 +158,7 @@ async function tareasDelPanel(): Promise<PorHacer> {
     })),
     mas,
     sinDia,
+    rutinas,
   };
 }
 

@@ -8,8 +8,10 @@ import {
   notasFijadas,
   ordenarCartera,
   resumenNota,
+  rutinasPorHacer,
   tareasPorHacer,
 } from "./panel-estado";
+import type { Rutina } from "./rutinas";
 
 describe("el gesto de deslizar", () => {
   const ancho = 400;
@@ -195,5 +197,51 @@ describe("por hacer con fecha límite y sin día", () => {
     expect(cuandoTocaTarea({ ...base, due_date: null }, hoy)).toBe(
       "Cuando puedas",
     );
+  });
+});
+
+describe("rutinasPorHacer", () => {
+  // Datos de ejemplo (no son los horarios reales de nadie).
+  const base: Rutina = {
+    id: "p",
+    title: "Paseo",
+    notes: null,
+    repeat_rule: null,
+    times_per_day: 2,
+    duration_minutes: null,
+    window_start: null,
+    window_end: null,
+    times_of_day: ["09:00", "19:00"],
+    part_of_day: null,
+    focus: false,
+    focus_alarm_minutes: null,
+    active: true,
+  };
+
+  it("una fila por vez, lo hecho al final", () => {
+    const r = rutinasPorHacer(
+      [base],
+      [{ routine_id: "p", on_date: "2026-11-02", slot: 1 }],
+      "2026-11-02",
+      8,
+    );
+    expect(r).toEqual([
+      { id: "p", titulo: "Paseo", vez: 2, hora: "19:00", hecha: false },
+      { id: "p", titulo: "Paseo", vez: 1, hora: "09:00", hecha: true },
+    ]);
+  });
+
+  it("las de una vez al día no llevan vez y no salen las pausadas", () => {
+    const una = {
+      ...base,
+      id: "u",
+      times_per_day: 1,
+      times_of_day: null,
+      window_start: "10:00",
+    };
+    const pausada = { ...base, id: "x", active: false };
+    expect(rutinasPorHacer([una, pausada], [], "2026-11-02", 8)).toEqual([
+      { id: "u", titulo: "Paseo", vez: null, hora: "10:00", hecha: false },
+    ]);
   });
 });

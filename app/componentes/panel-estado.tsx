@@ -6,6 +6,7 @@ import {
   Briefcase,
   ChartColumn,
   ListTodo,
+  Check,
   ChevronDown,
   ChevronRight,
   ExternalLink,
@@ -23,6 +24,7 @@ import {
   Zap,
 } from "lucide-react";
 import { CasillaHecha } from "@/app/bandeja/casilla-hecha";
+import { CasillaRutina } from "@/app/componentes/casilla-rutina";
 import {
   cargarEstado,
   type EstadoDocumentos,
@@ -30,6 +32,7 @@ import {
   type EstadoProgreso,
   type PorHacer,
 } from "@/app/componentes/acciones-estado";
+import type { RutinaPorHacer } from "@/lib/planner/panel-estado";
 import { textoHoras } from "@/lib/planner/areas";
 import {
   nombreTipo,
@@ -538,8 +541,10 @@ function Notas({
   );
 }
 
-// Tus tareas pendientes, en una lista: lo atrasado, lo de hoy y lo de esta
-// semana. La casilla la marca como hecha (y la quita de la lista).
+// Lo que te queda, en una lista: tus rutinas de hoy y tus tareas (lo
+// atrasado, lo de hoy, lo que tienes en marcha, lo de esta semana y lo que
+// no tiene día). Lo que marcas se queda tachado, para ver lo hecho y lo
+// que falta.
 function ListaPorHacer({
   datos,
   cargando,
@@ -548,7 +553,19 @@ function ListaPorHacer({
   cargando: boolean;
 }) {
   const [hechas, setHechas] = useState<string[]>([]);
-  const lista = datos?.lista.filter((t) => !hechas.includes(t.id)) ?? null;
+  // Las rutinas que marcas o desmarcas aquí (lo demás, como venía).
+  const [rutinasCambiadas, setRutinasCambiadas] = useState<
+    Record<string, boolean>
+  >({});
+  const clave = (r: RutinaPorHacer) => `${r.id}|${r.vez ?? 0}`;
+  const rutinaHecha = (r: RutinaPorHacer) =>
+    rutinasCambiadas[clave(r)] ?? r.hecha;
+  const rutinas = datos?.rutinas ?? [];
+  const tareas = datos?.lista ?? [];
+  const nada = datos && rutinas.length === 0 && tareas.length === 0;
+  const quedan =
+    rutinas.filter((r) => !rutinaHecha(r)).length +
+    tareas.filter((t) => !hechas.includes(t.id)).length;
   return (
     <section aria-labelledby="estado-por-hacer" className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
@@ -567,30 +584,70 @@ function ListaPorHacer({
       {datos === null && (
         <p className="text-sm text-muted">Ahora no puedo cargar tus tareas.</p>
       )}
-      {lista?.length === 0 && (
+      {nada && (
         <p className="text-sm text-muted">No tienes nada pendiente. ¡Bien!</p>
       )}
-      {lista && lista.length > 0 && (
-        <ul className="flex flex-col gap-2">
-          {lista.map((t) => (
-            <li key={t.id} className="card flex items-start gap-3 p-3 text-sm">
-              <CasillaHecha
-                id={t.id}
-                titulo={t.titulo}
-                previstos={t.previstos}
-                alMarcar={() => setHechas((h) => [...h, t.id])}
-              />
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="break-words">{t.titulo}</span>
-                <span
-                  className={`text-xs ${t.atrasada ? "text-danger" : "text-muted"}`}
-                >
-                  {t.cuando}
-                  {t.hora && ` · ${t.hora}`}
-                </span>
-              </span>
-            </li>
+      {datos && !nada && (
+        <p className="text-xs text-muted">
+          {quedan === 0
+            ? "Todo hecho. ¡Bien!"
+            : quedan === 1
+              ? "Te queda 1 cosa."
+              : `Te quedan ${quedan} cosas.`}
+        </p>
+      )}
+      {rutinas.length > 0 && (
+        <ul aria-label="Rutinas de hoy" className="flex flex-col gap-2">
+          {rutinas.map((r) => (
+            <FilaRutina
+              key={clave(r)}
+              r={r}
+              hecha={rutinaHecha(r)}
+              alCambiar={(h) =>
+                setRutinasCambiadas((c) => ({ ...c, [clave(r)]: h }))
+              }
+            />
           ))}
+        </ul>
+      )}
+      {tareas.length > 0 && (
+        <ul aria-label="Tareas" className="flex flex-col gap-2">
+          {tareas.map((t) => {
+            const hecha = hechas.includes(t.id);
+            return (
+              <li
+                key={t.id}
+                className="card flex items-start gap-3 p-3 text-sm"
+              >
+                {hecha ? (
+                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                    <Check aria-hidden className="size-4" />
+                    <span className="sr-only">Hecha</span>
+                  </span>
+                ) : (
+                  <CasillaHecha
+                    id={t.id}
+                    titulo={t.titulo}
+                    previstos={t.previstos}
+                    alMarcar={() => setHechas((h) => [...h, t.id])}
+                  />
+                )}
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span
+                    className={`break-words ${hecha ? "text-muted line-through" : ""}`}
+                  >
+                    {t.titulo}
+                  </span>
+                  <span
+                    className={`text-xs ${t.atrasada && !hecha ? "text-danger" : "text-muted"}`}
+                  >
+                    {t.cuando}
+                    {t.hora && ` · ${t.hora}`}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
       {datos && datos.mas > 0 && (
@@ -599,5 +656,41 @@ function ListaPorHacer({
         </p>
       )}
     </section>
+  );
+}
+
+// Una rutina de hoy: la casilla la marca (y la tacha) o la desmarca.
+function FilaRutina({
+  r,
+  hecha,
+  alCambiar,
+}: {
+  r: RutinaPorHacer;
+  hecha: boolean;
+  alCambiar: (hecha: boolean) => void;
+}) {
+  return (
+    <li className="card flex items-start gap-3 p-3 text-sm">
+      <span className="mt-0.5">
+        <CasillaRutina
+          id={r.id}
+          titulo={r.titulo}
+          vez={r.vez}
+          hecha={r.hecha}
+          alCambiar={alCambiar}
+        />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span
+          className={`break-words ${hecha ? "text-muted line-through" : ""}`}
+        >
+          {r.titulo}
+        </span>
+        <span className="text-xs text-muted">
+          Hoy{r.hora && ` · ${r.hora}`}
+          {r.vez && ` · ${r.vez}.ª vez`}
+        </span>
+      </span>
+    </li>
   );
 }
