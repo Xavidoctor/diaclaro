@@ -2,8 +2,9 @@
 
 import { Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import { capturar, type CapturaState } from "@/app/bandeja/actions";
+import { BotonDictar } from "@/app/componentes/boton-dictar";
 import { useColaSinConexion } from "@/app/componentes/cola-sin-conexion";
 
 // El cuadro para apuntar algo en segundos: escribes y pulsas Enter.
@@ -26,6 +27,7 @@ export function CapturaRapida({
   const { pendientes, encolar } = useColaSinConexion();
   const router = useRouter();
   const caja = useRef<HTMLTextAreaElement>(null);
+  const [avisoDictado, setAvisoDictado] = useState<string | null>(null);
 
   function pedirAlAsistente() {
     const texto = caja.current?.value.trim();
@@ -87,6 +89,7 @@ export function CapturaRapida({
             }
           }}
         />
+        <BotonDictar caja={caja} onAviso={setAvisoDictado} />
         <button
           type="submit"
           disabled={guardando}
@@ -107,6 +110,11 @@ export function CapturaRapida({
           </button>
         )}
       </div>
+      {avisoDictado && (
+        <p role="alert" className="text-sm text-danger">
+          {avisoDictado}
+        </p>
+      )}
       {estado.error ? (
         <p role="alert" className="text-sm text-danger">
           {estado.error}
