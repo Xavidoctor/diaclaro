@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { leerAjustes } from "@/lib/data/ajustes";
 import {
   leerHabito,
   listarApuntesDeHabito,
   listarRegistrosDeHabito,
 } from "@/lib/data/habitos";
-import { fechaCorta, hoyEn, sumarDias } from "@/lib/planner/fechas";
+import { fechaCorta, sumarDias } from "@/lib/planner/fechas";
 import {
   OPCIONES_SEMANAS,
   leerSemanas,
@@ -17,6 +16,7 @@ import {
   textoCantidad,
   textoMeta,
 } from "@/lib/planner/habitos";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Historial del hábito" };
 
@@ -31,8 +31,7 @@ export default async function HistorialHabitoPage({
   const habito = await leerHabito(id);
   if (!habito) notFound();
 
-  const { timezone } = await leerAjustes();
-  const hoy = hoyEn(timezone);
+  const hoy = await diaDeHoy();
   const desde = sumarDias(lunesDe(hoy), -7 * (semanas - 1));
   const [registros, apuntes] = await Promise.all([
     listarRegistrosDeHabito(habito, desde, hoy),

@@ -3,8 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BotonesDespertar } from "@/app/componentes/empiezo-el-dia";
 import { leerAjustes } from "@/lib/data/ajustes";
+import { leerDiaDeHoy } from "@/lib/data/dia-activo";
+import { listarHorasDormir } from "@/lib/data/dormir";
 import { leerInicio } from "@/lib/data/inicio-dia";
-import { hoyEn } from "@/lib/planner/fechas";
+import { sumarDias } from "@/lib/planner/fechas";
 import { ajustesDelDia, estadoDespertar } from "@/lib/planner/inicio-dia";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,7 +21,14 @@ export default async function DespiertoPage() {
   if (!data?.claims) redirect("/login");
 
   const ajustes = await leerAjustes();
-  const inicio = await leerInicio(hoyEn(ajustes.timezone));
+  // El día que abres al despertarte (aunque no pulsaras «Me voy a dormir»)
+  // y la hora a la que te dormiste la noche antes, por si quieres cambiarla.
+  const { abrir } = await leerDiaDeHoy();
+  const noche = sumarDias(abrir, -1);
+  const [inicio, dormirAnoche] = await Promise.all([
+    leerInicio(abrir),
+    listarHorasDormir(noche, noche).catch(() => []),
+  ]);
   if (estadoDespertar(inicio) === "levantado") redirect("/");
 
   return (
@@ -28,6 +37,7 @@ export default async function DespiertoPage() {
       <BotonesDespertar
         inicio={inicio}
         ajustes={ajustesDelDia(ajustes, inicio)}
+        anoche={dormirAnoche[0]?.bed_time ?? null}
         grande
         irAHoy
       />

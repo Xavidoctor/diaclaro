@@ -2,7 +2,6 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { leerAjustes } from "@/lib/data/ajustes";
 import {
   apuntarHabito,
   borrarHabito,
@@ -14,7 +13,6 @@ import {
 import { iaDisponible, pedirTexto } from "@/lib/ai/groq";
 import { leerFrases, mensajesFrasesHabito } from "@/lib/ai/frases-habito";
 import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
-import { hoyEn } from "@/lib/planner/fechas";
 import {
   anadirFrase,
   prepararApunte,
@@ -22,6 +20,7 @@ import {
   quitarFrase,
 } from "@/lib/planner/habitos";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Acciones de los Hábitos. Cada una comprueba primero que hay sesión.
 
@@ -39,8 +38,7 @@ function leerId(formData: FormData): string {
 
 // El día de hoy se calcula aquí, en tu zona horaria, no lo manda el navegador.
 async function hoy() {
-  const { timezone } = await leerAjustes();
-  return hoyEn(timezone);
+  return await diaDeHoy();
 }
 
 // ---- Crear y cambiar hábitos ----

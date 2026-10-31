@@ -4,14 +4,16 @@ import { redirect } from "next/navigation";
 import { FormCierre } from "@/app/cierre/form-cierre";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
+import { leerDiaDeHoy, leerLimitesDelDia } from "@/lib/data/dia-activo";
 import { leerCierre, listarTareasHechasDesde } from "@/lib/data/cierre";
 import { leerDiaDificil, listarTareasPorIds } from "@/lib/data/dia-dificil";
 import { listarSesionesDelDia } from "@/lib/data/foco";
 import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
 import { textoHoras } from "@/lib/planner/areas";
-import { diaACerrar, hechasEnDia, horaLocal } from "@/lib/planner/cierre";
+import { hechasEnDia } from "@/lib/planner/cierre";
+import { diaVivido } from "@/lib/planner/dia-activo";
 import { MOTIVOS, resumenConservado } from "@/lib/planner/dia-dificil";
-import { esFecha, hoyEn, nombreDia, sumarDias } from "@/lib/planner/fechas";
+import { esFecha, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import { totalMinutos } from "@/lib/planner/foco";
 import { createClient } from "@/lib/supabase/server";
 
@@ -28,12 +30,11 @@ export default async function CierrePage({
 
   const params = await searchParams;
   const { timezone } = await leerAjustes();
-  const hoy = hoyEn(timezone);
+  // El día que estás viviendo: no cambia a medianoche, sino al pulsar
+  // «Me voy a dormir». Si ya lo pulsaste, repasas el día que acabas de cerrar.
+  const hoy = diaVivido(await leerDiaDeHoy());
   const pedido = typeof params.dia === "string" ? params.dia : "";
-  const dia =
-    esFecha(pedido) && pedido <= hoy
-      ? pedido
-      : diaACerrar(hoy, sumarDias(hoy, -1), horaLocal(timezone));
+  const dia = esFecha(pedido) && pedido <= hoy ? pedido : hoy;
 
   // Desde el día anterior a medianoche (UTC) para no perder ninguna por la zona horaria.
   const [cierre, tareas, sesiones, registros, rutinas, diaDificil] =
@@ -52,7 +53,9 @@ export default async function CierrePage({
         await listarTareasPorIds(diaDificil.kept_task_ids),
       )
     : null;
-  const hechas = hechasEnDia(tareas, dia, timezone);
+  // Lo que hiciste de madrugada, antes de irte a dormir, cuenta en este día.
+  const limites = await leerLimitesDelDia(dia);
+  const hechas = hechasEnDia(tareas, dia, timezone, limites);
   const minutosFoco = totalMinutos(sesiones);
   const vecesPorRutina = new Map<string, number>();
   for (const r of registros)

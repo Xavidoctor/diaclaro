@@ -17,13 +17,13 @@ import {
   listarEventosHasta,
   listarExcepciones,
 } from "@/lib/data/agenda";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { cambiarTarea, listarTareas } from "@/lib/data/bandeja";
 import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
 import { ocurrenciasEntre } from "@/lib/planner/agenda";
-import { hoyEn, sumarDias } from "@/lib/planner/fechas";
+import { sumarDias } from "@/lib/planner/fechas";
 import { leerCambioAceptado } from "@/lib/planner/propuestas";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Acciones de «Algo ha cambiado». La IA solo propone cambios; cada uno se
 // aplica cuando pulsas su «Aceptar», y se vuelve a comprobar aquí.
@@ -89,7 +89,7 @@ export async function interpretarCambio(
   if (!iaDisponible())
     return { intento, texto, error: "La IA no está configurada." };
 
-  const hoy = hoyEn((await leerAjustes()).timezone);
+  const hoy = await diaDeHoy();
   if (!(await apuntarUsoIA(hoy)))
     return {
       intento,

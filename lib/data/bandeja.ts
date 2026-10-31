@@ -1,4 +1,5 @@
 import "server-only";
+import { horaCorta } from "@/lib/planner/agenda";
 import type { TipoNota } from "@/lib/planner/etiquetas";
 import type { Importancia } from "@/lib/planner/recortes";
 import { createClient } from "@/lib/supabase/server";
@@ -27,6 +28,7 @@ export type Tarea = {
   title: string;
   details: string | null;
   due_date: string | null;
+  due_time: string | null; // "09:30" o vacía (sin hora)
   kind: "tarea" | "entrega";
   estimated_minutes: number | null;
   actual_minutes: number | null;
@@ -44,7 +46,12 @@ export type VistaNotas = "activas" | "archivo" | "papelera";
 const CAMPOS_NOTA =
   "id, body, url, kind, tags, pinned, archived_at, deleted_at, created_at, project_id, tasks(id, title, done_at)";
 const CAMPOS_TAREA =
-  "id, title, details, kind, due_date, estimated_minutes, actual_minutes, note_id, project_id, importance, hard_deadline, done_at, deleted_at, created_at";
+  "id, title, details, kind, due_date, due_time, estimated_minutes, actual_minutes, note_id, project_id, importance, hard_deadline, done_at, deleted_at, created_at";
+
+// La base de datos da la hora como "09:30:00"; en la app va como "09:30".
+function limpiarTarea(t: Tarea): Tarea {
+  return { ...t, due_time: horaCorta(t.due_time) };
+}
 
 // Lanza un error con un mensaje claro si Supabase falla.
 function comprobar(error: { message: string } | null, que: string) {
@@ -97,7 +104,7 @@ export async function listarTareas(papelera: boolean) {
     .order("created_at", { ascending: false })
     .limit(300);
   comprobar(error, "cargar las tareas");
-  return (data ?? []) as Tarea[];
+  return ((data ?? []) as Tarea[]).map(limpiarTarea);
 }
 
 // Las tareas de un proyecto (sin las de la papelera).
@@ -111,7 +118,7 @@ export async function listarTareasDeProyecto(proyectoId: string) {
     .order("created_at", { ascending: false })
     .limit(300);
   comprobar(error, "cargar las tareas del proyecto");
-  return (data ?? []) as Tarea[];
+  return ((data ?? []) as Tarea[]).map(limpiarTarea);
 }
 
 // Etiquetas de todas las notas que no están en la papelera (para los filtros).
@@ -157,6 +164,7 @@ export async function crearTarea(datos: {
   note_id?: string | null;
   project_id?: string | null;
   due_date?: string | null;
+  due_time?: string | null;
   estimated_minutes?: number | null;
 }) {
   const supabase = await createClient();
@@ -187,6 +195,7 @@ export async function cambiarTarea(
   cambios: Partial<{
     title: string;
     due_date: string | null;
+    due_time: string | null;
     estimated_minutes: number | null;
     actual_minutes: number | null;
     project_id: string | null;

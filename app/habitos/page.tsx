@@ -4,14 +4,13 @@ import { Plus } from "lucide-react";
 import { deshacerApunte } from "@/app/habitos/actions";
 import { Apuntar } from "@/app/habitos/apuntar";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { listarHabitos, listarRegistrosEntre } from "@/lib/data/habitos";
 import {
   DIAS_SEMANA,
   describirRepeticion,
   leerRegla,
 } from "@/lib/planner/agenda";
-import { hoyEn, sumarDias } from "@/lib/planner/fechas";
+import { sumarDias } from "@/lib/planner/fechas";
 import {
   IDEAS,
   fraseDelDia,
@@ -27,13 +26,13 @@ import {
 } from "@/lib/planner/habitos";
 import { parseISO } from "date-fns";
 import { SaberMas } from "@/app/componentes/saber-mas";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Hábitos" };
 
 // Hábitos: lo que quieres observar, con lo apuntado hoy y un resumen de la semana.
 export default async function HabitosPage() {
-  const { timezone } = await leerAjustes();
-  const hoy = hoyEn(timezone);
+  const hoy = await diaDeHoy();
   // Dos semanas: esta y la anterior, para comparar.
   const [habitos, registros] = await Promise.all([
     listarHabitos(),

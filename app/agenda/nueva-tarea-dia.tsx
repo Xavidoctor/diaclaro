@@ -7,7 +7,8 @@ import {
 } from "@/app/bandeja/actions";
 
 // Formulario corto para apuntar una tarea en el día elegido del calendario.
-// Los minutos son opcionales: si no sabes cuánto tardarás, déjalo vacío.
+// Hora y minutos son opcionales: si no los sabes, déjalos vacíos.
+// Con hora y minutos, la tarea ocupa ese rato y sale en la Agenda.
 export function NuevaTareaDia({ dia }: { dia: string }) {
   const [estado, formAction, guardando] = useActionState<
     TareaParaDiaState,
@@ -32,8 +33,12 @@ export function NuevaTareaDia({ dia }: { dia: string }) {
           className="input py-2"
         />
       </label>
-      <div className="flex items-end gap-3">
-        <label className="flex w-36 flex-col gap-1">
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="flex w-32 flex-col gap-1">
+          Hora (opcional)
+          <input name="due_time" type="time" className="input py-2" />
+        </label>
+        <label className="flex w-32 flex-col gap-1">
           Minutos (opcional)
           <input
             name="estimated_minutes"

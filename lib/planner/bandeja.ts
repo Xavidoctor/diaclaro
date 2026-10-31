@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { horaOpcional } from "./agenda";
 import { esFecha, fechaCorta, sumarDias } from "./fechas";
 
 // Reglas de la Bandeja. Son funciones puras: no tocan la base de datos,
@@ -63,9 +64,12 @@ export function tareaDesdeNota(texto: string): {
   return { title, details };
 }
 
-// Lo que se puede cambiar de una tarea desde su ficha. Fecha y minutos son
-// opcionales: si los dejas vacíos, quedan vacíos (la app no se los inventa).
-const esquemaTarea = z.object({
+// Lo que se puede cambiar de una tarea desde su ficha. Fecha, hora y minutos
+// son opcionales: si los dejas vacíos, quedan vacíos (la app no se los inventa).
+// La hora solo tiene sentido con fecha: con hora y minutos, la tarea ocupa
+// ese rato del día y sale en la Agenda.
+const esquemaTarea = z
+  .object({
   title: z
     .string()
     .trim()
@@ -79,6 +83,7 @@ const esquemaTarea = z.object({
     .trim()
     .transform((v) => (v === "" ? null : v))
     .pipe(z.iso.date({ error: "La fecha no es válida." }).nullable()),
+  due_time: horaOpcional,
   estimated_minutes: z
     .string()
     .trim()
@@ -91,18 +96,23 @@ const esquemaTarea = z.object({
         .max(1440, "Como mucho 1440 minutos (un día).")
         .nullable(),
     ),
-});
+  })
+  .refine((d) => d.due_time === null || d.due_date !== null, {
+    error: "Para poner hora, elige también el día.",
+  });
 
 export type CambiosTarea = z.infer<typeof esquemaTarea>;
 
 export function prepararCambiosTarea(datos: {
   title: unknown;
   due_date: unknown;
+  due_time?: unknown;
   estimated_minutes: unknown;
 }): Resultado<CambiosTarea> {
   const r = esquemaTarea.safeParse({
     title: datos.title ?? "",
     due_date: datos.due_date ?? "",
+    due_time: datos.due_time ?? "",
     estimated_minutes: datos.estimated_minutes ?? "",
   });
   if (!r.success) return { ok: false, error: r.error.issues[0].message };
@@ -127,9 +137,22 @@ export function ordenarNotas<T extends { pinned: boolean; created_at: string }>(
 
 type TareaParaAgrupar = {
   due_date: string | null;
+  due_time?: string | null;
   done_at: string | null;
   created_at: string;
 };
+
+// Ordena por día y, dentro del mismo día, por hora (las que no tienen hora,
+// después). Fechas "2026-10-30" y horas "09:30" se ordenan bien como texto.
+export function porFechaYHora(
+  a: Pick<TareaParaAgrupar, "due_date" | "due_time">,
+  b: Pick<TareaParaAgrupar, "due_date" | "due_time">,
+): number {
+  return (
+    (a.due_date ?? "").localeCompare(b.due_date ?? "") ||
+    (a.due_time ?? "99").localeCompare(b.due_time ?? "99")
+  );
+}
 
 // Reparte las tareas en tres grupos, como en la pestaña Tareas.
 export function agruparTareas<T extends TareaParaAgrupar>(tareas: T[]) {
@@ -139,7 +162,7 @@ export function agruparTareas<T extends TareaParaAgrupar>(tareas: T[]) {
   // Las fechas van como "2026-10-30", así que ordenarlas como texto funciona.
   const conFecha = tareas
     .filter((t) => !t.done_at && t.due_date)
-    .sort((a, b) => a.due_date!.localeCompare(b.due_date!));
+    .sort(porFechaYHora);
   const hechas = tareas
     .filter((t) => t.done_at)
     .sort((a, b) => b.done_at!.localeCompare(a.done_at!));
@@ -173,9 +196,7 @@ export function tareasParaHoy<T extends TareaParaAgrupar>(
   diasAviso = 3,
 ) {
   const pendientes = tareas.filter((t) => !t.done_at);
-  const conFecha = pendientes
-    .filter((t) => t.due_date)
-    .sort((a, b) => a.due_date!.localeCompare(b.due_date!));
+  const conFecha = pendientes.filter((t) => t.due_date).sort(porFechaYHora);
   const limite = sumarDias(hoy, diasAviso);
   return {
     atrasadas: conFecha.filter((t) => t.due_date! < hoy),
@@ -205,7 +226,11 @@ export function tareasDelDia<T extends TareaParaAgrupar>(
 ): T[] {
   return tareas
     .filter((t) => t.due_date === dia)
-    .sort((a, b) => Number(Boolean(a.done_at)) - Number(Boolean(b.done_at)));
+    .sort(
+      (a, b) =>
+        Number(Boolean(a.done_at)) - Number(Boolean(b.done_at)) ||
+        porFechaYHora(a, b),
+    );
 }
 
 // Los días que tienen alguna tarea sin hacer (para marcarlos en el calendario).

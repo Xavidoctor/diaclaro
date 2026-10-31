@@ -3,12 +3,11 @@
 import { redirect } from "next/navigation";
 import { iaDisponible, pedirTexto } from "@/lib/ai/groq";
 import { mensajesResumirNotas } from "@/lib/ai/resumir-notas";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { leerProyecto } from "@/lib/data/areas";
 import { listarNotasDeProyecto } from "@/lib/data/bandeja";
 import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
-import { hoyEn } from "@/lib/planner/fechas";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // «Resumir con IA» en la página de un proyecto. Las notas se leen aquí, en el
 // servidor (no las manda el navegador), y solo las de ese proyecto.
@@ -34,7 +33,7 @@ export async function resumirNotas(
   if (notas.length === 0)
     return { error: "Este proyecto aún no tiene notas que resumir." };
 
-  const hoy = hoyEn((await leerAjustes()).timezone);
+  const hoy = await diaDeHoy();
   if (!(await apuntarUsoIA(hoy)))
     return {
       error: `Hoy ya has usado la IA ${await topeIA()} veces. Mañana vuelve a estar disponible.`,

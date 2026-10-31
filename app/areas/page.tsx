@@ -15,12 +15,12 @@ import {
   type Area,
 } from "@/lib/planner/areas";
 import { lunesDe } from "@/lib/planner/candidaturas";
-import { hoyEn } from "@/lib/planner/fechas";
 import {
   porcentaje,
   textoFila,
   type FilaArea,
 } from "@/lib/planner/resumen-semana";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Áreas" };
 
@@ -31,7 +31,7 @@ export default async function AreasPage() {
     listarAreas(),
     contarProyectosPorArea(),
     // Lo que llevas esta semana en cada área. Si falla, la lista sale igual.
-    cargarResumenSemana(lunesDe(hoyEn(timezone)), timezone).catch((error) => {
+    cargarResumenSemana(lunesDe(await diaDeHoy()), timezone).catch((error) => {
       console.error(error);
       return null;
     }),

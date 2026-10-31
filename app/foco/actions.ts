@@ -2,12 +2,11 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { borrarSesion, guardarSesion } from "@/lib/data/foco";
 import { apuntarHecha } from "@/lib/data/rutinas";
-import { hoyEn } from "@/lib/planner/fechas";
 import { prepararSesion } from "@/lib/planner/foco";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Acciones del temporizador de foco. Se ejecutan en el servidor.
 // Cada una comprueba primero que hay sesión: se pueden llamar desde fuera de la app.
@@ -44,9 +43,9 @@ export async function guardarSesionFoco(
   );
   if (!r.ok) return { envios, error: r.error };
 
-  // El día se calcula aquí, en tu zona horaria (el del momento en que empezaste).
-  const { timezone } = await leerAjustes();
-  const on_date = hoyEn(timezone, new Date(r.valor.started_at));
+  // El día se calcula aquí: el día en el que estás (no cambia a medianoche,
+  // sino al pulsar «Me voy a dormir»).
+  const on_date = await diaDeHoy();
   await guardarSesion({ ...r.valor, on_date });
   // Si era una rutina con foco, se apunta también como hecha ese día.
   if (r.valor.routine_id) {
@@ -62,8 +61,7 @@ export async function rutinaHechaSinMedir(formData: FormData) {
   await exigirSesion();
   const id = formData.get("rutina");
   if (typeof id !== "string" || id === "") throw new Error("Falta la rutina.");
-  const { timezone } = await leerAjustes();
-  await apuntarHecha(id, hoyEn(timezone));
+  await apuntarHecha(id, await diaDeHoy());
   redirect("/");
 }
 

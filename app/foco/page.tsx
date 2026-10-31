@@ -8,9 +8,9 @@ import { listarTareas } from "@/lib/data/bandeja";
 import { listarSesionesDelDia } from "@/lib/data/foco";
 import { leerRutina } from "@/lib/data/rutinas";
 import { textoHoras } from "@/lib/planner/areas";
-import { hoyEn } from "@/lib/planner/fechas";
 import { totalMinutos } from "@/lib/planner/foco";
 import { createClient } from "@/lib/supabase/server";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Foco" };
 
@@ -26,7 +26,7 @@ export default async function FocoPage({ searchParams }: PageProps<"/foco">) {
   const tareaInicial = typeof params.tarea === "string" ? params.tarea : null;
   const rutinaId = typeof params.rutina === "string" ? params.rutina : null;
   const { timezone } = await leerAjustes();
-  const hoy = hoyEn(timezone);
+  const hoy = await diaDeHoy();
   const [tareas, sesiones, rutina] = await Promise.all([
     listarTareas(false),
     listarSesionesDelDia(hoy),

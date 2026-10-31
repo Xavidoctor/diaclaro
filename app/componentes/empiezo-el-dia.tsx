@@ -4,8 +4,12 @@ import {
   marcarDespierto,
 } from "@/app/componentes/acciones-inicio";
 import { marcarRutinaHecha } from "@/app/actions";
+import Link from "next/link";
+import { CorregirDormir } from "@/app/componentes/corregir-dormir";
 import { CorregirHoras } from "@/app/componentes/corregir-horas";
 import type { Ajustes } from "@/lib/planner/ajustes";
+import type { ModoDelDia } from "@/lib/planner/dia-activo";
+import { nombreDia } from "@/lib/planner/fechas";
 import {
   estadoDespertar,
   minutosEnLaCama,
@@ -21,15 +25,45 @@ import { SaberMas } from "@/app/componentes/saber-mas";
 // día desde ese momento hasta que te acuestes.
 // "ajustes" son los de hoy (ya con la hora de acostarte del día, si la pusiste).
 // "rutinas" son las de hoy: al levantarte, te enseña la primera (como el primer paseo).
+//
+// El día no cambia a medianoche (ver lib/planner/dia-activo.ts):
+// - "trasnoche": sigues en el día de ayer ("dia") hasta que pulses «Me voy a
+//   dormir»; los botones de abajo ya abren el día nuevo.
+// - "cerrado": ya te has ido a dormir; los botones abren mañana.
+// "inicio" es el del día que abren los botones. "anoche" es la hora a la que
+// te dormiste la noche anterior a ese día, si la hay.
 export function EmpiezoElDia({
   inicio,
   ajustes,
   rutinas,
+  modo,
+  dia,
+  anoche,
 }: {
   inicio: InicioDia | null;
   ajustes: Ajustes;
   rutinas: RutinaDelDia[];
+  modo: ModoDelDia;
+  dia: string;
+  anoche: string | null;
 }) {
+  if (modo === "trasnoche")
+    return (
+      <section className="card flex flex-col gap-3 p-4">
+        <p className="text-sm">
+          Sigues en tu día del {nombreDia(dia)}. Termina cuando pulses «Me voy a
+          dormir».
+        </p>
+        <Link href="/dormir" className="button-primary py-2 text-center">
+          Me voy a dormir
+        </Link>
+        <p className="mt-2 text-sm text-muted">
+          ¿Ya te has despertado? Empieza el día nuevo:
+        </p>
+        <BotonesDespertar inicio={inicio} ajustes={ajustes} anoche={anoche} />
+      </section>
+    );
+
   if (estadoDespertar(inicio) === "levantado" && inicio?.start_time) {
     const primera = primeraRutina(rutinas);
     const enLaCama = textoEnLaCama(minutosEnLaCama(inicio));
@@ -57,7 +91,15 @@ export function EmpiezoElDia({
 
   return (
     <section className="card flex flex-col gap-3 p-4">
-      <BotonesDespertar inicio={inicio} ajustes={ajustes} />
+      {modo === "cerrado" && (
+        <p className="text-sm text-muted">
+          Día cerrado{anoche ? ` a las ${anoche}` : ""}. ¡Buenas noches!{" "}
+          <Link href="/dormir" className="underline">
+            Deshacer
+          </Link>
+        </p>
+      )}
+      <BotonesDespertar inicio={inicio} ajustes={ajustes} anoche={anoche} />
     </section>
   );
 }
@@ -65,14 +107,17 @@ export function EmpiezoElDia({
 // Los dos botones, para la tarjeta de Hoy y para la pantalla /despierto.
 // "grande" los hace más altos, para pulsarlos medio dormido.
 // "irAHoy": al pulsar "Levantado", te lleva a Hoy.
+// "anoche": la hora a la que te dormiste la noche anterior (para corregirla).
 export function BotonesDespertar({
   inicio,
   ajustes,
+  anoche,
   grande = false,
   irAHoy = false,
 }: {
   inicio: InicioDia | null;
   ajustes: Ajustes;
+  anoche: string | null;
   grande?: boolean;
   irAHoy?: boolean;
 }) {
@@ -126,6 +171,7 @@ export function BotonesDespertar({
             : "¿Se te olvidó pulsar? Pon la hora a mano"
         }
       />
+      <CorregirDormir anoche={anoche} />
     </>
   );
 }

@@ -2,10 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { aplicarRecortes } from "@/app/componentes/acciones-recortes";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { guardarDiaDificil } from "@/lib/data/dia-dificil";
 import { leerConservadas, leerMotivo } from "@/lib/planner/dia-dificil";
-import { hoyEn } from "@/lib/planner/fechas";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Acciones del Día difícil. Los cambios se aplican con la misma acción que los
 // recortes del aviso de sobrecarga. Además se apunta que hoy es un día difícil
@@ -14,9 +13,8 @@ import { hoyEn } from "@/lib/planner/fechas";
 async function apuntarDiaDificil(formData: FormData) {
   const motivo = leerMotivo(formData.get("motivo"));
   if (!motivo) return;
-  const { timezone } = await leerAjustes();
   await guardarDiaDificil({
-    on_date: hoyEn(timezone),
+    on_date: await diaDeHoy(),
     reason: motivo,
     kept_task_ids: leerConservadas(formData.getAll("conservar")),
   });

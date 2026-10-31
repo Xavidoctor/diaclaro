@@ -158,27 +158,35 @@ export async function eliminarProyecto(formData: FormData) {
 }
 
 // Añade una tarea directamente dentro de un proyecto.
+// Día, hora y minutos son opcionales: si no los pones, se quedan vacíos.
+export type ValoresTareaProyecto = Record<
+  "title" | "due_date" | "due_time" | "estimated_minutes",
+  string
+>;
+
 export async function anadirTareaAProyecto(
-  prev: FormState<{ title: string }>,
+  prev: FormState<ValoresTareaProyecto>,
   formData: FormData,
-): Promise<FormState<{ title: string }>> {
+): Promise<FormState<ValoresTareaProyecto>> {
   await exigirSesion();
   const envios = prev.envios + 1;
-  const title = String(formData.get("title") ?? "");
-  // Mismas reglas que al editar una tarea; fecha y minutos se quedan vacíos.
-  const r = prepararCambiosTarea({
-    title,
-    due_date: "",
-    estimated_minutes: "",
-  });
-  if (!r.ok) return { envios, error: r.error, valores: { title } };
+  const texto = (campo: string) => String(formData.get(campo) ?? "");
+  const valores = {
+    title: texto("title"),
+    due_date: texto("due_date"),
+    due_time: texto("due_time"),
+    estimated_minutes: texto("estimated_minutes"),
+  };
+  // Mismas reglas que al editar una tarea.
+  const r = prepararCambiosTarea(valores);
+  if (!r.ok) return { envios, error: r.error, valores };
   try {
     await crearTarea({
-      title: r.valor.title,
+      ...r.valor,
       project_id: leerTexto(formData, "project_id"),
     });
   } catch {
-    return { envios, error: ERROR_CONEXION, valores: { title } };
+    return { envios, error: ERROR_CONEXION, valores };
   }
   refresh();
   return { envios };

@@ -1,5 +1,4 @@
 import "server-only";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { listarEventosHasta, listarExcepciones } from "@/lib/data/agenda";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { listarTareas } from "@/lib/data/bandeja";
@@ -7,17 +6,16 @@ import { listarRegistrosDelDia, listarRutinas } from "@/lib/data/rutinas";
 import { ocurrenciasEntre } from "@/lib/planner/agenda";
 import { tareasParaHoy } from "@/lib/planner/bandeja";
 import { proponerDiaDificil, type Motivo } from "@/lib/planner/dia-dificil";
-import { hoyEn } from "@/lib/planner/fechas";
 import { marcarTiempoPersonal } from "@/lib/planner/plan";
 import { rutinasDelDia } from "@/lib/planner/rutinas";
 import { factoresPorTipo } from "@/lib/planner/tiempos";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 // Junta todo lo de hoy y calcula la propuesta del Día difícil.
 // Lo usan la página y el botón «Explícamelo con IA», para que los dos vean
 // exactamente lo mismo.
 export async function cargarDiaDificil(motivo: Motivo) {
-  const ajustes = await leerAjustes();
-  const hoy = hoyEn(ajustes.timezone);
+  const hoy = await diaDeHoy();
   const [tareas, { areas, proyectos }, eventos, rutinas, registros] =
     await Promise.all([
       listarTareas(false),

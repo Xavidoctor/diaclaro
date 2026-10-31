@@ -8,7 +8,8 @@ import { borrarRutina, cambiarRutina, crearRutina } from "@/lib/data/rutinas";
 import { revocarPermiso, secretoGoogle } from "@/lib/google/api";
 import { descifrar } from "@/lib/google/cifrado";
 import { prepararAjustes } from "@/lib/planner/ajustes";
-import { prepararRutina } from "@/lib/planner/rutinas";
+import { prepararProyectoDeTarea } from "@/lib/planner/areas";
+import { destinoRutina, prepararRutina } from "@/lib/planner/rutinas";
 import { createClient } from "@/lib/supabase/server";
 
 // Acciones de Ajustes y Rutinas. Cada una comprueba primero que hay sesión.
@@ -63,7 +64,8 @@ export type ValoresFormRutina = Record<
   | "window_end"
   | "part_of_day"
   | "focus"
-  | "focus_alarm_minutes",
+  | "focus_alarm_minutes"
+  | "project_id",
   string
 > & { dias: string[]; horas: string[] };
 
@@ -88,6 +90,7 @@ function valoresEscritos(formData: FormData): ValoresFormRutina {
     part_of_day: texto("part_of_day"),
     focus: texto("focus"),
     focus_alarm_minutes: texto("focus_alarm_minutes"),
+    project_id: texto("project_id"),
     dias: formData.getAll("dias").map(String),
     horas: formData.getAll("horas").map(String),
   };
@@ -106,11 +109,15 @@ export async function guardarRutina(
     dias: formData.getAll("dias"),
   });
   if (!r.ok) return { envios, error: r.error, valores };
+  // El proyecto es opcional (una clase dentro de su asignatura, por ejemplo).
+  const p = prepararProyectoDeTarea(valores.project_id);
+  if (!p.ok) return { envios, error: p.error, valores };
+  const datos = { ...r.valor, project_id: p.valor };
 
   const id = formData.get("id");
   try {
-    if (typeof id === "string" && id !== "") await cambiarRutina(id, r.valor);
-    else await crearRutina(r.valor);
+    if (typeof id === "string" && id !== "") await cambiarRutina(id, datos);
+    else await crearRutina(datos);
   } catch {
     return {
       envios,
@@ -118,8 +125,8 @@ export async function guardarRutina(
       valores,
     };
   }
-  // Si entraste desde Hoy, vuelves a Hoy.
-  redirect(formData.get("volver") === "hoy" ? "/" : "/ajustes");
+  // Vuelves a donde estabas (Hoy, la Agenda o el proyecto).
+  redirect(destinoRutina(formData.get("volver")));
 }
 
 // Pausar: deja de salir en Hoy, pero no se borra.
@@ -134,7 +141,7 @@ export async function pausarRutina(formData: FormData) {
 export async function eliminarRutina(formData: FormData) {
   await exigirSesion();
   await borrarRutina(leerId(formData));
-  redirect(formData.get("volver") === "hoy" ? "/" : "/ajustes");
+  redirect(destinoRutina(formData.get("volver")));
 }
 
 // ---- Google Calendar ----

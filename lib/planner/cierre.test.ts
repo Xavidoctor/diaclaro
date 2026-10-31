@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diaACerrar, hechasEnDia, horaLocal, prepararCierre } from "./cierre";
+import { hechasEnDia, horaLocal, prepararCierre } from "./cierre";
 
 describe("prepararCierre", () => {
   it("guarda las dos respuestas sin espacios sobrantes", () => {
@@ -48,13 +48,14 @@ describe("hechasEnDia", () => {
       hechasEnDia(tareas, "2026-10-29", "Europe/Madrid").map((t) => t.id),
     ).toEqual(["4"]);
   });
-});
 
-describe("diaACerrar", () => {
-  it("de madrugada cierra el día anterior", () => {
-    expect(diaACerrar("2026-10-31", "2026-10-30", 1)).toBe("2026-10-30");
-    expect(diaACerrar("2026-10-31", "2026-10-30", 5)).toBe("2026-10-31");
-    expect(diaACerrar("2026-10-31", "2026-10-30", 23)).toBe("2026-10-31");
+  it("con límites, lo de madrugada cuenta en el día sin cerrar", () => {
+    const limites = { desde: "2026-10-30 08:00", hasta: "2026-10-31 01:30" };
+    expect(
+      hechasEnDia(tareas, "2026-10-30", "Europe/Madrid", limites).map(
+        (t) => t.id,
+      ),
+    ).toEqual(["1", "2"]);
   });
 });
 

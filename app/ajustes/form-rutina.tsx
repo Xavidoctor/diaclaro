@@ -9,30 +9,42 @@ import {
 import Link from "next/link";
 import { SaberMas } from "@/app/componentes/saber-mas";
 import { DIAS_SEMANA, FRANJAS, leerRegla } from "@/lib/planner/agenda";
+import { opcionesVisibles, type GrupoOpciones } from "@/lib/planner/areas";
 import { MINUTOS_AVISO, nombreVez, type Rutina } from "@/lib/planner/rutinas";
 
 // Formulario para crear o cambiar una rutina.
 // Arriba, lo justo para añadirla rápido: nombre, días y hora (si la sabes).
 // El modo foco y el resto («Más opciones») son opcionales.
-// "volver" = "hoy" si entraste desde Hoy: al guardar vuelves allí.
+// "volver" = de dónde entraste ("hoy", "agenda" o la página de un proyecto):
+// al guardar vuelves allí. "grupos" son tus proyectos, para elegir uno
+// (opcional), y "proyectoId", el que sale ya elegido al crearla.
 export function FormRutina({
   rutina,
   volver,
+  grupos = [],
+  proyectoId,
 }: {
   rutina?: Rutina;
-  volver?: "hoy";
+  volver?: string;
+  grupos?: GrupoOpciones[];
+  proyectoId?: string;
 }) {
   const [estado, formAction, guardando] = useActionState<
     FormRutinaState,
     FormData
   >(guardarRutina, { envios: 0 });
-  const valores = estado.valores ?? valoresIniciales(rutina);
+  const valores = estado.valores ?? valoresIniciales(rutina, proyectoId);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
       {rutina && <input type="hidden" name="id" value={rutina.id} />}
       {volver && <input type="hidden" name="volver" value={volver} />}
-      <Campos key={estado.envios} valores={valores} editando={!!rutina} />
+      <Campos
+        key={estado.envios}
+        valores={valores}
+        editando={!!rutina}
+        grupos={grupos}
+      />
       {estado.error && (
         <p role="alert" className="text-sm text-danger">
           {estado.error}
@@ -49,7 +61,10 @@ export function FormRutina({
   );
 }
 
-function valoresIniciales(rutina?: Rutina): ValoresFormRutina {
+function valoresIniciales(
+  rutina?: Rutina,
+  proyectoId?: string,
+): ValoresFormRutina {
   const regla = leerRegla(rutina?.repeat_rule ?? null);
   return {
     title: rutina?.title ?? "",
@@ -73,16 +88,20 @@ function valoresIniciales(rutina?: Rutina): ValoresFormRutina {
     focus_alarm_minutes: rutina?.focus_alarm_minutes
       ? String(rutina.focus_alarm_minutes)
       : "",
+    project_id: rutina ? (rutina.project_id ?? "") : (proyectoId ?? ""),
   };
 }
 
 function Campos({
   valores,
   editando,
+  grupos,
 }: {
   valores: ValoresFormRutina;
   editando: boolean;
+  grupos: GrupoOpciones[];
 }) {
+  const opciones = opcionesVisibles(grupos, valores.project_id || null);
   const [cuando, setCuando] = useState(valores.cuando);
   const [desde, setDesde] = useState(valores.window_start);
   const [foco, setFoco] = useState(valores.focus === "si");
@@ -314,6 +333,30 @@ function Campos({
             <p className="-mt-2 text-sm text-muted">
               Arriba, en «¿A qué hora?», puedes poner la hora de cada vez.
             </p>
+          )}
+
+          {opciones.length > 0 ? (
+            <label className="flex flex-col gap-1 text-sm">
+              Proyecto (opcional)
+              <select
+                name="project_id"
+                defaultValue={valores.project_id}
+                className="input py-2"
+              >
+                <option value="">Sin proyecto</option>
+                {opciones.map((g) => (
+                  <optgroup key={g.area} label={g.area}>
+                    {g.proyectos.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <input type="hidden" name="project_id" value={valores.project_id} />
           )}
 
           <label className="flex flex-col gap-1 text-sm">

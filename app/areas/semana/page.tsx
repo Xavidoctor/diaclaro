@@ -8,13 +8,14 @@ import { cargarResumenSemana } from "@/lib/data/resumen-semana";
 import { leerFechaParam } from "@/lib/planner/agenda";
 import { textoHoras } from "@/lib/planner/areas";
 import { lunesDe } from "@/lib/planner/candidaturas";
-import { fechaCorta, hoyEn, sumarDias } from "@/lib/planner/fechas";
+import { fechaCorta, sumarDias } from "@/lib/planner/fechas";
 import {
   porcentaje,
   textoDesglose,
   textoFila,
   type FilaArea,
 } from "@/lib/planner/resumen-semana";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Tu semana" };
 
@@ -25,7 +26,7 @@ export default async function SemanaPage({
 }: PageProps<"/areas/semana">) {
   const params = await searchParams;
   const { timezone } = await leerAjustes();
-  const hoy = hoyEn(timezone);
+  const hoy = await diaDeHoy();
   const estaSemana = lunesDe(hoy);
   // Siempre empezamos en lunes y nunca en una semana que aún no ha llegado.
   const pedido = lunesDe(leerFechaParam(params.semana, hoy));

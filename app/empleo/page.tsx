@@ -3,24 +3,22 @@ import Link from "next/link";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { ListaCandidaturas } from "@/app/empleo/lista";
-import { leerAjustes } from "@/lib/data/ajustes";
 import { listarCandidaturas } from "@/lib/data/candidaturas";
 import {
   contarPorEstado,
   separarCandidaturas,
 } from "@/lib/planner/candidaturas";
-import { hoyEn } from "@/lib/planner/fechas";
 import { SaberMas } from "@/app/componentes/saber-mas";
+import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Candidaturas" };
 
 // Candidaturas de empleo: a qué ofertas te has presentado y cuándo toca volver a mirarlas.
 export default async function EmpleoPage() {
-  const [candidaturas, { timezone }] = await Promise.all([
+  const [candidaturas, hoy] = await Promise.all([
     listarCandidaturas(),
-    leerAjustes(),
+    diaDeHoy(),
   ]);
-  const hoy = hoyEn(timezone);
   const { activas, cerradas } = separarCandidaturas(candidaturas);
   const resumen = contarPorEstado(activas);
 
