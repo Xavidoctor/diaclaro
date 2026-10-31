@@ -11,6 +11,9 @@ import {
   type Propuesta,
 } from "@/lib/ai/interpretar-texto";
 import { crearEvento } from "@/lib/data/agenda";
+import { crearHabito } from "@/lib/data/habitos";
+import { crearMeta } from "@/lib/data/metas";
+import { crearRutina } from "@/lib/data/rutinas";
 import { crearNota, crearTarea } from "@/lib/data/bandeja";
 import { apuntarUsoIA, topeIA } from "@/lib/data/uso-ia";
 import { primerEnlace } from "@/lib/planner/bandeja";
@@ -114,6 +117,12 @@ export async function guardarPropuestas(
           estimated_minutes: e.estimated_minutes,
           project_id: e.project_id,
         });
+      } else if (e.tipo === "rutina") {
+        await crearRutina(e.datos);
+      } else if (e.tipo === "habito") {
+        await crearHabito(e.datos);
+      } else if (e.tipo === "meta") {
+        await crearMeta(e.proyectoId, e.datos);
       } else {
         await crearEvento({
           title: e.title,
@@ -129,7 +138,7 @@ export async function guardarPropuestas(
   } catch {
     return {
       error:
-        "No se ha podido guardar todo. Revisa Tareas, Notas y la Agenda antes de repetir, por si algo ya se guardó.",
+        "No se ha podido guardar todo. Revisa Tareas, Notas, la Agenda, Rutinas y Hábitos antes de repetir, por si algo ya se guardó.",
     };
   }
   refresh();

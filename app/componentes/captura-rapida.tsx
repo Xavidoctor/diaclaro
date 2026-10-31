@@ -124,7 +124,7 @@ export function CapturaRapida({
                 : esTarea
                   ? "Enter para guardar la tarea."
                   : conAsistente
-                    ? "Enter o + lo guarda como nota. ✨ se lo pide a tu asistente: lo ordena en tareas, citas y notas."
+                    ? "Enter o + lo guarda como nota. ✨ se lo pide a tu asistente: lo ordena en tareas, citas, rutinas, hábitos…"
                     : "Enter para guardar. Usa #etiqueta si quieres clasificarla."}
         </p>
       )}

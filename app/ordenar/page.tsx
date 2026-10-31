@@ -27,8 +27,8 @@ export default async function OrdenarPage() {
             Tu asistente
           </h1>
           <SaberMas resumen="Escribe todo de golpe, como te salga.">
-            La IA lo separa en tareas, citas y notas, y tú decides qué se
-            guarda.
+            La IA lo separa en tareas, citas, notas, rutinas, hábitos y metas, y
+            tú decides qué se guarda.
           </SaberMas>
         </header>
 

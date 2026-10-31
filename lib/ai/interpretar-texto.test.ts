@@ -56,6 +56,98 @@ describe("mensajesInterpretar", () => {
 describe("leerRespuesta", () => {
   const datos = (texto: string) => ({ texto, hoy, proyectos });
 
+  it("una rutina lleva los días y la hora que has escrito", () => {
+    const [p] = leerRespuesta(
+      respuesta([
+        elemento({
+          tipo: "rutina",
+          titulo: "Gimnasio",
+          dias: ["MO", "WE"],
+          dias_texto: "los lunes y miércoles",
+          hora: "07:00",
+          hora_texto: "a las 7",
+          fecha: "2026-11-02",
+          fecha_texto: "los lunes",
+          proyecto: "P1",
+        }),
+      ]),
+      datos("Gimnasio los lunes y miércoles a las 7"),
+    )!;
+    expect(p).toMatchObject({
+      tipo: "rutina",
+      dias: ["MO", "WE"],
+      hora: "07:00",
+      fecha: null, // las rutinas no llevan fecha
+      proyectoId: null,
+    });
+  });
+
+  it("quita los días que no has dicho y deja que los elijas tú", () => {
+    const [p] = leerRespuesta(
+      respuesta([
+        elemento({
+          tipo: "habito",
+          titulo: "Leer",
+          dias: "todos",
+          dias_texto: "cada día",
+          hora: "22:00",
+          hora_texto: "a las 22",
+        }),
+      ]),
+      datos("Quiero leer más"),
+    )!;
+    expect(p.dias).toBeNull();
+    expect(p.hora).toBeNull();
+    expect(p.avisos).toContain(
+      "He quitado los días: no los veo en lo que escribiste.",
+    );
+  });
+
+  it("los siete días cuentan como todos", () => {
+    const [p] = leerRespuesta(
+      respuesta([
+        elemento({
+          tipo: "habito",
+          titulo: "Beber agua",
+          dias: ["MO", "TU", "WE", "TH", "FR", "SA", "SU"],
+          dias_texto: "cada día",
+        }),
+      ]),
+      datos("Beber agua cada día"),
+    )!;
+    expect(p.dias).toBe("todos");
+  });
+
+  it("una meta lleva su tipo, su fecha y su proyecto", () => {
+    const [p] = leerRespuesta(
+      respuesta([
+        elemento({
+          tipo: "meta",
+          titulo: "Examen de Mates",
+          clase_meta: "examen",
+          fecha: "2026-11-05",
+          fecha_texto: "el jueves",
+          proyecto: "P1",
+          minutos: 60,
+          minutos_texto: "1 hora",
+        }),
+        elemento({
+          tipo: "meta",
+          titulo: "Terminar la web",
+          clase_meta: "rara",
+        }),
+      ]),
+      datos("Examen de mates el jueves, 1 hora. Terminar la web"),
+    )!;
+    expect(p).toMatchObject({
+      tipo: "meta",
+      claseMeta: "examen",
+      fecha: "2026-11-05",
+      proyectoId: proyectos[0].id,
+      minutos: null,
+    });
+  });
+
   it("acepta la fecha si está en el texto", () => {
     const [p] = leerRespuesta(
       respuesta([
