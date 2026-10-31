@@ -10,7 +10,7 @@ import { sumarMinutosAHora } from "../planner/propuestas";
 // Cuentas qué ha cambiado («me han cancelado la tutoría del martes», «la
 // entrega pasa al viernes») y la IA propone cambios concretos en tu agenda y
 // tus tareas. Tú aceptas cada uno; nada cambia antes.
-// Igual que en «Ordenar con IA», la IA no puede poner un día o una hora que
+// Igual que en «Tu asistente», la IA no puede poner un día o una hora que
 // no hayas escrito: si lo intenta, la app quita ese cambio.
 
 export const MAX_TEXTO_CAMBIO = 1000;

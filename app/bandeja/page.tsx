@@ -98,12 +98,7 @@ async function PestanaNotas({
   return (
     <section className="flex flex-col gap-4">
       {ver === "activas" && (
-        <>
-          <CapturaRapida />
-          <Link href="/ordenar" className="enlace self-start text-sm">
-            ¿Mucho en la cabeza? Ordénalo con IA
-          </Link>
-        </>
+        <CapturaRapida conAsistente={ia} />
       )}
 
       <form role="search" action="/bandeja" className="flex flex-col gap-2">

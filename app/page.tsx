@@ -14,6 +14,7 @@ import { FocoDeHoy } from "@/app/componentes/foco-de-hoy";
 import { HabitosDeHoy } from "@/app/componentes/habitos-de-hoy";
 import { MetasProximas } from "@/app/componentes/metas-proximas";
 import { PlanDeHoy } from "@/app/componentes/plan-de-hoy";
+import { iaDisponible } from "@/lib/ai/groq";
 import { RecordatoriosHabitos } from "@/app/componentes/recordatorios-habitos";
 import { SeguimientosEmpleo } from "@/app/componentes/seguimientos-empleo";
 import { TareasDeHoy } from "@/app/componentes/tareas-de-hoy";
@@ -116,7 +117,8 @@ export default async function HoyPage() {
 
         <section data-guia="captura" className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Apunta algo</h2>
-          <CapturaRapida />
+          {/* ✨ al lado del «+»: la puerta de tu asistente personal. */}
+          <CapturaRapida conAsistente={iaDisponible()} />
         </section>
 
         <section className="flex flex-col gap-3">

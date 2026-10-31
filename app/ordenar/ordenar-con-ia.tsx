@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { CLAVE_TEXTO_ASISTENTE } from "@/app/componentes/captura-rapida";
 import {
   guardarPropuestas,
   interpretar,
@@ -19,14 +20,27 @@ export function OrdenarConIA({ grupos }: { grupos: GrupoOpciones[] }) {
     interpretar,
     { intento: 0 },
   );
+  const formulario = useRef<HTMLFormElement>(null);
+  const caja = useRef<HTMLTextAreaElement>(null);
+
+  // Si vienes del botón de tu asistente en Hoy, tu texto ya está
+  // escrito: lo ponemos aquí y lo enviamos solo, una vez.
+  useEffect(() => {
+    const texto = sessionStorage.getItem(CLAVE_TEXTO_ASISTENTE);
+    if (!texto || !caja.current) return;
+    sessionStorage.removeItem(CLAVE_TEXTO_ASISTENTE);
+    caja.current.value = texto;
+    formulario.current?.requestSubmit();
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">
-      <form action={pedir} className="flex flex-col gap-2">
+      <form ref={formulario} action={pedir} className="flex flex-col gap-2">
         <label htmlFor="texto-ia" className="font-medium">
           ¿Qué tienes en la cabeza?
         </label>
         <textarea
+          ref={caja}
           id="texto-ia"
           name="texto"
           rows={5}
@@ -41,7 +55,7 @@ export function OrdenarConIA({ grupos }: { grupos: GrupoOpciones[] }) {
           disabled={pensando}
           className="button-primary self-start"
         >
-          {pensando ? "Ordenando…" : "Ordenar con IA"}
+          {pensando ? "Pensando…" : "Pedírselo"}
         </button>
         {estado.error && (
           <p role="alert" className="text-sm text-danger">
