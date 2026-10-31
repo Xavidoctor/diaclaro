@@ -4,6 +4,7 @@ import {
   minutosAHorasTexto,
   moverEnLista,
   nombreProyecto,
+  nombreTipoProyecto,
   opcionesProyecto,
   opcionesVisibles,
   prepararProyectoDeTarea,
@@ -12,7 +13,9 @@ import {
   prepararArea,
   prepararProyecto,
   resumenSemana,
+  sugerenciasTipo,
   textoHoras,
+  tipoDesdeEtiqueta,
   textoPresupuesto,
   type Area,
   type Proyecto,
@@ -37,6 +40,7 @@ function proyecto(cambios: Partial<Proyecto>): Proyecto {
     area_id: "a",
     name: "Proyecto",
     kind: "proyecto",
+    label: null,
     notes: null,
     url: null,
     archived_at: null,
@@ -171,7 +175,7 @@ describe("prepararProyecto", () => {
     expect(
       prepararProyecto({
         name: "Asignatura de prueba",
-        kind: "asignatura",
+        label: " Asignatura ",
         notes: "",
         url: "https://campus.example.com/aula",
       }),
@@ -180,23 +184,79 @@ describe("prepararProyecto", () => {
       valor: {
         name: "Asignatura de prueba",
         kind: "asignatura",
+        label: "Asignatura",
         notes: null,
         url: "https://campus.example.com/aula",
       },
     });
   });
-  it("rechaza enlaces que no son http(s) y tipos desconocidos", () => {
+  it("acepta un tipo libre o ningún tipo", () => {
+    const deporte = prepararProyecto({
+      name: "Deporte",
+      label: "Deporte",
+      notes: "",
+      url: "",
+    });
+    expect(deporte).toMatchObject({
+      ok: true,
+      valor: { kind: "proyecto", label: "Deporte" },
+    });
     expect(
-      prepararProyecto({
-        name: "A",
-        kind: "proyecto",
-        notes: "",
-        url: "campus",
-      }).ok,
+      prepararProyecto({ name: "A", label: "", notes: "", url: "" }),
+    ).toMatchObject({ ok: true, valor: { kind: "proyecto", label: null } });
+  });
+  it("rechaza enlaces que no son http(s) y tipos demasiado largos", () => {
+    expect(
+      prepararProyecto({ name: "A", label: "", notes: "", url: "campus" }).ok,
     ).toBe(false);
     expect(
-      prepararProyecto({ name: "A", kind: "otro", notes: "", url: "" }).ok,
+      prepararProyecto({ name: "A", label: "x".repeat(41), notes: "", url: "" })
+        .ok,
     ).toBe(false);
+  });
+});
+
+describe("tipo de proyecto", () => {
+  it("«Asignatura» o «Materia» (sin importar tildes ni mayúsculas) funcionan como asignatura", () => {
+    expect(tipoDesdeEtiqueta("asignatura")).toBe("asignatura");
+    expect(tipoDesdeEtiqueta("  MATERIA ")).toBe("asignatura");
+    expect(tipoDesdeEtiqueta("Deporte")).toBe("proyecto");
+    expect(tipoDesdeEtiqueta(null)).toBe("proyecto");
+  });
+  it("enseña tu tipo, o «Proyecto»/«Asignatura» si está vacío", () => {
+    expect(nombreTipoProyecto({ label: "Deporte", kind: "proyecto" })).toBe(
+      "Deporte",
+    );
+    expect(nombreTipoProyecto({ label: null, kind: "proyecto" })).toBe(
+      "Proyecto",
+    );
+    expect(nombreTipoProyecto({ label: null, kind: "asignatura" })).toBe(
+      "Asignatura",
+    );
+  });
+  it("sugiere primero los tipos de esta área, sin repetir, y luego los básicos", () => {
+    const proyectos = [
+      { area_id: "salud", label: "Deporte" },
+      { area_id: "salud", label: "deporte " },
+      { area_id: "salud", label: "Comida" },
+      { area_id: "estudios", label: "Asignatura" },
+      { area_id: "estudios", label: "Asignatura" },
+      { area_id: "estudios", label: "Asignatura" },
+      { area_id: "salud", label: null },
+    ];
+    expect(sugerenciasTipo(proyectos, "salud")).toEqual([
+      "Deporte",
+      "Comida",
+      "Asignatura",
+      "Proyecto",
+    ]);
+    expect(sugerenciasTipo(proyectos, "estudios")).toEqual([
+      "Asignatura",
+      "Deporte",
+      "Comida",
+      "Proyecto",
+    ]);
+    expect(sugerenciasTipo([], "x")).toEqual(["Proyecto", "Asignatura"]);
   });
 });
 

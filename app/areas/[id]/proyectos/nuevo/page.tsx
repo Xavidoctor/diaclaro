@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FormProyecto } from "@/app/areas/form-proyecto";
-import { leerArea } from "@/lib/data/areas";
+import { leerArea, listarTodosLosProyectos } from "@/lib/data/areas";
+import { sugerenciasTipo } from "@/lib/planner/areas";
 
 export const metadata: Metadata = { title: "Añadir proyecto" };
 
@@ -10,7 +11,10 @@ export default async function NuevoProyectoPage({
   params,
 }: PageProps<"/areas/[id]/proyectos/nuevo">) {
   const { id } = await params;
-  const area = await leerArea(id);
+  const [area, proyectos] = await Promise.all([
+    leerArea(id),
+    listarTodosLosProyectos(),
+  ]);
   if (!area) notFound();
 
   return (
@@ -19,7 +23,10 @@ export default async function NuevoProyectoPage({
         ← {area.name}
       </Link>
       <h1 className="text-3xl font-semibold tracking-tight">Añadir proyecto</h1>
-      <FormProyecto areaId={area.id} />
+      <FormProyecto
+        areaId={area.id}
+        sugerencias={sugerenciasTipo(proyectos, area.id)}
+      />
     </main>
   );
 }

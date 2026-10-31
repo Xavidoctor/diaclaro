@@ -76,7 +76,7 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
     titulo: "Áreas y proyectos",
     resumen: "Las grandes partes de tu vida, con sus proyectos y sus horas.",
     pasos: [
-      "Cada área (por ejemplo, estudios) tiene proyectos dentro. Una asignatura también es un proyecto.",
+      "Cada área (por ejemplo, estudios) tiene proyectos dentro. A cada proyecto le puedes poner el tipo que quieras, como «Asignatura» o «Deporte», y la app te recuerda los que ya usas.",
       "Puedes ponerle a cada área las horas que quieres darle a la semana. Si es un hobby, márcala como «Es tiempo personal» y nunca pasará delante de lo demás.",
       "En «Tu semana» ves el tiempo que has dado a cada área frente al que te propusiste.",
     ],
