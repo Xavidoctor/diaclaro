@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { deshacerRutinaHecha, marcarRutinaHecha } from "@/app/actions";
+import { deshacerRutinaHecha } from "@/app/actions";
+import { BotonRutinaHecha } from "@/app/componentes/boton-rutina-hecha";
 import { AbrirEnlace } from "@/app/componentes/abrir-enlace";
 import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { cargarAgendaGoogle } from "@/app/componentes/agenda-google";
@@ -255,14 +256,12 @@ function FilaRutina({ fila }: { fila: FilaRutinaHoy }) {
         </Link>
       )}
       {!hecha && !rutina.focus && (
-        <form action={marcarRutinaHecha}>
-          {/* Con varias veces al día, se apunta qué vez has hecho. */}
-          <input type="hidden" name="id" value={rutina.id} />
-          {vez && <input type="hidden" name="vez" value={vez.numero} />}
-          <button type="submit" className="button-primary py-2 text-sm">
-            Hecho
-          </button>
-        </form>
+        // Con varias veces al día, se apunta qué vez has hecho.
+        <BotonRutinaHecha
+          id={rutina.id}
+          titulo={rutina.title}
+          vez={vez?.numero ?? null}
+        />
       )}
     </li>
   );

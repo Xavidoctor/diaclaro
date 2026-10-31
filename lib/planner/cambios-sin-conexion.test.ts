@@ -3,6 +3,7 @@ import {
   anadirCambio,
   camposDeFormulario,
   cambiadoDespues,
+  describirCambio,
   diaDelApunte,
   leerCambios,
   type Cambio,
@@ -100,5 +101,21 @@ describe("anadirCambio con tareas", () => {
     const lista = anadirCambio([editar("1", "a")], editar("2", "b"));
     expect(lista).toHaveLength(1);
     expect(lista[0].id).toBe("2");
+  });
+});
+
+describe("rutina hecha sin conexión", () => {
+  it("se guarda con su vez y su día, y se describe con su nombre", () => {
+    const rutina: Cambio = {
+      ...base,
+      id: "r",
+      tipo: "rutina-hecha",
+      rutinaId: "r1",
+      titulo: "Paseo del perro",
+      vez: 2,
+      dia: "2026-10-31",
+    };
+    expect(leerCambios(JSON.stringify([rutina]))).toEqual([rutina]);
+    expect(describirCambio(rutina)).toBe("Marcar como hecha la rutina «Paseo del perro»");
   });
 });

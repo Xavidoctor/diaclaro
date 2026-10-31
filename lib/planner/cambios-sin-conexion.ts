@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 // Cambios hechos sin internet: marcar una tarea como hecha, editar una
-// tarea o una nota, añadir una tarea a un día o apuntar un hábito. Se guardan en el móvil (localStorage) y se envían en
+// tarea o una nota, añadir una tarea a un día, apuntar un hábito o marcar
+// una rutina como hecha. Se guardan en el móvil (localStorage) y se envían en
 // orden al volver la red. Si alguno no se puede aplicar porque esa cosa se
 // cambió en otro aparato mientras tanto, pasa a «Revisa este cambio».
 // Aquí solo están las reglas; guardar y enviar lo hace
@@ -48,6 +49,14 @@ export const esquemaCambio = z.discriminatedUnion("tipo", [
     ...base,
     tipo: z.literal("nueva-tarea"),
     campos: z.record(z.string(), z.string().max(10000)),
+  }),
+  z.object({
+    ...base,
+    tipo: z.literal("rutina-hecha"),
+    rutinaId: z.string().min(1),
+    titulo: z.string(),
+    vez: z.number().int().min(1).max(20).nullable(), // qué vez del día
+    dia: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // fecha del móvil
   }),
   z.object({
     ...base,
@@ -154,6 +163,8 @@ export function describirCambio(c: Cambio): string {
       return `Añadir la tarea «${c.campos.title ?? ""}»`;
     case "apunte-habito":
       return "Apuntar un hábito";
+    case "rutina-hecha":
+      return `Marcar como hecha la rutina «${c.titulo}»`;
   }
 }
 
