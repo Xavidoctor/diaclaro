@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { BotonesDespertar } from "@/app/componentes/empiezo-el-dia";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { leerDiaDeHoy } from "@/lib/data/dia-activo";
-import { listarHorasDormir } from "@/lib/data/dormir";
+import { leerNocheParaCorregir } from "@/lib/data/dormir";
 import { leerInicio } from "@/lib/data/inicio-dia";
 import { sumarDias } from "@/lib/planner/fechas";
 import { ajustesDelDia, estadoDespertar } from "@/lib/planner/inicio-dia";
@@ -27,7 +27,7 @@ export default async function DespiertoPage() {
   const noche = sumarDias(abrir, -1);
   const [inicio, dormirAnoche] = await Promise.all([
     leerInicio(abrir),
-    listarHorasDormir(noche, noche).catch(() => []),
+    leerNocheParaCorregir(noche, ajustes.sleep_time),
   ]);
   if (estadoDespertar(inicio) === "levantado") redirect("/");
 
@@ -37,7 +37,7 @@ export default async function DespiertoPage() {
       <BotonesDespertar
         inicio={inicio}
         ajustes={ajustesDelDia(ajustes, inicio)}
-        anoche={dormirAnoche[0]?.bed_time ?? null}
+        anoche={dormirAnoche}
         grande
         irAHoy
       />

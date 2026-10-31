@@ -4,17 +4,23 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { EnlaceVolver } from "@/app/componentes/enlace-volver";
 import { leerAjustes } from "@/lib/data/ajustes";
+import { cargarSuenoPerdido } from "@/lib/data/dormir";
 import { cargarResumenSemana } from "@/lib/data/resumen-semana";
 import { leerFechaParam } from "@/lib/planner/agenda";
 import { textoHoras } from "@/lib/planner/areas";
 import { lunesDe } from "@/lib/planner/candidaturas";
-import { fechaCorta, sumarDias } from "@/lib/planner/fechas";
+import { fechaCorta, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import {
   porcentaje,
   textoDesglose,
   textoFila,
   type FilaArea,
 } from "@/lib/planner/resumen-semana";
+import { SaberMas } from "@/app/componentes/saber-mas";
+import type {
+  GrupoNoches as GrupoDeNoches,
+  SuenoPerdido,
+} from "@/lib/planner/sueno-perdido";
 import { diaDeHoy } from "@/lib/data/dia-activo";
 
 export const metadata: Metadata = { title: "Tu semana" };
@@ -32,7 +38,11 @@ export default async function SemanaPage({
   const pedido = lunesDe(leerFechaParam(params.semana, hoy));
   const desde = pedido > estaSemana ? estaSemana : pedido;
   const hasta = sumarDias(desde, 6);
-  const resumen = await cargarResumenSemana(desde, timezone);
+  const [resumen, sueno] = await Promise.all([
+    cargarResumenSemana(desde, timezone),
+    // Si algo falla con las horas de dormir, el resto de la semana se ve igual.
+    cargarSuenoPerdido(desde, hasta).catch(() => null),
+  ]);
   const esEsta = desde === estaSemana;
 
   return (
@@ -87,10 +97,12 @@ export default async function SemanaPage({
 
         {resumen.sinArea > 0 && (
           <p className="text-sm text-muted">
-            Además, {textoHoras(resumen.sinArea)} sin área: foco o tareas que
-            no están en ningún proyecto. Ponles proyecto para que cuenten.
+            Además, {textoHoras(resumen.sinArea)} sin área: foco o tareas que no
+            están en ningún proyecto. Ponles proyecto para que cuenten.
           </p>
         )}
+
+        {sueno && <TarjetaSueno sueno={sueno} />}
 
         <details className="text-sm">
           <summary className="cursor-pointer text-muted">
@@ -98,12 +110,11 @@ export default async function SemanaPage({
           </summary>
           <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-muted">
             <li>
-              Foco: el temporizador, cuando lo usas en una tarea de un
-              proyecto.
+              Foco: el temporizador, cuando lo usas en una tarea de un proyecto.
             </li>
             <li>
-              Tareas: lo que contestas en «¿Cuánto has tardado?» al terminar
-              una tarea de un proyecto (sin repetir lo ya medido con el
+              Tareas: lo que contestas en «¿Cuánto has tardado?» al terminar una
+              tarea de un proyecto (sin repetir lo ya medido con el
               temporizador).
             </li>
             <li>Candidaturas: los minutos que apuntas en su historial.</li>
@@ -152,5 +163,95 @@ function FilaResumen({ fila }: { fila: FilaArea }) {
       ) : null}
       {desglose && <p className="text-xs text-muted">{desglose}</p>}
     </li>
+  );
+}
+
+// «Tus noches»: cuánto más tarde de lo previsto te acostaste esta semana,
+// separado en horas aprovechadas (trabajo, planes) y aprovechables (lo que
+// la próxima vez podría ir a dormir). Los motivos se apuntan en Hoy.
+function TarjetaSueno({ sueno }: { sueno: SuenoPerdido }) {
+  if (sueno.total === 0) {
+    if (sueno.sinPrevista === 0) return null;
+    return (
+      <p className="text-sm text-muted">
+        Para ver tus noches, pon tu hora de acostarte en{" "}
+        <Link href="/ajustes" className="enlace">
+          Ajustes
+        </Link>
+        .
+      </p>
+    );
+  }
+  return (
+    <section className="card flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="font-medium">Tus noches</h2>
+        <p className="text-sm">
+          Te quedaste {textoHoras(sueno.total)} más de lo previsto,{" "}
+          {sueno.noches === 1 ? "en 1 noche" : `en ${sueno.noches} noches`}.
+        </p>
+      </div>
+      <GrupoNoches
+        titulo="Horas aprovechadas"
+        grupo={sueno.aprovechadas}
+        clase="text-primary"
+      />
+      <GrupoNoches
+        titulo="Horas aprovechables"
+        grupo={sueno.aprovechables}
+        clase="text-muted"
+      />
+      {sueno.notas.length > 0 && (
+        <details className="text-xs text-muted">
+          <summary className="cursor-pointer">Lo que apuntaste</summary>
+          <ul className="mt-1 flex flex-col gap-1">
+            {sueno.notas.map((n) => (
+              <li key={n.on_date} className="break-words">
+                Noche del {nombreDia(n.on_date)}: {n.texto} (
+                {textoHoras(n.minutos)})
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      <SaberMas className="text-xs text-muted">
+        Se compara la hora a la que te acostaste con la prevista. Aprovechadas:
+        trabajo o estudios y planes o amigos. Aprovechables: lo demás, horas que
+        la próxima vez podrían ser de sueño. El motivo se apunta en Hoy, en
+        «Anoche… · cambiar».
+      </SaberMas>
+    </section>
+  );
+}
+
+// Una línea con el total del grupo y, debajo, sus motivos.
+function GrupoNoches({
+  titulo,
+  grupo,
+  clase,
+}: {
+  titulo: string;
+  grupo: GrupoDeNoches;
+  clase: string;
+}) {
+  if (grupo.minutos === 0) return null;
+  return (
+    <div className="flex flex-col gap-1 text-sm">
+      <p className="flex justify-between gap-3 font-medium">
+        <span>{titulo}</span>
+        <span className={`shrink-0 ${clase}`}>{textoHoras(grupo.minutos)}</span>
+      </p>
+      <ul className="flex flex-col gap-0.5 text-xs text-muted">
+        {grupo.motivos.map((m) => (
+          <li key={m.motivo ?? "sin"} className="flex justify-between gap-3">
+            <span>{m.texto}</span>
+            <span className="shrink-0">
+              {textoHoras(m.minutos)} ·{" "}
+              {m.noches === 1 ? "1 noche" : `${m.noches} noches`}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
