@@ -57,7 +57,7 @@ export function FormCierre({
       )}
       <div className="flex items-center gap-4">
         <button type="submit" disabled={guardando} className="button-primary">
-          {guardando ? "Guardando…" : "Guardar el cierre"}
+          {guardando ? "Guardando…" : "Guardar"}
         </button>
         {estado.guardado && (
           <p aria-live="polite" className="text-sm text-muted">

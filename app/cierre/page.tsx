@@ -17,9 +17,10 @@ import { esFecha, nombreDia, sumarDias } from "@/lib/planner/fechas";
 import { totalMinutos } from "@/lib/planner/foco";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Cierre del día" };
+export const metadata: Metadata = { title: "Cerrar el día" };
 
-// Cierre del día: un resumen de lo que has hecho y dos preguntas.
+// Cerrar el día: un resumen de lo que has hecho, dos preguntas (opcionales)
+// y, al final, «Me voy a dormir». Es el único sitio donde se cierra el día.
 // /cierre?dia=2026-10-29 abre el de otro día (nunca uno futuro).
 export default async function CierrePage({
   searchParams,
@@ -70,7 +71,7 @@ export default async function CierrePage({
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-6 py-8">
         <header className="flex flex-col gap-1">
           <h1 className="text-3xl font-semibold tracking-tight">
-            Cierre del día
+            Cerrar el día
           </h1>
           <p className="text-muted first-letter:uppercase">
             {nombreDia(dia)}
@@ -149,6 +150,20 @@ export default async function CierrePage({
         </section>
 
         <FormCierre key={dia} dia={dia} cierre={cierre} />
+
+        {/* El último paso: guarda la hora a la que te acuestas y el día se cierra. */}
+        {dia === hoy && (
+          <section className="card flex flex-col gap-3 p-4">
+            <h2 className="text-lg font-semibold">Último paso</h2>
+            <p className="text-sm text-muted">
+              Escribir es opcional. Cuando te metas en la cama, pulsa aquí y el
+              día queda cerrado.
+            </p>
+            <Link href="/dormir" className="button-primary self-start">
+              Me voy a dormir
+            </Link>
+          </section>
+        )}
       </main>
       <BarraInferior actual="/cierre" />
     </>

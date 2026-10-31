@@ -7,6 +7,7 @@ import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { contarProyectosPorArea, listarAreas } from "@/lib/data/areas";
 import { cargarResumenSemana } from "@/lib/data/resumen-semana";
+import { leerSecciones } from "@/lib/data/secciones";
 import {
   AREAS_SUGERIDAS,
   resumenSemana,
@@ -27,9 +28,10 @@ export const metadata: Metadata = { title: "Áreas" };
 // Áreas: las grandes partes de tu vida, con sus proyectos y sus horas.
 export default async function AreasPage() {
   const { timezone } = await leerAjustes();
-  const [areas, proyectos, estaSemana] = await Promise.all([
+  const [areas, proyectos, secciones, estaSemana] = await Promise.all([
     listarAreas(),
     contarProyectosPorArea(),
+    leerSecciones(),
     // Lo que llevas esta semana en cada área. Si falla, la lista sale igual.
     cargarResumenSemana(lunesDe(await diaDeHoy()), timezone).catch((error) => {
       console.error(error);
@@ -58,18 +60,21 @@ export default async function AreasPage() {
 
         <AyudaPantalla seccion="areas" />
 
-        <Link
-          href="/empleo"
-          className="card flex items-center justify-between gap-3 p-4"
-        >
-          <span className="flex flex-col gap-1">
-            <span className="font-medium">Candidaturas de empleo</span>
-            <span className="text-sm text-muted">
-              Las ofertas a las que te presentas y sus seguimientos
+        {/* Empleo solo sale si lo usas o lo enciendes en Ajustes. */}
+        {secciones.empleo && (
+          <Link
+            href="/empleo"
+            className="card flex items-center justify-between gap-3 p-4"
+          >
+            <span className="flex flex-col gap-1">
+              <span className="font-medium">Candidaturas de empleo</span>
+              <span className="text-sm text-muted">
+                Las ofertas a las que te presentas y sus seguimientos
+              </span>
             </span>
-          </span>
-          <ChevronRight aria-hidden className="size-5 shrink-0 text-muted" />
-        </Link>
+            <ChevronRight aria-hidden className="size-5 shrink-0 text-muted" />
+          </Link>
+        )}
 
         {areas.length === 0 ? (
           <section className="card flex flex-col gap-3">

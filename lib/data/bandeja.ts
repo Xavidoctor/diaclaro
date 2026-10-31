@@ -222,6 +222,18 @@ export async function moverTareas(ids: string[], dia: string) {
   comprobar(error, "mover las tareas");
 }
 
+// «Soltar»: la tarea se queda sin día (y sin hora) y vuelve a Tareas.
+// No se borra: sigue ahí para cuando la quieras retomar.
+export async function soltarTareas(ids: string[]) {
+  if (ids.length === 0) return;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tasks")
+    .update({ due_date: null, due_time: null })
+    .in("id", ids);
+  comprobar(error, "soltar las tareas");
+}
+
 export async function leerNota(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
