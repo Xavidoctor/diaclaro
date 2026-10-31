@@ -4,6 +4,7 @@ import { CasillaHecha } from "@/app/bandeja/casilla-hecha";
 import { FichaTarea } from "@/app/bandeja/ficha-tarea";
 import type { Tarea } from "@/lib/data/bandeja";
 import { nombreProyecto, type GrupoOpciones } from "@/lib/planner/areas";
+import { textoHoraTarea } from "@/lib/planner/bloques";
 
 const fecha = new Intl.DateTimeFormat("es-ES", {
   weekday: "short",
@@ -71,13 +72,17 @@ export function TareaItem({
             {tarea.title}
           </p>
           {(tarea.due_date ||
+            tarea.due_time ||
             tarea.estimated_minutes ||
             tarea.actual_minutes ||
             proyecto) && (
             <p className="text-sm text-muted">
               {[
                 tarea.due_date && verFecha(tarea.due_date),
-                tarea.estimated_minutes && `${tarea.estimated_minutes} min`,
+                // "10:00–11:30" si tiene hora; si no, solo los minutos.
+                tarea.due_time
+                  ? textoHoraTarea(tarea)
+                  : tarea.estimated_minutes && `${tarea.estimated_minutes} min`,
                 tarea.actual_minutes && `tardaste ${tarea.actual_minutes} min`,
                 proyecto,
               ]

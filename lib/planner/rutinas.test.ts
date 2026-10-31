@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { prepararAjustes, esZonaValida } from "./ajustes";
 import {
+  destinoRutina,
   filasDeHoy,
   prepararRutina,
   rutinasDelDia,
@@ -417,5 +418,21 @@ describe("prepararAjustes", () => {
       ok: false,
       error: "Esa zona horaria no existe.",
     });
+  });
+});
+
+describe("destinoRutina", () => {
+  it("vuelve a Hoy, a la Agenda o al proyecto del que viniste", () => {
+    const proyecto =
+      "/areas/11111111-1111-4111-8111-111111111111/proyectos/22222222-2222-4222-8222-222222222222";
+    expect(destinoRutina("hoy")).toBe("/");
+    expect(destinoRutina("agenda")).toBe("/agenda");
+    expect(destinoRutina(proyecto)).toBe(proyecto);
+  });
+
+  it("si no, a Ajustes (nunca a una página de fuera)", () => {
+    expect(destinoRutina(null)).toBe("/ajustes");
+    expect(destinoRutina("https://ejemplo.com")).toBe("/ajustes");
+    expect(destinoRutina("//ejemplo.com/areas/x")).toBe("/ajustes");
   });
 });

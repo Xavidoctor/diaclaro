@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   agruparTareas,
+  porFechaYHora,
   tareasParaHoy,
   diasConTareas,
   leerDiaParaMover,
@@ -100,7 +101,12 @@ describe("prepararCambiosTarea", () => {
       }),
     ).toEqual({
       ok: true,
-      valor: { title: "Estudiar", due_date: null, estimated_minutes: null },
+      valor: {
+        title: "Estudiar",
+        due_date: null,
+        due_time: null,
+        estimated_minutes: null,
+      },
     });
   });
 
@@ -116,9 +122,39 @@ describe("prepararCambiosTarea", () => {
       valor: {
         title: "Estudiar",
         due_date: "2026-11-03",
+        due_time: null,
         estimated_minutes: 45,
       },
     });
+  });
+
+  it("acepta una hora si también hay día", () => {
+    const r = prepararCambiosTarea({
+      title: "Reunión",
+      due_date: "2026-11-03",
+      due_time: "10:00",
+      estimated_minutes: "90",
+    });
+    expect(r.ok && r.valor.due_time).toBe("10:00");
+  });
+
+  it("pide el día si pones hora, y rechaza horas raras", () => {
+    expect(
+      prepararCambiosTarea({
+        title: "x",
+        due_date: "",
+        due_time: "10:00",
+        estimated_minutes: "",
+      }),
+    ).toEqual({ ok: false, error: "Para poner hora, elige también el día." });
+    expect(
+      prepararCambiosTarea({
+        title: "x",
+        due_date: "2026-11-03",
+        due_time: "25:00",
+        estimated_minutes: "",
+      }).ok,
+    ).toBe(false);
   });
 
   it("rechaza datos que no tienen sentido", () => {
@@ -263,9 +299,7 @@ describe("textoPendienteDesde", () => {
     expect(textoPendienteDesde("2026-10-23", "2026-10-30")).toBe(
       "de hace 7 días",
     );
-    expect(textoPendienteDesde("2026-10-12", "2026-10-30")).toBe(
-      "del 12 oct",
-    );
+    expect(textoPendienteDesde("2026-10-12", "2026-10-30")).toBe("del 12 oct");
   });
 
   it("cruza bien el cambio de mes", () => {
@@ -274,7 +308,11 @@ describe("textoPendienteDesde", () => {
 });
 
 describe("tareasDelDia y diasConTareas", () => {
-  const t = (id: string, due_date: string | null, done_at: string | null = null) => ({
+  const t = (
+    id: string,
+    due_date: string | null,
+    done_at: string | null = null,
+  ) => ({
     id,
     due_date,
     done_at,
@@ -320,5 +358,27 @@ describe("leerIds", () => {
   it("separa por comas y quita vacíos y repetidos", () => {
     expect(leerIds("a, b,,a")).toEqual(["a", "b"]);
     expect(leerIds(null)).toEqual([]);
+  });
+});
+
+describe("porFechaYHora", () => {
+  it("ordena por día y, el mismo día, por hora (sin hora al final)", () => {
+    const t = (id: string, due_date: string, due_time: string | null) => ({
+      id,
+      due_date,
+      due_time,
+    });
+    const lista = [
+      t("sin-hora", "2026-11-03", null),
+      t("tarde", "2026-11-03", "16:00"),
+      t("otro-dia", "2026-11-02", null),
+      t("manana", "2026-11-03", "09:30"),
+    ];
+    expect([...lista].sort(porFechaYHora).map((x) => x.id)).toEqual([
+      "otro-dia",
+      "manana",
+      "tarde",
+      "sin-hora",
+    ]);
   });
 });

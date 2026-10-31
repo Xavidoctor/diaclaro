@@ -5,7 +5,7 @@ import { editarTarea, type EditarTareaState } from "@/app/bandeja/actions";
 import type { Tarea } from "@/lib/data/bandeja";
 import { opcionesVisibles, type GrupoOpciones } from "@/lib/planner/areas";
 
-// Formulario para cambiar el título, la fecha, los minutos, la importancia y el
+// Formulario para cambiar el título, la fecha, la hora, los minutos, la importancia y el
 // proyecto de una tarea. Todo menos el título es opcional: si lo dejas vacío,
 // se queda vacío. La importancia y la fecha dura le dicen a la app qué puede
 // proponerte recortar cuando te pasas (lo importante nunca lo toca).
@@ -34,8 +34,8 @@ export function FichaTarea({
           className="input py-2"
         />
       </label>
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-sm">
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1 text-sm">
           Fecha (opcional)
           <input
             name="due_date"
@@ -44,7 +44,16 @@ export function FichaTarea({
             className="input py-2"
           />
         </label>
-        <label className="flex w-32 flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-sm">
+          Hora (opcional)
+          <input
+            name="due_time"
+            type="time"
+            defaultValue={tarea.due_time ?? ""}
+            className="input py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
           Minutos (opcional)
           <input
             name="estimated_minutes"
@@ -57,6 +66,9 @@ export function FichaTarea({
           />
         </label>
       </div>
+      <p className="-mt-1 text-xs text-muted">
+        Con hora y minutos, la tarea ocupa ese rato y sale en la Agenda.
+      </p>
       <div className="flex items-end gap-3">
         <label className="flex flex-1 flex-col gap-1 text-sm">
           Importancia
