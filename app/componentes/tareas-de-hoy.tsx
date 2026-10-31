@@ -5,23 +5,33 @@ import { SaberMas } from "@/app/componentes/saber-mas";
 import { cargarOpcionesProyecto } from "@/lib/data/areas";
 import { listarTareas, type Tarea } from "@/lib/data/bandeja";
 import { opcionesProyecto } from "@/lib/planner/areas";
-import { tareasParaHoy, textoPendienteDesde } from "@/lib/planner/bandeja";
+import {
+  tareasParaHoy,
+  textoFechaLimite,
+  textoPendienteDesde,
+} from "@/lib/planner/bandeja";
 
 // Sección de Hoy con tus tareas, justo debajo de «Tu plan de hoy».
 // El plan ya enseña las de hoy en orden; aquí están, sin culpa, las que no
 // dio tiempo otros días (para decidir qué hacer con ellas), las de hoy
-// plegadas para cambiarlas y, plegadas, las de los próximos 3 días.
-// Las que no tienen fecha se quedan en Tareas.
+// plegadas para cambiarlas, las que tienen fecha límite más adelante
+// («En marcha»), las que no tienen día («Cuando puedas») y, plegadas,
+// las de los próximos 3 días.
 
 // Cuántas de otros días se ven sin desplegar: el resto, plegadas.
 const ATRASADAS_A_LA_VISTA = 3;
+// Lo mismo con las que no tienen día.
+const SIN_DIA_A_LA_VISTA = 3;
 
 export async function TareasDeHoy({ hoy }: { hoy: string }) {
   const [tareas, { areas, proyectos }] = await Promise.all([
     listarTareas(false),
     cargarOpcionesProyecto(),
   ]);
-  const { atrasadas, deHoy, proximas, sinFecha } = tareasParaHoy(tareas, hoy);
+  const { atrasadas, deHoy, enMarcha, proximas, sinDia } = tareasParaHoy(
+    tareas,
+    hoy,
+  );
   const grupos = opcionesProyecto(areas, proyectos);
   const aLaVista = atrasadas.slice(0, ATRASADAS_A_LA_VISTA);
   const plegadas = atrasadas.slice(ATRASADAS_A_LA_VISTA);
@@ -30,7 +40,11 @@ export async function TareasDeHoy({ hoy }: { hoy: string }) {
       key={tarea.id}
       tarea={tarea}
       grupos={grupos}
-      etiqueta={textoPendienteDesde(tarea.due_date!, hoy)}
+      etiqueta={
+        tarea.due_kind === "limite"
+          ? `Fecha límite ${textoPendienteDesde(tarea.due_date!, hoy)}`
+          : textoPendienteDesde(tarea.due_date!, hoy)
+      }
     >
       <MoverTareas
         ids={[tarea.id]}
@@ -98,6 +112,54 @@ export async function TareasDeHoy({ hoy }: { hoy: string }) {
         </details>
       )}
 
+      {/* Con fecha límite: las tienes entre manos hasta ese día. */}
+      {enMarcha.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            En marcha ({enMarcha.length})
+          </h3>
+          <ul className="flex flex-col gap-2">
+            {enMarcha.map((tarea) => (
+              <TareaItem
+                key={tarea.id}
+                tarea={tarea}
+                grupos={grupos}
+                etiqueta={textoFechaLimite(tarea.due_date!, hoy)}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Sin día: pendientes, para cuando tengas un rato. */}
+      {sinDia.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            Cuando puedas ({sinDia.length})
+          </h3>
+          <ul className="flex flex-col gap-2">
+            {sinDia.slice(0, SIN_DIA_A_LA_VISTA).map((tarea) => (
+              <TareaItem key={tarea.id} tarea={tarea} grupos={grupos} />
+            ))}
+          </ul>
+          {sinDia.length > SIN_DIA_A_LA_VISTA && (
+            <details className="flex flex-col gap-2">
+              <summary className="cursor-pointer text-sm text-muted">
+                Ver{" "}
+                {sinDia.length - SIN_DIA_A_LA_VISTA === 1
+                  ? "1 más"
+                  : `${sinDia.length - SIN_DIA_A_LA_VISTA} más`}
+              </summary>
+              <ul className="mt-2 flex flex-col gap-2">
+                {sinDia.slice(SIN_DIA_A_LA_VISTA).map((tarea) => (
+                  <TareaItem key={tarea.id} tarea={tarea} grupos={grupos} />
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
+      )}
+
       {proximas.length > 0 && (
         <details className="flex flex-col gap-2">
           <summary className="cursor-pointer text-sm text-muted">
@@ -115,13 +177,6 @@ export async function TareasDeHoy({ hoy }: { hoy: string }) {
         <Link href="/agenda#calendario" className="enlace">
           Poner tareas en un día del calendario
         </Link>
-        {sinFecha > 0 && (
-          <Link href="/bandeja?pestana=tareas" className="text-muted underline">
-            {sinFecha === 1
-              ? "1 tarea sin fecha en Tareas"
-              : `${sinFecha} tareas sin fecha en Tareas`}
-          </Link>
-        )}
       </div>
     </section>
   );

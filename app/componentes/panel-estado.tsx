@@ -568,11 +568,7 @@ function ListaPorHacer({
         <p className="text-sm text-muted">Ahora no puedo cargar tus tareas.</p>
       )}
       {lista?.length === 0 && (
-        <p className="text-sm text-muted">
-          {datos!.sinDia > 0
-            ? "Nada pendiente para estos días."
-            : "No tienes nada pendiente. ¡Bien!"}
-        </p>
+        <p className="text-sm text-muted">No tienes nada pendiente. ¡Bien!</p>
       )}
       {lista && lista.length > 0 && (
         <ul className="flex flex-col gap-2">
@@ -597,14 +593,9 @@ function ListaPorHacer({
           ))}
         </ul>
       )}
-      {datos && (datos.mas > 0 || datos.sinDia > 0) && (
+      {datos && datos.mas > 0 && (
         <p className="text-xs text-muted">
-          {[
-            datos.mas > 0 && `${datos.mas} más esta semana`,
-            datos.sinDia > 0 && `${datos.sinDia} sin día (en Tareas)`,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
+          {datos.mas === 1 ? "Y 1 más" : `Y ${datos.mas} más`} en Tareas.
         </p>
       )}
     </section>

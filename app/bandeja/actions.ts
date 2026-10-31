@@ -214,6 +214,7 @@ export async function editarTarea(
     due_date: formData.get("due_date"),
     due_time: formData.get("due_time"),
     estimated_minutes: formData.get("estimated_minutes"),
+    cuando: formData.get("cuando"),
   });
   if (!r.ok) return { error: r.error };
   // El proyecto solo se cambia si el formulario trae el selector.

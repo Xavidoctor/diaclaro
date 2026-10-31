@@ -70,53 +70,101 @@ export function tareaDesdeNota(texto: string): {
 // ese rato del día y sale en la Agenda.
 const esquemaTarea = z
   .object({
-  title: z
-    .string()
-    .trim()
-    .min(1, "La tarea necesita un título.")
-    .max(
-      MAX_TITULO_TAREA,
-      `El título admite como mucho ${MAX_TITULO_TAREA} caracteres.`,
-    ),
-  due_date: z
-    .string()
-    .trim()
-    .transform((v) => (v === "" ? null : v))
-    .pipe(z.iso.date({ error: "La fecha no es válida." }).nullable()),
-  due_time: horaOpcional,
-  estimated_minutes: z
-    .string()
-    .trim()
-    .transform((v) => (v === "" ? null : Number(v)))
-    .pipe(
-      z
-        .number({ error: "Los minutos tienen que ser un número." })
-        .int("Los minutos tienen que ser un número entero.")
-        .min(1, "Pon al menos 1 minuto, o déjalo vacío.")
-        .max(1440, "Como mucho 1440 minutos (un día).")
-        .nullable(),
-    ),
+    title: z
+      .string()
+      .trim()
+      .min(1, "La tarea necesita un título.")
+      .max(
+        MAX_TITULO_TAREA,
+        `El título admite como mucho ${MAX_TITULO_TAREA} caracteres.`,
+      ),
+    due_date: z
+      .string()
+      .trim()
+      .transform((v) => (v === "" ? null : v))
+      .pipe(z.iso.date({ error: "La fecha no es válida." }).nullable()),
+    due_time: horaOpcional,
+    estimated_minutes: z
+      .string()
+      .trim()
+      .transform((v) => (v === "" ? null : Number(v)))
+      .pipe(
+        z
+          .number({ error: "Los minutos tienen que ser un número." })
+          .int("Los minutos tienen que ser un número entero.")
+          .min(1, "Pon al menos 1 minuto, o déjalo vacío.")
+          .max(1440, "Como mucho 1440 minutos (un día).")
+          .nullable(),
+      ),
   })
   .refine((d) => d.due_time === null || d.due_date !== null, {
     error: "Para poner hora, elige también el día.",
   });
 
-export type CambiosTarea = z.infer<typeof esquemaTarea>;
+// ---- Tres formas de poner una tarea ----
+//   «Un día» (dia): para hacerla ese día, con hora si quieres.
+//   «Con fecha límite» (limite): desde que la apuntas hasta ese día, como
+//     «hacer el tema 1». Sale en Hoy cada día hasta entonces.
+//   «Sin día» (sin): pendiente, sin fecha. En la base de datos, sin due_date.
+export type TipoFecha = "dia" | "limite";
+export type Cuando = TipoFecha | "sin";
 
+// El tipo de una tarea tal como lo ves.
+export function cuandoDeTarea(t: {
+  due_date: string | null;
+  due_kind?: TipoFecha;
+}): Cuando {
+  if (!t.due_date) return "sin";
+  return t.due_kind === "limite" ? "limite" : "dia";
+}
+
+export type CambiosTarea = z.infer<typeof esquemaTarea> & {
+  due_kind?: TipoFecha;
+};
+
+// Si el formulario trae «cuando», manda él: «Sin día» quita el día y la
+// hora, y «Con fecha límite» necesita el día pero no lleva hora.
+// Sin «cuando» (formularios que solo ponen un día), el tipo no se toca.
 export function prepararCambiosTarea(datos: {
   title: unknown;
   due_date: unknown;
   due_time?: unknown;
   estimated_minutes: unknown;
+  cuando?: unknown;
 }): Resultado<CambiosTarea> {
+  const cuando =
+    datos.cuando === "dia" ||
+    datos.cuando === "limite" ||
+    datos.cuando === "sin"
+      ? datos.cuando
+      : null;
   const r = esquemaTarea.safeParse({
     title: datos.title ?? "",
-    due_date: datos.due_date ?? "",
-    due_time: datos.due_time ?? "",
+    due_date: cuando === "sin" ? "" : (datos.due_date ?? ""),
+    due_time:
+      cuando === "sin" || cuando === "limite" ? "" : (datos.due_time ?? ""),
     estimated_minutes: datos.estimated_minutes ?? "",
   });
   if (!r.success) return { ok: false, error: r.error.issues[0].message };
-  return { ok: true, valor: r.data };
+  if (cuando === null) return { ok: true, valor: r.data };
+  if (cuando === "dia" && !r.data.due_date)
+    return { ok: false, error: "Elige qué día la vas a hacer." };
+  if (cuando === "limite" && !r.data.due_date)
+    return { ok: false, error: "Elige hasta qué día tienes para hacerla." };
+  return {
+    ok: true,
+    valor: { ...r.data, due_kind: cuando === "limite" ? "limite" : "dia" },
+  };
+}
+
+// "Hasta hoy", "Hasta mañana" o "Hasta el 6 nov · quedan 5 días".
+export function textoFechaLimite(fecha: string, hoy: string): string {
+  if (fecha === hoy) return "Hasta hoy";
+  if (fecha === sumarDias(hoy, 1)) return "Hasta mañana";
+  if (fecha < hoy) return `Era hasta el ${fechaCorta(fecha)}`;
+  let dias = 0;
+  for (let d = hoy; d < fecha && dias < 400; d = sumarDias(d, 1)) dias++;
+  return `Hasta el ${fechaCorta(fecha)} · quedan ${dias} días`;
 }
 
 // Texto del buscador: sin espacios de sobra y con un límite razonable.
@@ -138,6 +186,7 @@ export function ordenarNotas<T extends { pinned: boolean; created_at: string }>(
 type TareaParaAgrupar = {
   due_date: string | null;
   due_time?: string | null;
+  due_kind?: TipoFecha;
   done_at: string | null;
   created_at: string;
 };
@@ -197,17 +246,25 @@ export function tareasParaHoy<T extends TareaParaAgrupar>(
 ) {
   const pendientes = tareas.filter((t) => !t.done_at);
   const conFecha = pendientes.filter((t) => t.due_date).sort(porFechaYHora);
-  const limite = sumarDias(hoy, diasAviso);
+  const aviso = sumarDias(hoy, diasAviso);
+  const esLimite = (t: T) => t.due_kind === "limite";
+  const sinDia = pendientes
+    .filter((t) => !t.due_date)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
   return {
     atrasadas: conFecha.filter((t) => t.due_date! < hoy),
+    // Las de hoy, y las de fecha límite que acaban hoy.
     deHoy: conFecha.filter((t) => t.due_date === hoy),
+    // Con fecha límite más adelante: estás con ellas hasta ese día.
+    enMarcha: conFecha.filter((t) => esLimite(t) && t.due_date! > hoy),
     proximas: conFecha.filter(
-      (t) => t.due_date! > hoy && t.due_date! <= limite,
+      (t) => !esLimite(t) && t.due_date! > hoy && t.due_date! <= aviso,
     ),
-    sinFecha: pendientes.filter((t) => !t.due_date).length,
+    // Sin día: pendientes para cuando puedas (las más nuevas primero).
+    sinDia,
+    sinFecha: sinDia.length,
   };
 }
-
 
 // Cuánto hace que tocaba una tarea que no acabaste:
 // "de ayer", "de hace 3 días" o, si hace más de una semana, "del 12 oct.".
@@ -260,5 +317,12 @@ export function leerDiaParaMover(
 // La lista de ids que llega de un formulario ("id1,id2,id3"), sin repetidos.
 export function leerIds(valor: unknown): string[] {
   if (typeof valor !== "string") return [];
-  return [...new Set(valor.split(",").map((v) => v.trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      valor
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean),
+    ),
+  ];
 }

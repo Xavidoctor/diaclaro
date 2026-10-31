@@ -1,5 +1,6 @@
 import "server-only";
 import { horaCorta } from "@/lib/planner/agenda";
+import type { TipoFecha } from "@/lib/planner/bandeja";
 import type { TipoNota } from "@/lib/planner/etiquetas";
 import type { Importancia } from "@/lib/planner/recortes";
 import { createClient } from "@/lib/supabase/server";
@@ -29,6 +30,9 @@ export type Tarea = {
   details: string | null;
   due_date: string | null;
   due_time: string | null; // "09:30" o vacía (sin hora)
+  // "dia" = para hacerla ese día; "limite" = desde que la apuntas hasta ese
+  // día. Sin due_date es una tarea «sin día» (ver tipoDeFecha en bandeja.ts).
+  due_kind: TipoFecha;
   kind: "tarea" | "entrega";
   estimated_minutes: number | null;
   actual_minutes: number | null;
@@ -46,12 +50,25 @@ export type VistaNotas = "activas" | "archivo" | "papelera";
 
 const CAMPOS_NOTA =
   "id, body, url, kind, tags, pinned, archived_at, deleted_at, created_at, project_id, tasks(id, title, done_at)";
-const CAMPOS_TAREA =
+// Sin el tipo de fecha: por si aún no se ha aplicado su migración (520000).
+const CAMPOS_TAREA_ANTES =
   "id, title, details, kind, due_date, due_time, estimated_minutes, actual_minutes, note_id, project_id, importance, hard_deadline, url, done_at, deleted_at, created_at";
+const CAMPOS_TAREA = `${CAMPOS_TAREA_ANTES}, due_kind`;
 
 // La base de datos da la hora como "09:30:00"; en la app va como "09:30".
 function limpiarTarea(t: Tarea): Tarea {
-  return { ...t, due_time: horaCorta(t.due_time) };
+  return {
+    ...t,
+    due_time: horaCorta(t.due_time),
+    due_kind: t.due_kind ?? "dia",
+  };
+}
+
+// ¿Falla porque aún no existe la columna del tipo de fecha?
+function faltaTipoFecha(error: { code?: string; message: string } | null) {
+  return Boolean(
+    error && (error.code === "42703" || error.message.includes("due_kind")),
+  );
 }
 
 // Lanza un error con un mensaje claro si Supabase falla.
@@ -97,29 +114,39 @@ export async function listarNotas(vista: VistaNotas, filtros: FiltrosNotas) {
 
 export async function listarTareas(papelera: boolean) {
   const supabase = await createClient();
-  let consulta = supabase.from("tasks").select(CAMPOS_TAREA);
-  consulta = papelera
-    ? consulta.not("deleted_at", "is", null)
-    : consulta.is("deleted_at", null);
-  const { data, error } = await consulta
-    .order("created_at", { ascending: false })
-    .limit(300);
+  const pedir = (campos: string) => {
+    const consulta = supabase.from("tasks").select(campos);
+    return (
+      papelera
+        ? consulta.not("deleted_at", "is", null)
+        : consulta.is("deleted_at", null)
+    )
+      .order("created_at", { ascending: false })
+      .limit(300);
+  };
+  let { data, error } = await pedir(CAMPOS_TAREA);
+  if (faltaTipoFecha(error))
+    ({ data, error } = await pedir(CAMPOS_TAREA_ANTES));
   comprobar(error, "cargar las tareas");
-  return ((data ?? []) as Tarea[]).map(limpiarTarea);
+  return ((data ?? []) as unknown as Tarea[]).map(limpiarTarea);
 }
 
 // Las tareas de un proyecto (sin las de la papelera).
 export async function listarTareasDeProyecto(proyectoId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tasks")
-    .select(CAMPOS_TAREA)
-    .eq("project_id", proyectoId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(300);
+  const pedir = (campos: string) =>
+    supabase
+      .from("tasks")
+      .select(campos)
+      .eq("project_id", proyectoId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(300);
+  let { data, error } = await pedir(CAMPOS_TAREA);
+  if (faltaTipoFecha(error))
+    ({ data, error } = await pedir(CAMPOS_TAREA_ANTES));
   comprobar(error, "cargar las tareas del proyecto");
-  return ((data ?? []) as Tarea[]).map(limpiarTarea);
+  return ((data ?? []) as unknown as Tarea[]).map(limpiarTarea);
 }
 
 // Etiquetas de todas las notas que no están en la papelera (para los filtros).
@@ -166,12 +193,18 @@ export async function crearTarea(datos: {
   project_id?: string | null;
   due_date?: string | null;
   due_time?: string | null;
+  due_kind?: TipoFecha;
   estimated_minutes?: number | null;
   hard_deadline?: boolean;
   url?: string | null;
 }) {
   const supabase = await createClient();
-  const { error } = await supabase.from("tasks").insert(datos);
+  let { error } = await supabase.from("tasks").insert(datos);
+  if (faltaTipoFecha(error) && datos.due_kind !== "limite") {
+    const resto = { ...datos };
+    delete resto.due_kind;
+    ({ error } = await supabase.from("tasks").insert(resto));
+  }
   comprobar(error, "guardar la tarea");
 }
 
@@ -199,6 +232,7 @@ export async function cambiarTarea(
     title: string;
     due_date: string | null;
     due_time: string | null;
+    due_kind: TipoFecha;
     estimated_minutes: number | null;
     actual_minutes: number | null;
     project_id: string | null;
@@ -210,7 +244,14 @@ export async function cambiarTarea(
   }>,
 ) {
   const supabase = await createClient();
-  const { error } = await supabase.from("tasks").update(cambios).eq("id", id);
+  let { error } = await supabase.from("tasks").update(cambios).eq("id", id);
+  // Sin la migración 520000 se guarda todo menos el tipo de fecha (si es
+  // «Con fecha límite», sí hace falta: entonces sale el error).
+  if (faltaTipoFecha(error) && cambios.due_kind !== "limite") {
+    const resto = { ...cambios };
+    delete resto.due_kind;
+    ({ error } = await supabase.from("tasks").update(resto).eq("id", id));
+  }
   comprobar(error, "cambiar la tarea");
 }
 

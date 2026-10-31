@@ -1,4 +1,9 @@
-import { textoPendienteDesde, tareasParaHoy } from "./bandeja";
+import {
+  textoFechaLimite,
+  textoPendienteDesde,
+  tareasParaHoy,
+  type TipoFecha,
+} from "./bandeja";
 import {
   TIPOS_IMPORTANTES,
   type DocumentoImportante,
@@ -61,29 +66,39 @@ export function resumenNota(texto: string, max = 80): string {
 type TareaPendiente = {
   due_date: string | null;
   due_time?: string | null;
+  due_kind?: TipoFecha;
   done_at: string | null;
   created_at: string;
 };
 
 // Lo que tienes por hacer, en una lista: primero lo que se quedó atrás,
-// luego lo de hoy y lo de los próximos días, por día y hora.
-// Lo que no tiene día se cuenta aparte (está en Tareas).
+// luego lo de hoy, lo que tienes en marcha (con fecha límite), lo de los
+// próximos días y, al final, lo que no tiene día.
 export function tareasPorHacer<T extends TareaPendiente>(
   tareas: T[],
   hoy: string,
   cuantas: number,
 ): { lista: T[]; mas: number; sinDia: number } {
-  const { atrasadas, deHoy, proximas, sinFecha } = tareasParaHoy(
+  const { atrasadas, deHoy, enMarcha, proximas, sinDia } = tareasParaHoy(
     tareas,
     hoy,
     6,
   );
-  const todas = [...atrasadas, ...deHoy, ...proximas];
+  const todas = [...atrasadas, ...deHoy, ...enMarcha, ...proximas, ...sinDia];
   return {
     lista: todas.slice(0, cuantas),
     mas: Math.max(0, todas.length - cuantas),
-    sinDia: sinFecha,
+    sinDia: sinDia.length,
   };
+}
+
+// Cuándo toca una tarea, sea del tipo que sea: "Hoy", "Hasta el 6 nov ·
+// quedan 5 días" o "Cuando puedas" (sin día).
+export function cuandoTocaTarea(t: TareaPendiente, hoy: string): string {
+  if (!t.due_date) return "Cuando puedas";
+  if (t.due_kind === "limite" && t.due_date >= hoy)
+    return textoFechaLimite(t.due_date, hoy);
+  return cuandoToca(t.due_date, hoy);
 }
 
 // Cuándo toca: "Hoy", "Mañana", "De ayer", "De hace 3 días" o "12 nov.".

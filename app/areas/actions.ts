@@ -160,7 +160,7 @@ export async function eliminarProyecto(formData: FormData) {
 // Añade una tarea directamente dentro de un proyecto.
 // Día, hora y minutos son opcionales: si no los pones, se quedan vacíos.
 export type ValoresTareaProyecto = Record<
-  "title" | "due_date" | "due_time" | "estimated_minutes",
+  "title" | "due_date" | "due_time" | "estimated_minutes" | "cuando",
   string
 >;
 
@@ -176,6 +176,7 @@ export async function anadirTareaAProyecto(
     due_date: texto("due_date"),
     due_time: texto("due_time"),
     estimated_minutes: texto("estimated_minutes"),
+    cuando: texto("cuando"),
   };
   // Mismas reglas que al editar una tarea.
   const r = prepararCambiosTarea(valores);

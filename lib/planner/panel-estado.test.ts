@@ -4,6 +4,7 @@ import {
   abreElPanel,
   cierraElPanel,
   cuandoToca,
+  cuandoTocaTarea,
   notasFijadas,
   ordenarCartera,
   resumenNota,
@@ -135,6 +136,7 @@ describe("por hacer", () => {
       "Pronto",
       "Tarde",
       "Luego",
+      "Sin día",
     ]);
     expect(r.sinDia).toBe(1);
     expect(r.mas).toBe(0);
@@ -155,5 +157,43 @@ describe("por hacer", () => {
     expect(cuandoToca("2026-11-03", hoy)).toBe("Mañana");
     expect(cuandoToca("2026-11-01", hoy)).toBe("De ayer");
     expect(cuandoToca("2026-11-06", hoy)).toBe("6 nov");
+  });
+});
+
+describe("por hacer con fecha límite y sin día", () => {
+  const hoy = "2026-11-02";
+  const base = {
+    due_time: null,
+    done_at: null,
+    created_at: "2026-10-30T10:00:00Z",
+  };
+
+  it("las de fecha límite van después de las de hoy", () => {
+    const r = tareasPorHacer(
+      [
+        {
+          ...base,
+          titulo: "Tema 1",
+          due_date: "2026-11-06",
+          due_kind: "limite" as const,
+        },
+        { ...base, titulo: "Hoy", due_date: hoy },
+      ],
+      hoy,
+      10,
+    );
+    expect(r.lista.map((t) => t.titulo)).toEqual(["Hoy", "Tema 1"]);
+  });
+
+  it("dice cuánto queda o «Cuando puedas»", () => {
+    expect(
+      cuandoTocaTarea(
+        { ...base, due_date: "2026-11-06", due_kind: "limite" },
+        hoy,
+      ),
+    ).toBe("Hasta el 6 nov · quedan 4 días");
+    expect(cuandoTocaTarea({ ...base, due_date: null }, hoy)).toBe(
+      "Cuando puedas",
+    );
   });
 });
