@@ -16,11 +16,8 @@ update public.projects
   where kind = 'asignatura' and label is null;
 
 -- Barra de horas libres a la semana (pantalla Áreas).
--- Libres al día = 24 − horas de sueño − horas de descansos.
--- Vacías = 9 h de sueño y 4 h de descansos (lo que pidió Xavi).
+-- Libres al día = 24 − horas de sueño. Vacía = 9 h (lo que pidió Xavi).
 -- settings ya tiene user_id y reglas RLS (migración 030000).
 alter table public.settings
   add column if not exists sleep_hours numeric(3, 1)
-    check (sleep_hours is null or (sleep_hours >= 0 and sleep_hours <= 24)),
-  add column if not exists rest_hours numeric(3, 1)
-    check (rest_hours is null or (rest_hours >= 0 and rest_hours <= 24));
+    check (sleep_hours is null or (sleep_hours >= 0 and sleep_hours <= 24));

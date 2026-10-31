@@ -7,7 +7,7 @@ import { AyudaPantalla } from "@/app/componentes/ayuda-guia";
 import { BarraInferior } from "@/app/componentes/barra-inferior";
 import { leerAjustes } from "@/lib/data/ajustes";
 import { contarProyectosPorArea, listarAreas } from "@/lib/data/areas";
-import { leerHorasDescanso } from "@/lib/data/horas-libres";
+import { leerHorasSueno } from "@/lib/data/horas-libres";
 import { cargarResumenSemana } from "@/lib/data/resumen-semana";
 import { leerSecciones } from "@/lib/data/secciones";
 import {
@@ -21,7 +21,7 @@ import { lunesDe } from "@/lib/planner/candidaturas";
 import {
   barraHoras,
   minutosLibresSemana,
-  type HorasDescanso,
+  type HorasSueno,
 } from "@/lib/planner/horas-libres";
 import {
   porcentaje,
@@ -35,12 +35,12 @@ export const metadata: Metadata = { title: "Áreas" };
 // Áreas: las grandes partes de tu vida, con sus proyectos y sus horas.
 export default async function AreasPage() {
   const { timezone } = await leerAjustes();
-  const [areas, proyectos, secciones, horasDescanso, estaSemana] =
+  const [areas, proyectos, secciones, horasSueno, estaSemana] =
     await Promise.all([
       listarAreas(),
       contarProyectosPorArea(),
       leerSecciones(),
-      leerHorasDescanso(),
+      leerHorasSueno(),
       // Lo que llevas esta semana en cada área. Si falla, la lista sale igual.
       cargarResumenSemana(lunesDe(await diaDeHoy()), timezone).catch(
         (error) => {
@@ -108,7 +108,7 @@ export default async function AreasPage() {
         ) : (
           <>
             <HorasLibres
-              horas={horasDescanso}
+              horas={horasSueno}
               compromiso={semana.compromiso}
               personal={semana.personal}
             />
@@ -152,13 +152,13 @@ export default async function AreasPage() {
 }
 
 // Barra «Horas libres a la semana»: lo que has repartido entre tus áreas
-// frente a las horas que tienes libres (24 h − sueño − descansos, por 7).
+// frente a las horas que tienes despierto (24 h − sueño, por 7).
 function HorasLibres({
   horas,
   compromiso,
   personal,
 }: {
-  horas: HorasDescanso;
+  horas: HorasSueno;
   compromiso: number;
   personal: number;
 }) {
@@ -181,7 +181,7 @@ function HorasLibres({
         className="h-2.5 overflow-hidden rounded-full bg-secondary"
       >
         <div
-          className={`h-full rounded-full ${barra.teHasPasado > 0 ? "bg-danger" : "bg-primary"}`}
+          className={`h-full rounded-full ${barra.teHasPasado > 0 || barra.casiLleno ? "bg-danger/60" : "bg-primary"}`}
           style={{ width: `${barra.porcentaje}%` }}
         />
       </div>
@@ -189,7 +189,7 @@ function HorasLibres({
         {barra.repartidas === 0
           ? "Aún no has puesto horas a ninguna área."
           : barra.teHasPasado > 0
-            ? `Te has pasado ${textoHoras(barra.teHasPasado)}: has dado a tus áreas más horas de las que tienes libres.`
+            ? `Te has pasado ${textoHoras(barra.teHasPasado)}.`
             : `Te quedan ${textoHoras(barra.quedan)} sin repartir.`}
       </p>
       {personal > 0 && (
@@ -200,15 +200,9 @@ function HorasLibres({
       )}
       <details className="text-sm text-muted">
         <summary className="cursor-pointer">
-          Cuento {numero(horas.sueno)} h de sueño y {numero(horas.descanso)} h
-          de descansos al día · Cambiar
+          Cuento {numero(horas.sueno)} h de sueño al día · Cambiar
         </summary>
-        <FormHorasLibres
-          inicial={{
-            sueno: numero(horas.sueno),
-            descanso: numero(horas.descanso),
-          }}
-        />
+        <FormHorasLibres inicial={{ sueno: numero(horas.sueno) }} />
       </details>
     </section>
   );

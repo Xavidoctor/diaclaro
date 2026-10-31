@@ -13,8 +13,8 @@ import {
   moverArea as moverAreaEnLista,
 } from "@/lib/data/areas";
 import { crearTarea } from "@/lib/data/bandeja";
-import { guardarHorasDescanso } from "@/lib/data/horas-libres";
-import { prepararHorasDescanso } from "@/lib/planner/horas-libres";
+import { guardarHorasSueno } from "@/lib/data/horas-libres";
+import { prepararHorasSueno } from "@/lib/planner/horas-libres";
 import { prepararArea, prepararProyecto } from "@/lib/planner/areas";
 import { prepararCambiosTarea } from "@/lib/planner/bandeja";
 import { createClient } from "@/lib/supabase/server";
@@ -111,23 +111,20 @@ export async function moverArea(formData: FormData) {
 
 // ---- Horas libres a la semana ----
 
-export type ValoresHorasDescanso = { sueno: string; descanso: string };
+export type ValoresHorasSueno = { sueno: string };
 
-// Guarda las horas de sueño y descansos de la barra de Áreas.
+// Guarda las horas de sueño de la barra de Áreas.
 export async function guardarHorasLibres(
-  prev: FormState<ValoresHorasDescanso>,
+  prev: FormState<ValoresHorasSueno>,
   formData: FormData,
-): Promise<FormState<ValoresHorasDescanso>> {
+): Promise<FormState<ValoresHorasSueno>> {
   await exigirSesion();
   const envios = prev.envios + 1;
-  const valores = {
-    sueno: String(formData.get("sueno") ?? ""),
-    descanso: String(formData.get("descanso") ?? ""),
-  };
-  const r = prepararHorasDescanso(valores);
+  const valores = { sueno: String(formData.get("sueno") ?? "") };
+  const r = prepararHorasSueno(valores);
   if (!r.ok) return { envios, error: r.error, valores };
   try {
-    await guardarHorasDescanso(r.valor);
+    await guardarHorasSueno(r.valor);
   } catch {
     return { envios, error: ERROR_CONEXION, valores };
   }

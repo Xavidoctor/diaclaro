@@ -4,26 +4,21 @@ import type { Resultado } from "./bandeja";
 // Barra «Horas libres a la semana» de la pantalla Áreas. Funciones puras,
 // con pruebas en horas-libres.test.ts.
 //
-// Libres al día = 24 h − sueño − descansos. A la semana, por 7.
-// Si no cambias nada: 9 h de sueño y 4 h de descansos → 11 h al día, 77 h a la semana.
+// Libres al día = 24 h − horas de sueño. A la semana, por 7.
+// Si no cambias nada: 9 h de sueño → 15 h al día, 105 h a la semana.
+// Comer, moverte o lo que surja también ocupa, así que la barra se pone de un
+// rojizo suave a partir del 80 % (CASI_LLENO), sin textos.
 
 export const HORAS_SUENO = 9;
-export const HORAS_DESCANSO = 4;
+export const CASI_LLENO = 80; // % a partir del que la barra avisa
 
-export type HorasDescanso = { sueno: number; descanso: number };
+export type HorasSueno = { sueno: number };
 
-export const HORAS_DESCANSO_INICIALES: HorasDescanso = {
-  sueno: HORAS_SUENO,
-  descanso: HORAS_DESCANSO,
-};
+export const HORAS_SUENO_INICIALES: HorasSueno = { sueno: HORAS_SUENO };
 
-// Minutos libres a la semana (nunca menos de 0).
-export function minutosLibresSemana({
-  sueno,
-  descanso,
-}: HorasDescanso): number {
-  const libresDia = Math.max(0, 24 - sueno - descanso);
-  return Math.round(libresDia * 60 * 7);
+// Minutos despierto a la semana (nunca menos de 0).
+export function minutosLibresSemana({ sueno }: HorasSueno): number {
+  return Math.round(Math.max(0, 24 - sueno) * 60 * 7);
 }
 
 export type BarraHoras = {
@@ -32,39 +27,31 @@ export type BarraHoras = {
   porcentaje: number; // relleno de la barra, de 0 a 100
   quedan: number; // minutos sin repartir (0 si te pasas)
   teHasPasado: number; // minutos de más (0 si no te pasas)
+  casiLleno: boolean; // has repartido el 80 % o más, sin pasarte
 };
 
 export function barraHoras(libres: number, repartidas: number): BarraHoras {
+  const porcentaje =
+    libres > 0 ? Math.min(100, Math.round((repartidas / libres) * 100)) : 100;
+  const teHasPasado = Math.max(0, repartidas - libres);
   return {
     libres,
     repartidas,
-    porcentaje:
-      libres > 0 ? Math.min(100, Math.round((repartidas / libres) * 100)) : 100,
+    porcentaje,
     quedan: Math.max(0, libres - repartidas),
-    teHasPasado: Math.max(0, repartidas - libres),
+    teHasPasado,
+    casiLleno: repartidas > 0 && teHasPasado === 0 && porcentaje >= CASI_LLENO,
   };
 }
 
-// Lee lo que escribes en «Sueño» y «Descansos» (acepta "8,5").
-// Vacío = el valor de siempre (9 y 4).
-export function prepararHorasDescanso(datos: {
+// Lee lo que escribes en «Sueño» (acepta "8,5"). Vacío = 9 h.
+export function prepararHorasSueno(datos: {
   sueno: string;
-  descanso: string;
-}): Resultado<HorasDescanso> {
-  const sueno = horasAMinutos(datos.sueno);
-  const descanso = horasAMinutos(datos.descanso);
-  if (Number.isNaN(sueno) || Number.isNaN(descanso))
+}): Resultado<HorasSueno> {
+  const minutos = horasAMinutos(datos.sueno);
+  if (Number.isNaN(minutos))
     return { ok: false, error: "Escribe las horas con números, como 8 o 8,5." };
-  const valor = {
-    sueno: sueno === null ? HORAS_SUENO : sueno / 60,
-    descanso: descanso === null ? HORAS_DESCANSO : descanso / 60,
-  };
-  if (valor.sueno > 24 || valor.descanso > 24)
-    return { ok: false, error: "Un día tiene 24 horas como mucho." };
-  if (valor.sueno + valor.descanso > 24)
-    return {
-      ok: false,
-      error: "Sueño y descansos juntos no pueden pasar de 24 h.",
-    };
-  return { ok: true, valor };
+  const sueno = minutos === null ? HORAS_SUENO : minutos / 60;
+  if (sueno > 24) return { ok: false, error: "Un día tiene 24 horas." };
+  return { ok: true, valor: { sueno } };
 }

@@ -4,17 +4,13 @@ import { useActionState } from "react";
 import {
   guardarHorasLibres,
   type FormState,
-  type ValoresHorasDescanso,
+  type ValoresHorasSueno,
 } from "@/app/areas/actions";
 
-// Cambiar las horas de sueño y descansos de la barra de Áreas.
-export function FormHorasLibres({
-  inicial,
-}: {
-  inicial: ValoresHorasDescanso;
-}) {
+// Cambiar las horas de sueño de la barra de Áreas.
+export function FormHorasLibres({ inicial }: { inicial: ValoresHorasSueno }) {
   const [estado, formAction, guardando] = useActionState<
-    FormState<ValoresHorasDescanso>,
+    FormState<ValoresHorasSueno>,
     FormData
   >(guardarHorasLibres, { envios: 0 });
   const valores = estado.valores ?? inicial;
@@ -25,28 +21,16 @@ export function FormHorasLibres({
       action={formAction}
       className="flex flex-col gap-3 pt-3"
     >
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          Sueño al día (h)
-          <input
-            name="sueno"
-            inputMode="decimal"
-            defaultValue={valores.sueno}
-            placeholder="9"
-            className="input py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Descansos al día (h)
-          <input
-            name="descanso"
-            inputMode="decimal"
-            defaultValue={valores.descanso}
-            placeholder="4"
-            className="input py-2"
-          />
-        </label>
-      </div>
+      <label className="flex flex-col gap-1 text-sm">
+        Horas de sueño al día
+        <input
+          name="sueno"
+          inputMode="decimal"
+          defaultValue={valores.sueno}
+          placeholder="9"
+          className="input py-2"
+        />
+      </label>
       {estado.error && (
         <p role="alert" className="text-sm text-danger">
           {estado.error}
