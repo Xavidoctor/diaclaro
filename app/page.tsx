@@ -121,6 +121,10 @@ export default async function HoyPage() {
         <AvisoSobrecarga
           hoy={hoy}
           ajustes={ajustesHoy}
+          // Las horas del día cuentan desde que te despiertas.
+          despertar={
+            inicio?.awake_time ?? inicio?.start_time ?? ajustes.wake_time
+          }
           agenda={agenda}
           rutinas={deHoy}
         />

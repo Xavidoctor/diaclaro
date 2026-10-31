@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { aplicarRecortes } from "@/app/componentes/acciones-recortes";
+import { BarraHorasDia } from "@/app/componentes/barra-horas-dia";
 import { ExplicarConIA } from "@/app/componentes/explicar-con-ia";
 import { calcularSituacion } from "@/app/componentes/situacion-hoy";
 import { iaDisponible } from "@/lib/ai/groq";
+import { leerHorasSueno } from "@/lib/data/horas-libres";
 import type { Ocurrencia } from "@/lib/planner/agenda";
 import type { Ajustes } from "@/lib/planner/ajustes";
 import { textoDuracion } from "@/lib/planner/carga";
+import { horaEn } from "@/lib/planner/fechas";
+import { horasDelDia } from "@/lib/planner/horas-del-dia";
 import {
   textoRecorte,
   type PropuestaRecortes,
@@ -16,14 +20,18 @@ import { textoFactor } from "@/lib/planner/tiempos";
 
 // Tarjeta de Hoy que te dice si lo que te queda por hacer cabe en el tiempo
 // que te queda hasta acostarte. El cálculo está en lib/planner/carga.ts.
+// Arriba, la barra de horas del día: desde que te despertaste hasta
+// acostarte, con lo ocupado y lo libre (lib/planner/horas-del-dia.ts).
 export async function AvisoSobrecarga({
   hoy,
   ajustes,
+  despertar,
   agenda,
   rutinas,
 }: {
   hoy: string;
   ajustes: Ajustes;
+  despertar: string | null; // cuándo pulsaste «Despierto» (o te levantas)
   agenda: Ocurrencia[];
   rutinas: RutinaDelDia[];
 }) {
@@ -50,6 +58,13 @@ export async function AvisoSobrecarga({
 
   const { estado, apuntado, libre, diferencia, sinDuracion, ajuste } = carga;
   const tePasas = estado === "te-pasas";
+  const horas = horasDelDia({
+    ahora: horaEn(ajustes.timezone),
+    despertar,
+    acostarse: ajustes.sleep_time,
+    ocupado: apuntado,
+    horasSueno: (await leerHorasSueno()).sueno,
+  });
 
   return (
     <section
@@ -62,9 +77,10 @@ export async function AvisoSobrecarga({
           ? `Hoy te pasas unas ${textoDuracion(diferencia)}`
           : `Te cabe lo de hoy (te sobran ${textoDuracion(diferencia)})`}
       </p>
+      <BarraHorasDia horas={horas} esHoy />
       <p className="text-muted">
         Te quedan {textoDuracion(apuntado)} por hacer y {textoDuracion(libre)}{" "}
-        hasta las {ajustes.sleep_time}, sin contar comidas ni descansos.
+        hasta las {ajustes.sleep_time}.
       </p>
       {ajuste !== 0 && factores.tarea && (
         <p className="text-muted">
