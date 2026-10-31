@@ -37,11 +37,11 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     },
     // Atajos: mantén pulsado el icono de DíaClaro y salen «Estoy despierto»
-    // (botones Despierto y Levantado) y «Me voy a dormir».
+    // (botón «Me he levantado») y «Me voy a dormir».
     shortcuts: [
       {
-        name: "Estoy despierto",
-        short_name: "Despierto",
+        name: "Me he levantado",
+        short_name: "Levantado",
         url: "/despierto",
         icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
       },

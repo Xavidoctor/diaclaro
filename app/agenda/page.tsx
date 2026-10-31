@@ -240,7 +240,7 @@ export default async function AgendaPage({
     return horasDelDia({
       ahora,
       despertar:
-        inicioHoy?.awake_time ?? inicioHoy?.start_time ?? ajustes.wake_time,
+        inicioHoy?.start_time ?? inicioHoy?.awake_time ?? ajustes.wake_time,
       acostarse: inicioHoy?.sleep_time ?? ajustes.sleep_time,
       ocupado:
         carga.estado === "falta-hora-acostarse"

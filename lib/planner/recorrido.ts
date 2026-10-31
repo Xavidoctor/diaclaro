@@ -32,7 +32,7 @@ export const PASOS: PasoRecorrido[] = [
     objetivo: "despertar",
     titulo: "Empieza el día",
     texto:
-      "Pulsa «Levantado» al salir de la cama. Así la app sabe cuánto tiempo te queda hoy hasta acostarte.",
+      "Pulsa «Me he levantado» al empezar el día. Así la app sabe cuánto tiempo te queda hoy hasta acostarte.",
   },
   {
     ruta: "/",

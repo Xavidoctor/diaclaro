@@ -9,7 +9,7 @@ import { CASI_LLENO, HORAS_SUENO } from "./horas-libres";
 //
 // Reglas (las pidió Xavi):
 //   - Un día cualquiera tiene 24 h menos las horas de dormir (9 h → 15 h).
-//   - Hoy cuenta desde que te despiertas hasta tu hora de acostarte, y lo
+//   - Hoy cuenta desde que te levantas hasta tu hora de acostarte, y lo
 //     que ya ha pasado no cuenta: a las 14:00 te quedan 2 h menos que a las 12:00.
 //   - No se restan descansos fijos: si el día pasa del 80 % lleno, la app
 //     te avisa en suave para que dejes hueco para comer y descansar.

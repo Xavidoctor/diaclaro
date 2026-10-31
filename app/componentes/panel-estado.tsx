@@ -52,7 +52,7 @@ import {
 const CADUCA_MS = 60_000;
 
 const ATAJOS = [
-  { href: "/despierto", nombre: "Despierto", Icono: Sunrise },
+  { href: "/despierto", nombre: "Me he levantado", Icono: Sunrise },
   { href: "/foco", nombre: "Foco", Icono: Timer },
   { href: "/habitos", nombre: "Hábitos", Icono: Sprout },
   { href: "/dormir", nombre: "Me voy a dormir", Icono: Moon },

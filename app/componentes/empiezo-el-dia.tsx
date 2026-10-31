@@ -1,7 +1,6 @@
 import {
   deshacerInicioDia,
   empezarDia,
-  marcarDespierto,
 } from "@/app/componentes/acciones-inicio";
 import { BotonRutinaHecha } from "@/app/componentes/boton-rutina-hecha";
 import Link from "next/link";
@@ -13,16 +12,14 @@ import type { ModoDelDia } from "@/lib/planner/dia-activo";
 import { nombreDia } from "@/lib/planner/fechas";
 import {
   estadoDespertar,
-  minutosEnLaCama,
   primeraRutina,
-  textoEnLaCama,
   type InicioDia,
 } from "@/lib/planner/inicio-dia";
 import { textoFranja, type RutinaDelDia } from "@/lib/planner/rutinas";
 import { SaberMas } from "@/app/componentes/saber-mas";
 
-// Botones "Despierto" y "Levantado" arriba de Hoy (antes "Empiezo el día").
-// Al pulsar "Levantado" se guarda la hora y el aviso de sobrecarga calcula tu
+// Botón «Me he levantado» arriba de Hoy (antes había dos: «Despierto» y
+// «Levantado»; Xavi prefirió una sola hora). Al pulsarlo se guarda la hora y el aviso de sobrecarga calcula tu
 // día desde ese momento hasta que te acuestes.
 // "ajustes" son los de hoy (ya con la hora de acostarte del día, si la pusiste).
 // "rutinas" son las de hoy: al levantarte, te enseña la primera (como el primer paseo).
@@ -67,7 +64,6 @@ export function EmpiezoElDia({
 
   if (estadoDespertar(inicio) === "levantado" && inicio?.start_time) {
     const primera = primeraRutina(rutinas);
-    const enLaCama = textoEnLaCama(minutosEnLaCama(inicio));
     return (
       <section className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-4 text-sm text-muted">
@@ -76,7 +72,7 @@ export function EmpiezoElDia({
             {ajustes.sleep_time
               ? ` · te acuestas a las ${ajustes.sleep_time}`
               : ""}
-            .{enLaCama ? ` ${enLaCama}` : ""}
+            .
           </p>
           <form action={deshacerInicioDia}>
             <button type="submit" className="underline">
@@ -106,9 +102,9 @@ export function EmpiezoElDia({
   );
 }
 
-// Los dos botones, para la tarjeta de Hoy y para la pantalla /despierto.
-// "grande" los hace más altos, para pulsarlos medio dormido.
-// "irAHoy": al pulsar "Levantado", te lleva a Hoy.
+// El botón, para la tarjeta de Hoy y para la pantalla /despierto.
+// "grande" lo hace más alto, para pulsarlo medio dormido.
+// "irAHoy": al pulsarlo, te lleva a Hoy.
 // "anoche": la noche anterior (para corregir la hora y apuntar el motivo).
 export function BotonesDespertar({
   inicio,
@@ -123,26 +119,12 @@ export function BotonesDespertar({
   grande?: boolean;
   irAHoy?: boolean;
 }) {
-  const estado = estadoDespertar(inicio);
   const alto = grande ? "min-h-16 text-lg" : "py-2";
   return (
     <>
-      {estado === "despierto" && inicio?.awake_time ? (
-        <p className="text-sm text-muted">
-          {`Despierto desde las ${inicio.awake_time}. Pulsa «Levantado» cuando salgas de la cama.`}
-        </p>
-      ) : (
-        <SaberMas resumen="Pulsa «Despierto» al abrir los ojos y «Levantado» al salir de la cama.">
-          Calcularé tu día desde que te levantes hasta que te acuestes.
-        </SaberMas>
-      )}
-      {estado === "sin-empezar" && (
-        <form action={marcarDespierto} className="flex flex-col">
-          <button type="submit" className={`button-secondary ${alto}`}>
-            Despierto
-          </button>
-        </form>
-      )}
+      <SaberMas resumen="Pulsa «Me he levantado» al empezar el día.">
+        Calcularé tu día desde esa hora hasta que te acuestes.
+      </SaberMas>
       <form action={empezarDia} className="flex flex-col gap-3">
         {irAHoy && <input type="hidden" name="ir_a_hoy" value="1" />}
         {!ajustes.sleep_time && (
@@ -152,26 +134,12 @@ export function BotonesDespertar({
           </label>
         )}
         <button type="submit" className={`button-primary ${alto}`}>
-          Levantado
+          Me he levantado
         </button>
       </form>
-      {estado === "despierto" && (
-        <form
-          action={deshacerInicioDia}
-          className="self-start text-sm text-muted"
-        >
-          <button type="submit" className="underline">
-            Deshacer
-          </button>
-        </form>
-      )}
       <CorregirHoras
         inicio={inicio}
-        texto={
-          estado === "despierto"
-            ? "Cambiar horas"
-            : "¿Se te olvidó pulsar? Pon la hora a mano"
-        }
+        texto="¿Se te olvidó pulsar? Pon la hora a mano"
       />
       <CorregirDormir anoche={anoche} />
     </>

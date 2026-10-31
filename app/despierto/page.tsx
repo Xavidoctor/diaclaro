@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Buenos días" };
 
 // Pantalla para nada más despertarte. Se abre con el atajo «Estoy despierto»
-// (mantén pulsado el icono de DíaClaro). Solo tiene dos botones grandes.
+// (mantén pulsado el icono de DíaClaro). Solo tiene un botón grande.
 // Si ya te has levantado hoy, te lleva directamente a Hoy.
 export default async function DespiertoPage() {
   const supabase = await createClient();

@@ -31,7 +31,7 @@ export async function AvisoSobrecarga({
 }: {
   hoy: string;
   ajustes: Ajustes;
-  despertar: string | null; // cuándo pulsaste «Despierto» (o te levantas)
+  despertar: string | null; // cuándo pulsaste «Me he levantado»
   agenda: Ocurrencia[];
   rutinas: RutinaDelDia[];
 }) {

@@ -26,7 +26,7 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
     titulo: "Hoy",
     resumen: "La pantalla principal: lo que te toca hoy, todo junto.",
     pasos: [
-      "Arriba están los botones «Despierto» y «Levantado». Pulsa «Levantado» al salir de la cama y la app calcula tu día desde esa hora.",
+      "Arriba está el botón «Me he levantado». Púlsalo al empezar el día y la app calcula tu día desde esa hora.",
       "«Tu plan de hoy» te enseña la siguiente tarea y, en «Pendientes», todo lo de hoy para ir tachando, con un contador (1/2 = te queda 1 de 2). Tus 3 prioridades van arriba: el orden sale de la fecha y la importancia que pones en cada tarea.",
       "Si lo que tienes no cabe en el tiempo que te queda, sale un aviso con ideas para recortar. No cambia nada hasta que pulsas «Aceptar».",
       "Más abajo tienes la agenda del día, tus rutinas (pulsa «+ Añadir» para crear una y «Hecho» cuando las hagas; si tiene modo foco, «Empezar»), tus hábitos y el cierre del día.",

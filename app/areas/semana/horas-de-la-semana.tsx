@@ -26,7 +26,7 @@ export async function HorasDeLaSemana({
         <p className="card text-sm">
           Aún no hay horas de despertar esta semana. Pulsa{" "}
           <Link href="/despierto" className="enlace">
-            Despierto y Levantado
+            Me he levantado
           </Link>{" "}
           al empezar el día y pon tu hora de acostarte en{" "}
           <Link href="/ajustes" className="enlace">
@@ -49,11 +49,6 @@ export async function HorasDeLaSemana({
                 ? `Aproximado en ${suenoAprox === 1 ? "1 día" : `${suenoAprox} días`}: falta «Me voy a dormir»`
                 : "Con tu hora real de acostarte"
             }
-          />
-          <Dato
-            nombre="En la cama despierto"
-            media={resumen.enCama}
-            nota="De Despierto a Levantado"
           />
           <Dato nombre="En pie" media={resumen.enPie} />
           <Dato
@@ -94,7 +89,7 @@ export async function HorasDeLaSemana({
         <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-muted">
           <li>
             Sueño: desde tu hora de acostarte de la noche anterior hasta que
-            pulsas Despierto (o Levantado). La hora de acostarte es la de{" "}
+            pulsas «Me he levantado». La hora de acostarte es la de{" "}
             <Link href="/dormir" className="enlace">
               Me voy a dormir
             </Link>
@@ -203,7 +198,6 @@ function FilaDia({ dia }: { dia: DiaProgreso }) {
           valor={hora(dia.sueno)}
         />
         <Par nombre="En pie" valor={hora(dia.enPie)} />
-        <Par nombre="En la cama" valor={hora(dia.enCama)} />
         <Par nombre="Usadas" valor={hora(dia.usado)} />
         <Par nombre="Agenda" valor={hora(dia.agenda)} />
         <Par nombre="Sin apuntar" valor={hora(dia.sinApuntar)} />
