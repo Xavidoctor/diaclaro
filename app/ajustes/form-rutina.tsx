@@ -9,7 +9,7 @@ import {
 import Link from "next/link";
 import { SaberMas } from "@/app/componentes/saber-mas";
 import { DIAS_SEMANA, FRANJAS, leerRegla } from "@/lib/planner/agenda";
-import { MINUTOS_AVISO, type Rutina } from "@/lib/planner/rutinas";
+import { MINUTOS_AVISO, nombreVez, type Rutina } from "@/lib/planner/rutinas";
 
 // Formulario para crear o cambiar una rutina.
 // Arriba, lo justo para añadirla rápido: nombre, días y hora (si la sabes).
@@ -62,6 +62,12 @@ function valoresIniciales(rutina?: Rutina): ValoresFormRutina {
       : "",
     window_start: rutina?.window_start ?? "",
     window_end: rutina?.window_end ?? "",
+    // Si aún no tenía hora por vez, la 1.ª vez empieza con su «Desde».
+    horas: rutina?.times_of_day
+      ? rutina.times_of_day.map((h) => h ?? "")
+      : rutina?.window_start
+        ? [rutina.window_start]
+        : [],
     part_of_day: rutina?.part_of_day ?? "",
     focus: rutina?.focus ? "si" : "",
     focus_alarm_minutes: rutina?.focus_alarm_minutes
@@ -80,6 +86,21 @@ function Campos({
   const [cuando, setCuando] = useState(valores.cuando);
   const [desde, setDesde] = useState(valores.window_start);
   const [foco, setFoco] = useState(valores.focus === "si");
+  const [vecesTexto, setVecesTexto] = useState(valores.times_per_day);
+  const [horas, setHoras] = useState(valores.horas);
+  // Con más de 1 vez al día, en vez de «Desde–Hasta» sale una hora por vez.
+  const veces = Math.min(20, Math.max(1, Math.trunc(Number(vecesTexto)) || 1));
+  const variasVeces = veces > 1;
+  // La hora en que empieza: la de «Desde» o la de la primera vez con hora.
+  const inicio = variasVeces ? (horas.find((h) => h) ?? "") : desde;
+
+  function cambiarHora(i: number, valor: string) {
+    setHoras((antes) => {
+      const nuevas = Array.from({ length: veces }, (_, j) => antes[j] ?? "");
+      nuevas[i] = valor;
+      return nuevas;
+    });
+  }
 
   return (
     <>
@@ -134,29 +155,46 @@ function Campos({
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm">¿A qué hora? (opcional)</legend>
-        <div className="flex gap-3">
-          <label className="flex flex-1 flex-col gap-1 text-sm text-muted">
-            Desde
-            <input
-              name="window_start"
-              type="time"
-              value={desde}
-              onChange={(e) => setDesde(e.target.value)}
-              className="input py-2 text-foreground"
-            />
-          </label>
-          <label className="flex flex-1 flex-col gap-1 text-sm text-muted">
-            Hasta
-            <input
-              name="window_end"
-              type="time"
-              defaultValue={valores.window_end}
-              disabled={!desde}
-              className="input py-2 text-foreground disabled:opacity-50"
-            />
-          </label>
-        </div>
-        {!desde && (
+        {variasVeces ? (
+          <div className="grid grid-cols-2 gap-3">
+            {Array.from({ length: veces }, (_, i) => (
+              <label key={i} className="flex flex-col gap-1 text-sm text-muted">
+                {nombreVez(i + 1)}
+                <input
+                  name="horas"
+                  type="time"
+                  value={horas[i] ?? ""}
+                  onChange={(e) => cambiarHora(i, e.target.value)}
+                  className="input py-2 text-foreground"
+                />
+              </label>
+            ))}
+          </div>
+        ) : (
+          <div className="flex gap-3">
+            <label className="flex flex-1 flex-col gap-1 text-sm text-muted">
+              Desde
+              <input
+                name="window_start"
+                type="time"
+                value={desde}
+                onChange={(e) => setDesde(e.target.value)}
+                className="input py-2 text-foreground"
+              />
+            </label>
+            <label className="flex flex-1 flex-col gap-1 text-sm text-muted">
+              Hasta
+              <input
+                name="window_end"
+                type="time"
+                defaultValue={valores.window_end}
+                disabled={!desde}
+                className="input py-2 text-foreground disabled:opacity-50"
+              />
+            </label>
+          </div>
+        )}
+        {!inicio && (
           <label className="flex flex-col gap-1 text-sm text-muted">
             O solo la parte del día
             <select
@@ -205,7 +243,7 @@ function Campos({
               <select
                 name="focus_alarm_minutes"
                 defaultValue={valores.focus_alarm_minutes}
-                disabled={!desde}
+                disabled={!inicio}
                 className="input py-2 disabled:opacity-50"
               >
                 <option value="">Sin aviso</option>
@@ -216,10 +254,10 @@ function Campos({
                 ))}
               </select>
             </label>
-            {desde ? (
+            {inicio ? (
               <SaberMas resumen="Por si vienes de comer o de otra cosa.">
                 <p>
-                  Te llega un aviso al móvil esos minutos antes de las {desde},
+                  Te llega un aviso al móvil esos minutos antes de las {inicio},
                   para que te dé tiempo a terminar lo que estés haciendo y
                   prepararte. Hace falta tener los avisos activados en{" "}
                   <Link href="/habitos/avisos" className="enlace">
@@ -230,7 +268,9 @@ function Campos({
               </SaberMas>
             ) : (
               <p className="text-sm text-muted">
-                Para el aviso, pon arriba a qué hora empieza («Desde»).
+                {variasVeces
+                  ? "Para el aviso, pon arriba la hora de la 1.ª vez."
+                  : "Para el aviso, pon arriba a qué hora empieza («Desde»)."}
               </p>
             )}
           </div>
@@ -252,7 +292,8 @@ function Campos({
                 min={1}
                 max={20}
                 required
-                defaultValue={valores.times_per_day}
+                value={vecesTexto}
+                onChange={(e) => setVecesTexto(e.target.value)}
                 className="input py-2"
               />
             </label>
@@ -269,6 +310,11 @@ function Campos({
               />
             </label>
           </div>
+          {variasVeces && (
+            <p className="-mt-2 text-sm text-muted">
+              Arriba, en «¿A qué hora?», puedes poner la hora de cada vez.
+            </p>
+          )}
 
           <label className="flex flex-col gap-1 text-sm">
             Notas (opcional)

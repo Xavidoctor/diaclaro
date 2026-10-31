@@ -27,9 +27,11 @@ import { hoyEn } from "@/lib/planner/fechas";
 import { ajustesDelDia } from "@/lib/planner/inicio-dia";
 import { juntarAgendas } from "@/lib/planner/google-calendar";
 import {
+  filasDeHoy,
+  nombreVez,
   rutinasDelDia,
   textoFranja,
-  type RutinaDelDia,
+  type FilaRutinaHoy,
 } from "@/lib/planner/rutinas";
 import { createClient } from "@/lib/supabase/server";
 
@@ -159,8 +161,11 @@ export default async function HoyPage() {
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {deHoy.map((r) => (
-                <FilaRutina key={r.rutina.id} item={r} />
+              {filasDeHoy(deHoy).map((f) => (
+                <FilaRutina
+                  key={`${f.item.rutina.id}|${f.vez?.numero ?? 0}`}
+                  fila={f}
+                />
               ))}
             </ul>
           )}
@@ -179,35 +184,43 @@ export default async function HoyPage() {
   );
 }
 
-function FilaRutina({ item }: { item: RutinaDelDia }) {
-  const { rutina, hechas, completa } = item;
+// Una rutina de 1 vez al día, o una de las veces de una rutina de varias.
+function FilaRutina({ fila }: { fila: FilaRutinaHoy }) {
+  const { item, vez, hecha } = fila;
+  const { rutina, hechas } = item;
+  const minutos = rutina.duration_minutes
+    ? ` · ${rutina.duration_minutes} min`
+    : "";
+  // Con varias veces: «1.ª vez de 2 · 9:15». Con una: «0 de 1 · Por la mañana».
+  const detalle = vez
+    ? `${nombreVez(vez.numero)} de ${rutina.times_per_day}${
+        vez.hora ? ` · ${vez.hora}` : ""
+      }${minutos}`
+    : `${hechas} de ${rutina.times_per_day}${minutos} · ${textoFranja(rutina)}`;
+  const puedeDeshacer = vez ? vez.hecha : hechas > 0;
   return (
     <li className="card flex items-center gap-3 p-4">
       <div className="flex flex-1 flex-col gap-1">
         {/* Tocando el nombre la cambias (y ahí activas el modo foco). */}
         <Link
           href={`/ajustes/rutinas/${rutina.id}?desde=hoy`}
-          className={`break-words ${completa ? "text-muted line-through" : ""}`}
+          className={`break-words ${hecha ? "text-muted line-through" : ""}`}
         >
           {rutina.title}
         </Link>
-        <span className="text-sm text-muted">
-          {hechas} de {rutina.times_per_day}
-          {rutina.duration_minutes ? ` · ${rutina.duration_minutes} min` : ""}
-          {" · "}
-          {textoFranja(rutina)}
-        </span>
+        <span className="text-sm text-muted">{detalle}</span>
       </div>
-      {hechas > 0 && (
+      {puedeDeshacer && (
         <form action={deshacerRutinaHecha}>
           <input type="hidden" name="id" value={rutina.id} />
+          {vez && <input type="hidden" name="vez" value={vez.numero} />}
           <button type="submit" className="text-sm text-muted underline">
             Deshacer
           </button>
         </form>
       )}
       {/* Con modo foco, «Empezar» abre Foco: alejas el móvil y mides el tiempo. */}
-      {!completa && rutina.focus && (
+      {!hecha && rutina.focus && (
         <Link
           href={`/foco?rutina=${rutina.id}`}
           className="button-primary py-2 text-sm"
@@ -215,9 +228,11 @@ function FilaRutina({ item }: { item: RutinaDelDia }) {
           Empezar
         </Link>
       )}
-      {!completa && !rutina.focus && (
+      {!hecha && !rutina.focus && (
         <form action={marcarRutinaHecha}>
+          {/* Con varias veces al día, se apunta qué vez has hecho. */}
           <input type="hidden" name="id" value={rutina.id} />
+          {vez && <input type="hidden" name="vez" value={vez.numero} />}
           <button type="submit" className="button-primary py-2 text-sm">
             Hecho
           </button>

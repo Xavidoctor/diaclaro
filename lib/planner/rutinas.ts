@@ -27,6 +27,9 @@ export type Rutina = {
   duration_minutes: number | null;
   window_start: string | null;
   window_end: string | null;
+  // Con varias veces al día: la hora de cada vez, en orden. null = sin horas.
+  // Una vez sin hora se queda en null (la app no se la inventa).
+  times_of_day: (string | null)[] | null;
   part_of_day: Franja | null;
   // Modo foco: al empezar, te pide alejar el móvil y puedes medir el tiempo.
   focus: boolean;
@@ -38,7 +41,13 @@ export type Rutina = {
 // Los minutos que puedes elegir para el aviso antes de empezar.
 export const MINUTOS_AVISO = [5, 10, 15, 30, 60] as const;
 
-export type RegistroRutina = { routine_id: string; on_date: string };
+// slot = qué vez del día es (1, 2...). null en lo apuntado sin vez (antes de
+// poder marcar cada vez, o desde Foco): cuenta como la primera que quedaba.
+export type RegistroRutina = {
+  routine_id: string;
+  on_date: string;
+  slot?: number | null;
+};
 
 // ¿Toca esta rutina ese día?
 export function tocaRutina(
@@ -53,11 +62,43 @@ export function tocaRutina(
   );
 }
 
+export type VezRutina = { numero: number; hora: string | null; hecha: boolean };
+
 export type RutinaDelDia = {
   rutina: Rutina;
   hechas: number;
   completa: boolean;
+  // Cada vez del día por separado, con su hora (si la tiene) y si está hecha.
+  veces: VezRutina[];
 };
+
+// Las veces de una rutina en un día. Lo apuntado con su vez marca esa vez;
+// lo apuntado sin vez rellena las primeras que quedaban.
+export function vecesDeRutina(
+  rutina: Pick<Rutina, "id" | "times_per_day" | "times_of_day">,
+  registros: RegistroRutina[],
+  fecha: string,
+): VezRutina[] {
+  const delDia = registros.filter(
+    (g) => g.routine_id === rutina.id && g.on_date === fecha,
+  );
+  const veces = Array.from({ length: rutina.times_per_day }, (_, i) => ({
+    numero: i + 1,
+    hora: rutina.times_of_day?.[i] ?? null,
+    hecha: delDia.some((g) => g.slot === i + 1),
+  }));
+  let sinVez = delDia.filter(
+    (g) => !g.slot || g.slot > rutina.times_per_day,
+  ).length;
+  for (const vez of veces) {
+    if (sinVez === 0) break;
+    if (!vez.hecha) {
+      vez.hecha = true;
+      sinVez--;
+    }
+  }
+  return veces;
+}
 
 // Las rutinas activas que tocan ese día, con cuántas veces las llevas.
 // Primero las pendientes; dentro de cada grupo, por franja.
@@ -72,7 +113,12 @@ export function rutinasDelDia(
       const hechas = registros.filter(
         (g) => g.routine_id === rutina.id && g.on_date === fecha,
       ).length;
-      return { rutina, hechas, completa: hechas >= rutina.times_per_day };
+      return {
+        rutina,
+        hechas,
+        completa: hechas >= rutina.times_per_day,
+        veces: vecesDeRutina(rutina, registros, fecha),
+      };
     })
     .sort(
       (a, b) =>
@@ -80,6 +126,31 @@ export function rutinasDelDia(
         claveFranja(a.rutina).localeCompare(claveFranja(b.rutina)) ||
         a.rutina.title.localeCompare(b.rutina.title, "es"),
     );
+}
+
+// Lo que sale en la lista de Hoy: una fila por rutina o, si se hace varias
+// veces al día, una fila por cada vez (cada una con su «Hecho»).
+// Primero lo pendiente; dentro de cada grupo, por hora.
+export type FilaRutinaHoy = {
+  item: RutinaDelDia;
+  vez: VezRutina | null; // null = rutina de 1 vez al día
+  hecha: boolean;
+};
+
+export function filasDeHoy(rutinas: RutinaDelDia[]): FilaRutinaHoy[] {
+  const filas = rutinas.flatMap((item): FilaRutinaHoy[] =>
+    item.rutina.times_per_day > 1
+      ? item.veces.map((vez) => ({ item, vez, hecha: vez.hecha }))
+      : [{ item, vez: null, hecha: item.completa }],
+  );
+  const clave = (f: FilaRutinaHoy) => f.vez?.hora ?? claveFranja(f.item.rutina);
+  return filas.sort(
+    (a, b) =>
+      Number(a.hecha) - Number(b.hecha) ||
+      clave(a).localeCompare(clave(b)) ||
+      a.item.rutina.title.localeCompare(b.item.rutina.title, "es") ||
+      (a.vez?.numero ?? 0) - (b.vez?.numero ?? 0),
+  );
 }
 
 // Solo para ordenar: no es una hora que se muestre.
@@ -90,19 +161,36 @@ const ORDEN_FRANJA: Record<Franja, string> = {
 };
 function claveFranja(r: Rutina): string {
   if (r.window_start) return r.window_start;
+  const primera = r.times_of_day?.find((h) => h !== null);
+  if (primera) return primera;
   if (r.part_of_day) return ORDEN_FRANJA[r.part_of_day];
   return "99";
 }
 
 // "Entre 10:00 y 13:00", "Desde las 10:00", "Por la mañana" o "Cuando puedas".
+// Con hora en cada vez: "A las 9:15 y 19:00".
 export function textoFranja(
-  r: Pick<Rutina, "window_start" | "window_end" | "part_of_day">,
+  r: Pick<Rutina, "window_start" | "window_end" | "part_of_day"> & {
+    times_of_day?: Rutina["times_of_day"];
+  },
 ): string {
+  const horas = (r.times_of_day ?? []).filter((h): h is string => h !== null);
+  if (horas.length > 0) return `A las ${juntarHoras(horas)}`;
   if (r.window_start && r.window_end)
     return `Entre ${r.window_start} y ${r.window_end}`;
   if (r.window_start) return `Desde las ${r.window_start}`;
   if (r.part_of_day) return `Por la ${r.part_of_day}`;
   return "Cuando puedas";
+}
+
+function juntarHoras(horas: string[]): string {
+  if (horas.length === 1) return horas[0];
+  return `${horas.slice(0, -1).join(", ")} y ${horas[horas.length - 1]}`;
+}
+
+// "1.ª vez", "2.ª vez"...
+export function nombreVez(numero: number): string {
+  return `${numero}.ª vez`;
 }
 
 // "3 veces · 15 min" o "1 vez".
@@ -147,6 +235,7 @@ const esquemaRutina = z
     duration_minutes: minutosOpcionales,
     window_start: horaOpcional,
     window_end: horaOpcional,
+    horas: z.array(horaOpcional),
     part_of_day: textoOpcional.pipe(z.enum(FRANJAS).nullable()),
     focus: z.boolean(),
     focus_alarm_minutes: textoOpcional
@@ -161,7 +250,13 @@ const esquemaRutina = z
       ),
   })
   .superRefine((d, ctx) => {
-    if (d.focus && d.focus_alarm_minutes !== null && !d.window_start)
+    const primera = d.times_per_day > 1 ? d.horas.find((h) => h) : null;
+    if (
+      d.focus &&
+      d.focus_alarm_minutes !== null &&
+      !d.window_start &&
+      !primera
+    )
       ctx.addIssue({
         code: "custom",
         message:
@@ -184,6 +279,8 @@ export function prepararRutina(datos: {
   duration_minutes: unknown;
   window_start: unknown;
   window_end: unknown;
+  // La hora de cada vez (solo cuenta con más de 1 vez al día).
+  horas?: unknown[];
   part_of_day: unknown;
   focus?: unknown;
   focus_alarm_minutes?: unknown;
@@ -197,6 +294,7 @@ export function prepararRutina(datos: {
     duration_minutes: datos.duration_minutes ?? "",
     window_start: datos.window_start ?? "",
     window_end: datos.window_end ?? "",
+    horas: datos.horas ?? [],
     part_of_day: datos.part_of_day ?? "",
     // La casilla del formulario manda "si" cuando está marcada.
     focus: datos.focus === "si",
@@ -204,6 +302,18 @@ export function prepararRutina(datos: {
   });
   if (!r.success) return { ok: false, error: r.error.issues[0].message };
   const d = r.data;
+  // Varias veces al día: una hora por vez (las vacías se quedan vacías).
+  // La franja pasa a ser la hora de la primera vez: así el orden en Hoy y el
+  // aviso del modo foco siguen funcionando.
+  const horas =
+    d.times_per_day > 1
+      ? Array.from({ length: d.times_per_day }, (_, i) => d.horas[i] ?? null)
+      : [];
+  const times_of_day = horas.some((h) => h !== null) ? horas : null;
+  const window_start = times_of_day
+    ? times_of_day.find((h) => h !== null)!
+    : d.window_start;
+  const window_end = times_of_day ? null : d.window_end;
   return {
     ok: true,
     valor: {
@@ -219,10 +329,11 @@ export function prepararRutina(datos: {
             }),
       times_per_day: d.times_per_day,
       duration_minutes: d.duration_minutes,
-      window_start: d.window_start,
-      window_end: d.window_end,
+      window_start,
+      window_end,
+      times_of_day,
       // Con hora de inicio de la franja, la parte del día sobra.
-      part_of_day: d.window_start ? null : d.part_of_day,
+      part_of_day: window_start ? null : d.part_of_day,
       focus: d.focus,
       // Sin foco no hay aviso antes de empezar.
       focus_alarm_minutes: d.focus ? d.focus_alarm_minutes : null,
