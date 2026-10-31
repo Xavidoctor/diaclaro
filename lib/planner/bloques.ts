@@ -2,6 +2,7 @@ import type { Ocurrencia } from "./agenda";
 import { sumarDias } from "./fechas";
 import {
   estaMovida,
+  movidaDe,
   rutinaEseDia,
   rutinaFija,
   type MovidaRutina,
@@ -85,7 +86,7 @@ export function bloquesDeRutinas(
     | "times_of_day"
     | "active"
     | "project_id"
-  > & { fixed_time?: boolean | null })[],
+  > & { fixed_time?: boolean | null; recorded?: boolean })[],
   desde: string,
   hasta: string,
   movidas: MovidaRutina[] = [],
@@ -130,7 +131,8 @@ export function bloquesDeRutinas(
             fecha,
             fechaOriginal: fecha,
             horaInicio: t.inicio,
-            horaFin: t.fin,
+            // Si ese día acabó antes («Ya ha terminado»), su hora de fin.
+            horaFin: movidaDe(movidas, r.id, fecha, t.vez)?.end_time ?? t.fin,
             franja: null,
             seRepite: true,
             cambiada: estaMovida(movidas, r.id, fecha, t.vez),
@@ -140,6 +142,7 @@ export function bloquesDeRutinas(
               hecha: false,
               vez: t.vez,
               fija: rutinaFija(r),
+              grabada: Boolean(r.recorded),
             },
           }),
         );

@@ -60,6 +60,10 @@ export type Ocurrencia = {
     hecha: boolean;
     vez?: number;
     fija?: boolean;
+    // Clase grabada (solo rutinas). "aOtraHora": se junta con algo que no
+    // está grabado, así que ese día la ves en otro momento (ver dia-por-horas.ts).
+    grabada?: boolean;
+    aOtraHora?: boolean;
   };
 };
 

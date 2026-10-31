@@ -67,7 +67,10 @@ function limpiarTarea(t: Tarea): Tarea {
 // ¿Falla porque aún no existe la columna del tipo de fecha?
 function faltaTipoFecha(error: { code?: string; message: string } | null) {
   return Boolean(
-    error && (error.code === "42703" || error.message.includes("due_kind")),
+    error &&
+    (error.code === "42703" ||
+      error.code === "PGRST204" ||
+      error.message.includes("due_kind")),
   );
 }
 

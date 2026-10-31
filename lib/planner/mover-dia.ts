@@ -64,9 +64,12 @@ export function rutinaFija(
 }
 
 // ¿Se puede mover en la lista? Solo las tareas y rutinas con hora que no
-// son fijas. Tus compromisos de la Agenda y lo de Google, nunca.
+// son fijas, y las clases grabadas que ese día se juntan con otra cosa.
+// Tus compromisos de la Agenda y lo de Google, nunca.
 export function sePuedeMover(o: Ocurrencia): boolean {
-  return Boolean(o.bloque && !o.bloque.fija && o.horaInicio);
+  return Boolean(
+    o.bloque && (!o.bloque.fija || o.bloque.aOtraHora) && o.horaInicio,
+  );
 }
 
 // ---- Mover una rutina solo un día ----
@@ -77,6 +80,7 @@ export type MovidaRutina = {
   on_date: string;
   slot: number; // 1, 2... (las de una vez al día usan la 1)
   start_time: string; // "18:30"
+  end_time?: string | null; // si ese día acabó antes («Ya ha terminado»)
 };
 
 type RutinaConHora = Pick<
@@ -118,8 +122,23 @@ export function rutinaEseDia<R extends RutinaConHora>(
   return {
     ...r,
     window_start: m.start_time,
-    window_end: finMovido(r.window_start, r.window_end, m.start_time),
+    window_end:
+      m.end_time ?? finMovido(r.window_start, r.window_end, m.start_time),
   };
+}
+
+// El cambio de una vez de la rutina ese día, si lo hay.
+export function movidaDe(
+  movidas: MovidaRutina[],
+  rutinaId: string,
+  fecha: string,
+  vez: number,
+): MovidaRutina | null {
+  return (
+    movidas.find(
+      (m) => m.routine_id === rutinaId && m.on_date === fecha && m.slot === vez,
+    ) ?? null
+  );
 }
 
 // ¿Esa vez de la rutina está movida ese día?
@@ -141,7 +160,13 @@ export type RatoFijo = { titulo: string; inicio: string; fin: string | null };
 // Lo fijo de un día con hora, para avisar si mueves algo encima.
 export function ratosFijos(ocurrencias: Ocurrencia[]): RatoFijo[] {
   return ocurrencias
-    .filter((o) => o.horaInicio && !sePuedeMover(o) && !o.google?.libre)
+    .filter(
+      (o) =>
+        o.horaInicio &&
+        !sePuedeMover(o) &&
+        !o.google?.libre &&
+        !o.bloque?.aOtraHora,
+    )
     .map((o) => ({ titulo: o.titulo, inicio: o.horaInicio!, fin: o.horaFin }));
 }
 
@@ -194,4 +219,33 @@ export type Movimiento = z.infer<typeof esquemaMover>;
 export function leerMovimiento(datos: unknown): Movimiento | null {
   const r = esquemaMover.safeParse(datos);
   return r.success ? r.data : null;
+}
+
+// «Ya ha terminado»: un compromiso (evento) o una rutina acaba antes ese día.
+const esquemaTerminar = z.discriminatedUnion("tipo", [
+  z.object({
+    tipo: z.literal("evento"),
+    id: z.uuid(),
+    fecha: z.string().refine(esFecha),
+    fechaOriginal: z.string().refine(esFecha),
+    inicio: hora,
+    fin: hora,
+  }),
+  z.object({
+    tipo: z.literal("rutina"),
+    id: z.uuid(),
+    fecha: z.string().refine(esFecha),
+    vez: z.number().int().min(1).max(20),
+    inicio: hora,
+    fin: hora,
+  }),
+]);
+
+export type Terminar = z.infer<typeof esquemaTerminar>;
+
+// Comprueba lo que manda la pantalla. El fin tiene que ir después del inicio.
+export function leerTerminar(datos: unknown): Terminar | null {
+  const r = esquemaTerminar.safeParse(datos);
+  if (!r.success || r.data.fin <= r.data.inicio) return null;
+  return r.data;
 }
