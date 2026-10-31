@@ -145,15 +145,18 @@ export const SECCIONES_GUIA: SeccionGuia[] = [
   },
   {
     id: "ajustes",
-    titulo: "Ajustes",
-    resumen: "Tus horas, tus rutinas, Google y la copia de seguridad.",
+    titulo: "Tú y tus ajustes",
+    resumen:
+      "Tu perfil, tus horas, tus rutinas, Google y la copia de seguridad.",
     pasos: [
+      "Arriba, «Sobre ti»: cómo quieres que te llame la app y tu frase. Todo es opcional.",
       "Cambia tus horas de levantarte, comer, cenar y acostarte, y tu zona horaria.",
       "Añade rutinas: cosas que haces a menudo sin hora fija, como pasear al perro.",
       "Descarga una copia de seguridad de tus datos una vez a la semana.",
       "En «Guía de uso» puedes repetir el recorrido de bienvenida, abrir esta guía y volver a mostrar la ayuda pequeña de cada pantalla.",
+      "Al final, «Tu cuenta»: instalar la app y salir.",
     ],
-    enlace: { href: "/ajustes", texto: "Ir a Ajustes" },
+    enlace: { href: "/ajustes", texto: "Ir a Tú y tus ajustes" },
   },
 ];
 
